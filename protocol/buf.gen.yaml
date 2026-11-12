@@ -1,0 +1,13 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      value: ludra/internal/protocol
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.12
+    out: ../server
+    opt: module=ludra
+  - remote: buf.build/bufbuild/es:v2.17.0
+    out: ../apps/desktop/src/protocol
+    opt: target=ts

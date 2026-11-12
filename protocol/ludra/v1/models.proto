@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package ludra.v1;
+
+import "google/protobuf/timestamp.proto";
+
+enum Presence {
+  PRESENCE_UNSPECIFIED = 0;
+  PRESENCE_ONLINE = 1;
+  PRESENCE_OFFLINE = 2;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  Presence presence = 3;
+}
+
+message Message {
+  string id = 1;
+  string conversation_id = 2;
+  string sender_id = 3;
+  string content = 4;
+  google.protobuf.Timestamp sent_at = 5;
+}
+
+message Conversation {
+  string id = 1;
+  User peer = 2;
+  Message last_message = 3;
+}

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package ludra.v1;
+
+import "ludra/v1/models.proto";
+
+message ServerFrame {
+  uint32 request_id = 1;
+
+  oneof payload {
+    Error error = 2;
+    LoggedIn logged_in = 3;
+    ConversationList conversation_list = 4;
+    ConversationOpened conversation_opened = 5;
+    MessageHistory message_history = 6;
+    MessageCreated message_created = 7;
+    PresenceChanged presence_changed = 8;
+  }
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_INVALID_REQUEST = 1;
+  ERROR_CODE_UNAUTHENTICATED = 2;
+  ERROR_CODE_NOT_FOUND = 3;
+  ERROR_CODE_INTERNAL = 4;
+}
+
+message Error {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
+message LoggedIn {
+  User user = 1;
+}
+
+message ConversationList {
+  repeated Conversation conversations = 1;
+}
+
+message ConversationOpened {
+  Conversation conversation = 1;
+}
+
+message MessageHistory {
+  string conversation_id = 1;
+  repeated Message messages = 2;
+  bool has_more = 3;
+}
+
+message MessageCreated {
+  Message message = 1;
+}
+
+message PresenceChanged {
+  string user_id = 1;
+  Presence presence = 2;
+}

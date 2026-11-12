@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ludra.v1;
+
+message ClientFrame {
+  uint32 request_id = 1;
+
+  oneof payload {
+    Login login = 2;
+    ListConversations list_conversations = 3;
+    OpenConversation open_conversation = 4;
+    LoadMessages load_messages = 5;
+    SendMessage send_message = 6;
+  }
+}
+
+message Login {
+  string username = 1;
+}
+
+message ListConversations {}
+
+message OpenConversation {
+  string username = 1;
+}
+
+message LoadMessages {
+  string conversation_id = 1;
+  string before_id = 2;
+  uint32 limit = 3;
+}
+
+message SendMessage {
+  string conversation_id = 1;
+  string content = 2;
+}

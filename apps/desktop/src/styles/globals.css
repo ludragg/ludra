@@ -1,0 +1,120 @@
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("@fontsource-variable/noto-sans/files/noto-sans-latin-wght-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2") format("woff2");
+}
+
+:root {
+  --background-color: #121212;
+  --dark-background-color: #0d0d0d;
+  --muted-color: #f0f1f7;
+  --body-color: #d0d1d7;
+  --subtle-color: #8e919b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --hover-color: rgba(255, 255, 255, 0.15);
+  --active-color: rgba(255, 255, 255, 0.1);
+  --surface-color: rgba(255, 255, 255, 0.04);
+
+  --brand-color: #c77dff;
+  --success-color: #1c9749;
+  --warning-color: #ffc107;
+  --danger-color: #801d1e;
+  --error-color: #e11d48;
+
+  --spacing-unit: 8px;
+  --page-gutter: calc(var(--spacing-unit) * 3);
+
+  --body-font-size: 14px;
+  --hint-font-size: 13px;
+  --small-font-size: 12px;
+  --tiny-font-size: 11px;
+
+  --font-body: "Noto Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", var(--font-body);
+
+  --disabled-opacity: 0.5;
+  --active-opacity: 0.7;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--dark-background-color);
+  color: var(--body-color);
+  font-family: var(--font-body);
+  font-size: var(--body-font-size);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 1px solid var(--muted-color);
+  outline-offset: 2px;
+}
+
+input::placeholder {
+  color: var(--subtle-color);
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
