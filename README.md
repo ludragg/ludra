@@ -11,6 +11,7 @@
     </strong>
   </p>
 
+  <a href="https://github.com/ludragg/ludra/actions/workflows/build.yml"><img src="https://github.com/ludragg/ludra/actions/workflows/build.yml/badge.svg" alt="Build status" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0" /></a>
   <img src="https://img.shields.io/badge/status-early%20development-orange" alt="Status: early development" />
   <img src="https://img.shields.io/badge/platform-Windows-0078D6" alt="Platform: Windows" />
