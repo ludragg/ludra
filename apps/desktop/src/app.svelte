@@ -5,6 +5,7 @@
   import Register from "@/pages/auth/register.svelte";
   import ResetPassword from "@/pages/auth/reset-password.svelte";
   import type { Screen } from "@/pages/auth/screen";
+  import TwoFactor from "@/pages/auth/two-factor.svelte";
   import VerifyEmail from "@/pages/auth/verify-email.svelte";
   import Chat from "@/pages/chat/chat.svelte";
   import { chat } from "@/stores/chat.svelte";
@@ -34,6 +35,8 @@
       <Register {navigate} />
     {:else if screen.name === "verify"}
       <VerifyEmail email={screen.email} {navigate} />
+    {:else if screen.name === "twoFactor"}
+      <TwoFactor email={screen.email} {navigate} />
     {:else if screen.name === "forgot"}
       <ForgotPassword {navigate} />
     {:else if screen.name === "reset"}

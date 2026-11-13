@@ -8,7 +8,10 @@ SELECT
     s.id AS session_id,
     u.id,
     u.username,
-    u.invisible
+    u.email,
+    u.avatar,
+    u.invisible,
+    u.two_factor
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now();
@@ -24,3 +27,7 @@ WHERE id = $1;
 -- name: DeleteUserSessions :exec
 DELETE FROM sessions
 WHERE user_id = $1;
+
+-- name: DeleteOtherSessions :exec
+DELETE FROM sessions
+WHERE user_id = $1 AND id <> $2;

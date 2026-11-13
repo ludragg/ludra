@@ -12,7 +12,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible
+RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor
 `
 
 type CreateUserParams struct {
@@ -32,12 +32,14 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.EmailVerifiedAt,
 		&i.Invisible,
+		&i.Avatar,
+		&i.TwoFactor,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor FROM users
 WHERE id = $1
 `
 
@@ -52,12 +54,14 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.PasswordHash,
 		&i.EmailVerifiedAt,
 		&i.Invisible,
+		&i.Avatar,
+		&i.TwoFactor,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor FROM users
 WHERE lower(email) = lower($1)
 `
 
@@ -72,12 +76,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error
 		&i.PasswordHash,
 		&i.EmailVerifiedAt,
 		&i.Invisible,
+		&i.Avatar,
+		&i.TwoFactor,
 	)
 	return i, err
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor FROM users
 WHERE lower(username) = lower($1) OR lower(email) = lower($1)
 `
 
@@ -92,12 +98,14 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.PasswordHash,
 		&i.EmailVerifiedAt,
 		&i.Invisible,
+		&i.Avatar,
+		&i.TwoFactor,
 	)
 	return i, err
 }
 
 const getVerifiedUserByUsername = `-- name: GetVerifiedUserByUsername :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor FROM users
 WHERE lower(username) = lower($1) AND email_verified_at IS NOT NULL
 `
 
@@ -112,6 +120,8 @@ func (q *Queries) GetVerifiedUserByUsername(ctx context.Context, lower string) (
 		&i.PasswordHash,
 		&i.EmailVerifiedAt,
 		&i.Invisible,
+		&i.Avatar,
+		&i.TwoFactor,
 	)
 	return i, err
 }
@@ -123,6 +133,21 @@ WHERE id = $1 AND email_verified_at IS NULL
 
 func (q *Queries) MarkEmailVerified(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, markEmailVerified, id)
+	return err
+}
+
+const setAvatar = `-- name: SetAvatar :exec
+UPDATE users SET avatar = $2
+WHERE id = $1
+`
+
+type SetAvatarParams struct {
+	ID     string
+	Avatar string
+}
+
+func (q *Queries) SetAvatar(ctx context.Context, arg SetAvatarParams) error {
+	_, err := q.db.Exec(ctx, setAvatar, arg.ID, arg.Avatar)
 	return err
 }
 
@@ -138,6 +163,21 @@ type SetInvisibleParams struct {
 
 func (q *Queries) SetInvisible(ctx context.Context, arg SetInvisibleParams) error {
 	_, err := q.db.Exec(ctx, setInvisible, arg.ID, arg.Invisible)
+	return err
+}
+
+const setTwoFactor = `-- name: SetTwoFactor :exec
+UPDATE users SET two_factor = $2
+WHERE id = $1
+`
+
+type SetTwoFactorParams struct {
+	ID        string
+	TwoFactor bool
+}
+
+func (q *Queries) SetTwoFactor(ctx context.Context, arg SetTwoFactorParams) error {
+	_, err := q.db.Exec(ctx, setTwoFactor, arg.ID, arg.TwoFactor)
 	return err
 }
 

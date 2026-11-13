@@ -53,7 +53,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.NewHandler(pool, gateway),
+		Handler:           api.NewHandler(pool, accounts, gateway),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       time.Minute,
 		MaxHeaderBytes:    16 << 10,

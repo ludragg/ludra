@@ -91,6 +91,12 @@ type ClientFrame struct {
 	//	*ClientFrame_AcceptFriend
 	//	*ClientFrame_RemoveFriend
 	//	*ClientFrame_SetPresence
+	//	*ClientFrame_VerifyTwoFactor
+	//	*ClientFrame_ResendTwoFactor
+	//	*ClientFrame_ChangePassword
+	//	*ClientFrame_SetTwoFactor
+	//	*ClientFrame_SetAvatar
+	//	*ClientFrame_RemoveAvatar
 	Payload       isClientFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -284,6 +290,60 @@ func (x *ClientFrame) GetSetPresence() *SetPresence {
 	return nil
 }
 
+func (x *ClientFrame) GetVerifyTwoFactor() *VerifyTwoFactor {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_VerifyTwoFactor); ok {
+			return x.VerifyTwoFactor
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetResendTwoFactor() *ResendTwoFactor {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_ResendTwoFactor); ok {
+			return x.ResendTwoFactor
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetChangePassword() *ChangePassword {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_ChangePassword); ok {
+			return x.ChangePassword
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetSetTwoFactor() *SetTwoFactor {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_SetTwoFactor); ok {
+			return x.SetTwoFactor
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetSetAvatar() *SetAvatar {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_SetAvatar); ok {
+			return x.SetAvatar
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetRemoveAvatar() *RemoveAvatar {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_RemoveAvatar); ok {
+			return x.RemoveAvatar
+		}
+	}
+	return nil
+}
+
 type isClientFrame_Payload interface {
 	isClientFrame_Payload()
 }
@@ -352,6 +412,30 @@ type ClientFrame_SetPresence struct {
 	SetPresence *SetPresence `protobuf:"bytes,17,opt,name=set_presence,json=setPresence,proto3,oneof"`
 }
 
+type ClientFrame_VerifyTwoFactor struct {
+	VerifyTwoFactor *VerifyTwoFactor `protobuf:"bytes,18,opt,name=verify_two_factor,json=verifyTwoFactor,proto3,oneof"`
+}
+
+type ClientFrame_ResendTwoFactor struct {
+	ResendTwoFactor *ResendTwoFactor `protobuf:"bytes,19,opt,name=resend_two_factor,json=resendTwoFactor,proto3,oneof"`
+}
+
+type ClientFrame_ChangePassword struct {
+	ChangePassword *ChangePassword `protobuf:"bytes,20,opt,name=change_password,json=changePassword,proto3,oneof"`
+}
+
+type ClientFrame_SetTwoFactor struct {
+	SetTwoFactor *SetTwoFactor `protobuf:"bytes,21,opt,name=set_two_factor,json=setTwoFactor,proto3,oneof"`
+}
+
+type ClientFrame_SetAvatar struct {
+	SetAvatar *SetAvatar `protobuf:"bytes,22,opt,name=set_avatar,json=setAvatar,proto3,oneof"`
+}
+
+type ClientFrame_RemoveAvatar struct {
+	RemoveAvatar *RemoveAvatar `protobuf:"bytes,23,opt,name=remove_avatar,json=removeAvatar,proto3,oneof"`
+}
+
 func (*ClientFrame_Login) isClientFrame_Payload() {}
 
 func (*ClientFrame_ListConversations) isClientFrame_Payload() {}
@@ -384,11 +468,24 @@ func (*ClientFrame_RemoveFriend) isClientFrame_Payload() {}
 
 func (*ClientFrame_SetPresence) isClientFrame_Payload() {}
 
+func (*ClientFrame_VerifyTwoFactor) isClientFrame_Payload() {}
+
+func (*ClientFrame_ResendTwoFactor) isClientFrame_Payload() {}
+
+func (*ClientFrame_ChangePassword) isClientFrame_Payload() {}
+
+func (*ClientFrame_SetTwoFactor) isClientFrame_Payload() {}
+
+func (*ClientFrame_SetAvatar) isClientFrame_Payload() {}
+
+func (*ClientFrame_RemoveAvatar) isClientFrame_Payload() {}
+
 type Register struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
+	Locale        string                 `protobuf:"bytes,4,opt,name=locale,proto3" json:"locale,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -444,10 +541,18 @@ func (x *Register) GetPassword() string {
 	return ""
 }
 
+func (x *Register) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
 type Login struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Login         string                 `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -492,6 +597,13 @@ func (x *Login) GetLogin() string {
 func (x *Login) GetPassword() string {
 	if x != nil {
 		return x.Password
+	}
+	return ""
+}
+
+func (x *Login) GetLocale() string {
+	if x != nil {
+		return x.Locale
 	}
 	return ""
 }
@@ -552,6 +664,7 @@ type SendCode struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Purpose       CodePurpose            `protobuf:"varint,2,opt,name=purpose,proto3,enum=ludra.v1.CodePurpose" json:"purpose,omitempty"`
+	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -598,6 +711,13 @@ func (x *SendCode) GetPurpose() CodePurpose {
 		return x.Purpose
 	}
 	return CodePurpose_CODE_PURPOSE_UNSPECIFIED
+}
+
+func (x *SendCode) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
 }
 
 type ResetPassword struct {
@@ -660,6 +780,278 @@ func (x *ResetPassword) GetPassword() string {
 	return ""
 }
 
+type VerifyTwoFactor struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyTwoFactor) Reset() {
+	*x = VerifyTwoFactor{}
+	mi := &file_ludra_v1_client_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyTwoFactor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyTwoFactor) ProtoMessage() {}
+
+func (x *VerifyTwoFactor) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyTwoFactor.ProtoReflect.Descriptor instead.
+func (*VerifyTwoFactor) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *VerifyTwoFactor) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type ResendTwoFactor struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Locale        string                 `protobuf:"bytes,1,opt,name=locale,proto3" json:"locale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResendTwoFactor) Reset() {
+	*x = ResendTwoFactor{}
+	mi := &file_ludra_v1_client_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResendTwoFactor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResendTwoFactor) ProtoMessage() {}
+
+func (x *ResendTwoFactor) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResendTwoFactor.ProtoReflect.Descriptor instead.
+func (*ResendTwoFactor) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ResendTwoFactor) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
+type ChangePassword struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	CurrentPassword string                 `protobuf:"bytes,1,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	NewPassword     string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ChangePassword) Reset() {
+	*x = ChangePassword{}
+	mi := &file_ludra_v1_client_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangePassword) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangePassword) ProtoMessage() {}
+
+func (x *ChangePassword) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangePassword.ProtoReflect.Descriptor instead.
+func (*ChangePassword) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ChangePassword) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+func (x *ChangePassword) GetNewPassword() string {
+	if x != nil {
+		return x.NewPassword
+	}
+	return ""
+}
+
+type SetTwoFactor struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetTwoFactor) Reset() {
+	*x = SetTwoFactor{}
+	mi := &file_ludra_v1_client_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetTwoFactor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetTwoFactor) ProtoMessage() {}
+
+func (x *SetTwoFactor) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetTwoFactor.ProtoReflect.Descriptor instead.
+func (*SetTwoFactor) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SetTwoFactor) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SetTwoFactor) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type SetAvatar struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Image         []byte                 `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetAvatar) Reset() {
+	*x = SetAvatar{}
+	mi := &file_ludra_v1_client_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAvatar) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAvatar) ProtoMessage() {}
+
+func (x *SetAvatar) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAvatar.ProtoReflect.Descriptor instead.
+func (*SetAvatar) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SetAvatar) GetImage() []byte {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type RemoveAvatar struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveAvatar) Reset() {
+	*x = RemoveAvatar{}
+	mi := &file_ludra_v1_client_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveAvatar) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveAvatar) ProtoMessage() {}
+
+func (x *RemoveAvatar) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveAvatar.ProtoReflect.Descriptor instead.
+func (*RemoveAvatar) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{11}
+}
+
 type Resume struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
@@ -669,7 +1061,7 @@ type Resume struct {
 
 func (x *Resume) Reset() {
 	*x = Resume{}
-	mi := &file_ludra_v1_client_proto_msgTypes[6]
+	mi := &file_ludra_v1_client_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -681,7 +1073,7 @@ func (x *Resume) String() string {
 func (*Resume) ProtoMessage() {}
 
 func (x *Resume) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[6]
+	mi := &file_ludra_v1_client_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -694,7 +1086,7 @@ func (x *Resume) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resume.ProtoReflect.Descriptor instead.
 func (*Resume) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{6}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Resume) GetToken() string {
@@ -712,7 +1104,7 @@ type Logout struct {
 
 func (x *Logout) Reset() {
 	*x = Logout{}
-	mi := &file_ludra_v1_client_proto_msgTypes[7]
+	mi := &file_ludra_v1_client_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -724,7 +1116,7 @@ func (x *Logout) String() string {
 func (*Logout) ProtoMessage() {}
 
 func (x *Logout) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[7]
+	mi := &file_ludra_v1_client_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -737,7 +1129,7 @@ func (x *Logout) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Logout.ProtoReflect.Descriptor instead.
 func (*Logout) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{7}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{13}
 }
 
 type ListFriends struct {
@@ -748,7 +1140,7 @@ type ListFriends struct {
 
 func (x *ListFriends) Reset() {
 	*x = ListFriends{}
-	mi := &file_ludra_v1_client_proto_msgTypes[8]
+	mi := &file_ludra_v1_client_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +1152,7 @@ func (x *ListFriends) String() string {
 func (*ListFriends) ProtoMessage() {}
 
 func (x *ListFriends) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[8]
+	mi := &file_ludra_v1_client_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +1165,7 @@ func (x *ListFriends) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFriends.ProtoReflect.Descriptor instead.
 func (*ListFriends) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{8}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{14}
 }
 
 type AddFriend struct {
@@ -785,7 +1177,7 @@ type AddFriend struct {
 
 func (x *AddFriend) Reset() {
 	*x = AddFriend{}
-	mi := &file_ludra_v1_client_proto_msgTypes[9]
+	mi := &file_ludra_v1_client_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -797,7 +1189,7 @@ func (x *AddFriend) String() string {
 func (*AddFriend) ProtoMessage() {}
 
 func (x *AddFriend) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[9]
+	mi := &file_ludra_v1_client_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -810,7 +1202,7 @@ func (x *AddFriend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddFriend.ProtoReflect.Descriptor instead.
 func (*AddFriend) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{9}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AddFriend) GetUsername() string {
@@ -829,7 +1221,7 @@ type AcceptFriend struct {
 
 func (x *AcceptFriend) Reset() {
 	*x = AcceptFriend{}
-	mi := &file_ludra_v1_client_proto_msgTypes[10]
+	mi := &file_ludra_v1_client_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -841,7 +1233,7 @@ func (x *AcceptFriend) String() string {
 func (*AcceptFriend) ProtoMessage() {}
 
 func (x *AcceptFriend) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[10]
+	mi := &file_ludra_v1_client_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -854,7 +1246,7 @@ func (x *AcceptFriend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptFriend.ProtoReflect.Descriptor instead.
 func (*AcceptFriend) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{10}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AcceptFriend) GetUserId() string {
@@ -873,7 +1265,7 @@ type RemoveFriend struct {
 
 func (x *RemoveFriend) Reset() {
 	*x = RemoveFriend{}
-	mi := &file_ludra_v1_client_proto_msgTypes[11]
+	mi := &file_ludra_v1_client_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +1277,7 @@ func (x *RemoveFriend) String() string {
 func (*RemoveFriend) ProtoMessage() {}
 
 func (x *RemoveFriend) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[11]
+	mi := &file_ludra_v1_client_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +1290,7 @@ func (x *RemoveFriend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveFriend.ProtoReflect.Descriptor instead.
 func (*RemoveFriend) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{11}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RemoveFriend) GetUserId() string {
@@ -917,7 +1309,7 @@ type SetPresence struct {
 
 func (x *SetPresence) Reset() {
 	*x = SetPresence{}
-	mi := &file_ludra_v1_client_proto_msgTypes[12]
+	mi := &file_ludra_v1_client_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -929,7 +1321,7 @@ func (x *SetPresence) String() string {
 func (*SetPresence) ProtoMessage() {}
 
 func (x *SetPresence) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[12]
+	mi := &file_ludra_v1_client_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -942,7 +1334,7 @@ func (x *SetPresence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPresence.ProtoReflect.Descriptor instead.
 func (*SetPresence) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{12}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SetPresence) GetPresence() Presence {
@@ -960,7 +1352,7 @@ type ListConversations struct {
 
 func (x *ListConversations) Reset() {
 	*x = ListConversations{}
-	mi := &file_ludra_v1_client_proto_msgTypes[13]
+	mi := &file_ludra_v1_client_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -972,7 +1364,7 @@ func (x *ListConversations) String() string {
 func (*ListConversations) ProtoMessage() {}
 
 func (x *ListConversations) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[13]
+	mi := &file_ludra_v1_client_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -985,7 +1377,7 @@ func (x *ListConversations) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListConversations.ProtoReflect.Descriptor instead.
 func (*ListConversations) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{13}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{19}
 }
 
 type OpenConversation struct {
@@ -997,7 +1389,7 @@ type OpenConversation struct {
 
 func (x *OpenConversation) Reset() {
 	*x = OpenConversation{}
-	mi := &file_ludra_v1_client_proto_msgTypes[14]
+	mi := &file_ludra_v1_client_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1009,7 +1401,7 @@ func (x *OpenConversation) String() string {
 func (*OpenConversation) ProtoMessage() {}
 
 func (x *OpenConversation) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[14]
+	mi := &file_ludra_v1_client_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1022,7 +1414,7 @@ func (x *OpenConversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenConversation.ProtoReflect.Descriptor instead.
 func (*OpenConversation) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{14}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *OpenConversation) GetUsername() string {
@@ -1043,7 +1435,7 @@ type LoadMessages struct {
 
 func (x *LoadMessages) Reset() {
 	*x = LoadMessages{}
-	mi := &file_ludra_v1_client_proto_msgTypes[15]
+	mi := &file_ludra_v1_client_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1055,7 +1447,7 @@ func (x *LoadMessages) String() string {
 func (*LoadMessages) ProtoMessage() {}
 
 func (x *LoadMessages) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[15]
+	mi := &file_ludra_v1_client_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1068,7 +1460,7 @@ func (x *LoadMessages) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadMessages.ProtoReflect.Descriptor instead.
 func (*LoadMessages) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{15}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *LoadMessages) GetConversationId() string {
@@ -1102,7 +1494,7 @@ type SendMessage struct {
 
 func (x *SendMessage) Reset() {
 	*x = SendMessage{}
-	mi := &file_ludra_v1_client_proto_msgTypes[16]
+	mi := &file_ludra_v1_client_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1114,7 +1506,7 @@ func (x *SendMessage) String() string {
 func (*SendMessage) ProtoMessage() {}
 
 func (x *SendMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[16]
+	mi := &file_ludra_v1_client_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1127,7 +1519,7 @@ func (x *SendMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessage.ProtoReflect.Descriptor instead.
 func (*SendMessage) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{16}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SendMessage) GetConversationId() string {
@@ -1148,7 +1540,8 @@ var File_ludra_v1_client_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_client_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xdb\a\n" +
+	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xe7\n" +
+	"\n" +
 	"\vClientFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -1169,25 +1562,48 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"add_friend\x18\x0e \x01(\v2\x13.ludra.v1.AddFriendH\x00R\taddFriend\x12=\n" +
 	"\raccept_friend\x18\x0f \x01(\v2\x16.ludra.v1.AcceptFriendH\x00R\facceptFriend\x12=\n" +
 	"\rremove_friend\x18\x10 \x01(\v2\x16.ludra.v1.RemoveFriendH\x00R\fremoveFriend\x12:\n" +
-	"\fset_presence\x18\x11 \x01(\v2\x15.ludra.v1.SetPresenceH\x00R\vsetPresenceB\t\n" +
-	"\apayload\"X\n" +
+	"\fset_presence\x18\x11 \x01(\v2\x15.ludra.v1.SetPresenceH\x00R\vsetPresence\x12G\n" +
+	"\x11verify_two_factor\x18\x12 \x01(\v2\x19.ludra.v1.VerifyTwoFactorH\x00R\x0fverifyTwoFactor\x12G\n" +
+	"\x11resend_two_factor\x18\x13 \x01(\v2\x19.ludra.v1.ResendTwoFactorH\x00R\x0fresendTwoFactor\x12C\n" +
+	"\x0fchange_password\x18\x14 \x01(\v2\x18.ludra.v1.ChangePasswordH\x00R\x0echangePassword\x12>\n" +
+	"\x0eset_two_factor\x18\x15 \x01(\v2\x16.ludra.v1.SetTwoFactorH\x00R\fsetTwoFactor\x124\n" +
+	"\n" +
+	"set_avatar\x18\x16 \x01(\v2\x13.ludra.v1.SetAvatarH\x00R\tsetAvatar\x12=\n" +
+	"\rremove_avatar\x18\x17 \x01(\v2\x16.ludra.v1.RemoveAvatarH\x00R\fremoveAvatarB\t\n" +
+	"\apayload\"p\n" +
 	"\bRegister\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"9\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\x12\x16\n" +
+	"\x06locale\x18\x04 \x01(\tR\x06locale\"Q\n" +
 	"\x05Login\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"7\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x16\n" +
+	"\x06locale\x18\x03 \x01(\tR\x06locale\"7\n" +
 	"\vVerifyEmail\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
-	"\x04code\x18\x02 \x01(\tR\x04code\"Q\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"i\n" +
 	"\bSendCode\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12/\n" +
-	"\apurpose\x18\x02 \x01(\x0e2\x15.ludra.v1.CodePurposeR\apurpose\"U\n" +
+	"\apurpose\x18\x02 \x01(\x0e2\x15.ludra.v1.CodePurposeR\apurpose\x12\x16\n" +
+	"\x06locale\x18\x03 \x01(\tR\x06locale\"U\n" +
 	"\rResetPassword\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"\x1e\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"%\n" +
+	"\x0fVerifyTwoFactor\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\")\n" +
+	"\x0fResendTwoFactor\x12\x16\n" +
+	"\x06locale\x18\x01 \x01(\tR\x06locale\"^\n" +
+	"\x0eChangePassword\x12)\n" +
+	"\x10current_password\x18\x01 \x01(\tR\x0fcurrentPassword\x12!\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"D\n" +
+	"\fSetTwoFactor\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"!\n" +
+	"\tSetAvatar\x12\x14\n" +
+	"\x05image\x18\x01 \x01(\fR\x05image\"\x0e\n" +
+	"\fRemoveAvatar\"\x1e\n" +
 	"\x06Resume\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"\b\n" +
 	"\x06Logout\"\r\n" +
@@ -1229,7 +1645,7 @@ func file_ludra_v1_client_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_ludra_v1_client_proto_goTypes = []any{
 	(CodePurpose)(0),          // 0: ludra.v1.CodePurpose
 	(*ClientFrame)(nil),       // 1: ludra.v1.ClientFrame
@@ -1238,43 +1654,55 @@ var file_ludra_v1_client_proto_goTypes = []any{
 	(*VerifyEmail)(nil),       // 4: ludra.v1.VerifyEmail
 	(*SendCode)(nil),          // 5: ludra.v1.SendCode
 	(*ResetPassword)(nil),     // 6: ludra.v1.ResetPassword
-	(*Resume)(nil),            // 7: ludra.v1.Resume
-	(*Logout)(nil),            // 8: ludra.v1.Logout
-	(*ListFriends)(nil),       // 9: ludra.v1.ListFriends
-	(*AddFriend)(nil),         // 10: ludra.v1.AddFriend
-	(*AcceptFriend)(nil),      // 11: ludra.v1.AcceptFriend
-	(*RemoveFriend)(nil),      // 12: ludra.v1.RemoveFriend
-	(*SetPresence)(nil),       // 13: ludra.v1.SetPresence
-	(*ListConversations)(nil), // 14: ludra.v1.ListConversations
-	(*OpenConversation)(nil),  // 15: ludra.v1.OpenConversation
-	(*LoadMessages)(nil),      // 16: ludra.v1.LoadMessages
-	(*SendMessage)(nil),       // 17: ludra.v1.SendMessage
-	(Presence)(0),             // 18: ludra.v1.Presence
+	(*VerifyTwoFactor)(nil),   // 7: ludra.v1.VerifyTwoFactor
+	(*ResendTwoFactor)(nil),   // 8: ludra.v1.ResendTwoFactor
+	(*ChangePassword)(nil),    // 9: ludra.v1.ChangePassword
+	(*SetTwoFactor)(nil),      // 10: ludra.v1.SetTwoFactor
+	(*SetAvatar)(nil),         // 11: ludra.v1.SetAvatar
+	(*RemoveAvatar)(nil),      // 12: ludra.v1.RemoveAvatar
+	(*Resume)(nil),            // 13: ludra.v1.Resume
+	(*Logout)(nil),            // 14: ludra.v1.Logout
+	(*ListFriends)(nil),       // 15: ludra.v1.ListFriends
+	(*AddFriend)(nil),         // 16: ludra.v1.AddFriend
+	(*AcceptFriend)(nil),      // 17: ludra.v1.AcceptFriend
+	(*RemoveFriend)(nil),      // 18: ludra.v1.RemoveFriend
+	(*SetPresence)(nil),       // 19: ludra.v1.SetPresence
+	(*ListConversations)(nil), // 20: ludra.v1.ListConversations
+	(*OpenConversation)(nil),  // 21: ludra.v1.OpenConversation
+	(*LoadMessages)(nil),      // 22: ludra.v1.LoadMessages
+	(*SendMessage)(nil),       // 23: ludra.v1.SendMessage
+	(Presence)(0),             // 24: ludra.v1.Presence
 }
 var file_ludra_v1_client_proto_depIdxs = []int32{
 	3,  // 0: ludra.v1.ClientFrame.login:type_name -> ludra.v1.Login
-	14, // 1: ludra.v1.ClientFrame.list_conversations:type_name -> ludra.v1.ListConversations
-	15, // 2: ludra.v1.ClientFrame.open_conversation:type_name -> ludra.v1.OpenConversation
-	16, // 3: ludra.v1.ClientFrame.load_messages:type_name -> ludra.v1.LoadMessages
-	17, // 4: ludra.v1.ClientFrame.send_message:type_name -> ludra.v1.SendMessage
+	20, // 1: ludra.v1.ClientFrame.list_conversations:type_name -> ludra.v1.ListConversations
+	21, // 2: ludra.v1.ClientFrame.open_conversation:type_name -> ludra.v1.OpenConversation
+	22, // 3: ludra.v1.ClientFrame.load_messages:type_name -> ludra.v1.LoadMessages
+	23, // 4: ludra.v1.ClientFrame.send_message:type_name -> ludra.v1.SendMessage
 	2,  // 5: ludra.v1.ClientFrame.register:type_name -> ludra.v1.Register
-	7,  // 6: ludra.v1.ClientFrame.resume:type_name -> ludra.v1.Resume
-	8,  // 7: ludra.v1.ClientFrame.logout:type_name -> ludra.v1.Logout
+	13, // 6: ludra.v1.ClientFrame.resume:type_name -> ludra.v1.Resume
+	14, // 7: ludra.v1.ClientFrame.logout:type_name -> ludra.v1.Logout
 	4,  // 8: ludra.v1.ClientFrame.verify_email:type_name -> ludra.v1.VerifyEmail
 	5,  // 9: ludra.v1.ClientFrame.send_code:type_name -> ludra.v1.SendCode
 	6,  // 10: ludra.v1.ClientFrame.reset_password:type_name -> ludra.v1.ResetPassword
-	9,  // 11: ludra.v1.ClientFrame.list_friends:type_name -> ludra.v1.ListFriends
-	10, // 12: ludra.v1.ClientFrame.add_friend:type_name -> ludra.v1.AddFriend
-	11, // 13: ludra.v1.ClientFrame.accept_friend:type_name -> ludra.v1.AcceptFriend
-	12, // 14: ludra.v1.ClientFrame.remove_friend:type_name -> ludra.v1.RemoveFriend
-	13, // 15: ludra.v1.ClientFrame.set_presence:type_name -> ludra.v1.SetPresence
-	0,  // 16: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
-	18, // 17: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	15, // 11: ludra.v1.ClientFrame.list_friends:type_name -> ludra.v1.ListFriends
+	16, // 12: ludra.v1.ClientFrame.add_friend:type_name -> ludra.v1.AddFriend
+	17, // 13: ludra.v1.ClientFrame.accept_friend:type_name -> ludra.v1.AcceptFriend
+	18, // 14: ludra.v1.ClientFrame.remove_friend:type_name -> ludra.v1.RemoveFriend
+	19, // 15: ludra.v1.ClientFrame.set_presence:type_name -> ludra.v1.SetPresence
+	7,  // 16: ludra.v1.ClientFrame.verify_two_factor:type_name -> ludra.v1.VerifyTwoFactor
+	8,  // 17: ludra.v1.ClientFrame.resend_two_factor:type_name -> ludra.v1.ResendTwoFactor
+	9,  // 18: ludra.v1.ClientFrame.change_password:type_name -> ludra.v1.ChangePassword
+	10, // 19: ludra.v1.ClientFrame.set_two_factor:type_name -> ludra.v1.SetTwoFactor
+	11, // 20: ludra.v1.ClientFrame.set_avatar:type_name -> ludra.v1.SetAvatar
+	12, // 21: ludra.v1.ClientFrame.remove_avatar:type_name -> ludra.v1.RemoveAvatar
+	0,  // 22: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
+	24, // 23: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_client_proto_init() }
@@ -1300,6 +1728,12 @@ func file_ludra_v1_client_proto_init() {
 		(*ClientFrame_AcceptFriend)(nil),
 		(*ClientFrame_RemoveFriend)(nil),
 		(*ClientFrame_SetPresence)(nil),
+		(*ClientFrame_VerifyTwoFactor)(nil),
+		(*ClientFrame_ResendTwoFactor)(nil),
+		(*ClientFrame_ChangePassword)(nil),
+		(*ClientFrame_SetTwoFactor)(nil),
+		(*ClientFrame_SetAvatar)(nil),
+		(*ClientFrame_RemoveAvatar)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1307,7 +1741,7 @@ func file_ludra_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_client_proto_rawDesc), len(file_ludra_v1_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

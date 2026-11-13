@@ -1,19 +1,22 @@
 -- name: ListFriends :many
-SELECT u.id, u.username, 'accepted'::text AS state
+SELECT u.id, u.username, u.avatar, 'accepted'::text AS state
 FROM friendships f
 JOIN users u ON u.id = f.friend_id
 WHERE f.user_id = sqlc.arg(user_id)
 UNION ALL
-SELECT u.id, u.username, 'incoming'::text
+SELECT u.id, u.username, u.avatar, 'incoming'::text
 FROM friend_requests r
 JOIN users u ON u.id = r.sender_id
 WHERE r.recipient_id = sqlc.arg(user_id)
 UNION ALL
-SELECT u.id, u.username, 'outgoing'::text
+SELECT u.id, u.username, u.avatar, 'outgoing'::text
 FROM friend_requests r
 JOIN users u ON u.id = r.recipient_id
 WHERE r.sender_id = sqlc.arg(user_id)
 ORDER BY username;
+
+-- name: LockFriendPair :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(pair_key)::text, 0));
 
 -- name: ListFriendIDs :many
 SELECT friend_id FROM friendships

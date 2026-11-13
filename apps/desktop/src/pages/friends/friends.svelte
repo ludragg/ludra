@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t, type Key } from "@/i18n";
   import { FriendState, Presence, type Friend } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
   import FriendAction from "./friend-action.svelte";
@@ -7,10 +8,10 @@
 
   type Tab = "online" | "all" | "pending" | "add";
 
-  const tabs: { id: Exclude<Tab, "add">; label: string }[] = [
-    { id: "online", label: "Online" },
-    { id: "all", label: "Todos" },
-    { id: "pending", label: "Pendentes" },
+  const tabs: { id: Exclude<Tab, "add">; label: Key }[] = [
+    { id: "online", label: "friends.online" },
+    { id: "all", label: "friends.all" },
+    { id: "pending", label: "friends.pending" },
   ];
 
   let tab = $state<Tab>("online");
@@ -34,12 +35,12 @@
           <FriendRow {friend}>
             <FriendAction
               icon="message"
-              label="Mensagem para {friend.user!.username}"
+              label={t("friends.messageTo", { name: friend.user!.username })}
               onclick={() => run(chat.start(friend.user!.username))}
             />
             <FriendAction
               icon="remove"
-              label="Remover {friend.user!.username}"
+              label={t("friends.remove", { name: friend.user!.username })}
               onclick={() => run(chat.removeFriend(friend.user!.id))}
             />
           </FriendRow>
@@ -67,10 +68,10 @@
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
-    <h1 class="friends__heading">Amigos</h1>
+    <h1 class="friends__heading">{t("friends.title")}</h1>
   </div>
   <span class="friends__divider" aria-hidden="true"></span>
-  <div class="friends__tabs" role="tablist" aria-label="Filtro de amigos">
+  <div class="friends__tabs" role="tablist" aria-label={t("friends.filter")}>
     {#each tabs as item (item.id)}
       <button
         class="friends__tab"
@@ -79,7 +80,7 @@
         aria-selected={tab === item.id}
         onclick={() => (tab = item.id)}
       >
-        {item.label}
+        {t(item.label)}
         {#if item.id === "pending" && incoming.length > 0}
           <span class="friends__badge">{incoming.length}</span>
         {/if}
@@ -92,34 +93,34 @@
       aria-selected={tab === "add"}
       onclick={() => (tab = "add")}
     >
-      Adicionar amigo
+      {t("friends.add")}
     </button>
   </div>
 </header>
 
-<section class="friends__content" aria-label="Amigos">
+<section class="friends__content" aria-label={t("friends.title")}>
   {#if tab === "online"}
-    {@render friendList("Online", online, "Nenhum amigo online agora.")}
+    {@render friendList(t("friends.online"), online, t("friends.noneOnline"))}
   {:else if tab === "all"}
-    {@render friendList("Todos os amigos", accepted, "Você ainda não tem amigos.")}
+    {@render friendList(t("friends.allFriends"), accepted, t("friends.none"))}
   {:else if tab === "pending"}
     {#if incoming.length === 0 && outgoing.length === 0}
-      <p class="friends__empty">Nenhum pedido pendente.</p>
+      <p class="friends__empty">{t("friends.noPending")}</p>
     {/if}
     {#if incoming.length > 0}
       <div class="friends__group">
-        <span class="friends__label">Recebidos — {incoming.length}</span>
+        <span class="friends__label">{t("friends.received")} — {incoming.length}</span>
         <ul class="friends__list">
           {#each incoming as friend (friend.user!.id)}
             <FriendRow {friend}>
               <FriendAction
                 icon="accept"
-                label="Aceitar {friend.user!.username}"
+                label={t("friends.accept", { name: friend.user!.username })}
                 onclick={() => run(chat.acceptFriend(friend.user!.id))}
               />
               <FriendAction
                 icon="decline"
-                label="Recusar {friend.user!.username}"
+                label={t("friends.decline", { name: friend.user!.username })}
                 onclick={() => run(chat.removeFriend(friend.user!.id))}
               />
             </FriendRow>
@@ -129,13 +130,13 @@
     {/if}
     {#if outgoing.length > 0}
       <div class="friends__group">
-        <span class="friends__label">Enviados — {outgoing.length}</span>
+        <span class="friends__label">{t("friends.sent")} — {outgoing.length}</span>
         <ul class="friends__list">
           {#each outgoing as friend (friend.user!.id)}
             <FriendRow {friend}>
               <FriendAction
                 icon="decline"
-                label="Cancelar pedido para {friend.user!.username}"
+                label={t("friends.cancel", { name: friend.user!.username })}
                 onclick={() => run(chat.removeFriend(friend.user!.id))}
               />
             </FriendRow>

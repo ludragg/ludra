@@ -1,6 +1,8 @@
 <script lang="ts">
   import { Sidebar } from "@/components";
+  import { t } from "@/i18n";
   import Friends from "@/pages/friends/friends.svelte";
+  import Settings from "@/pages/settings/settings.svelte";
   import { chat } from "@/stores/chat.svelte";
   import ChatComposer from "./chat-composer.svelte";
   import ChatHeader from "./chat-header.svelte";
@@ -18,9 +20,11 @@
         {#if chat.isFriend(chat.active.peer.id)}
           <ChatComposer recipient={chat.active.peer.username} />
         {:else}
-          <p class="chat__locked">Vocês não são amigos. Adicione {chat.active.peer.username} para conversar.</p>
+          <p class="chat__locked">{t("chat.notFriends", { name: chat.active.peer.username })}</p>
         {/if}
       {/key}
+    {:else if chat.view === "settings"}
+      <Settings />
     {:else}
       <Friends />
     {/if}

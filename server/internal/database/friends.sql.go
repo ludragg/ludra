@@ -149,17 +149,17 @@ func (q *Queries) ListFriendIDs(ctx context.Context, userID string) ([]string, e
 }
 
 const listFriends = `-- name: ListFriends :many
-SELECT u.id, u.username, 'accepted'::text AS state
+SELECT u.id, u.username, u.avatar, 'accepted'::text AS state
 FROM friendships f
 JOIN users u ON u.id = f.friend_id
 WHERE f.user_id = $1
 UNION ALL
-SELECT u.id, u.username, 'incoming'::text
+SELECT u.id, u.username, u.avatar, 'incoming'::text
 FROM friend_requests r
 JOIN users u ON u.id = r.sender_id
 WHERE r.recipient_id = $1
 UNION ALL
-SELECT u.id, u.username, 'outgoing'::text
+SELECT u.id, u.username, u.avatar, 'outgoing'::text
 FROM friend_requests r
 JOIN users u ON u.id = r.recipient_id
 WHERE r.sender_id = $1
@@ -169,6 +169,7 @@ ORDER BY username
 type ListFriendsRow struct {
 	ID       string
 	Username string
+	Avatar   string
 	State    string
 }
 
@@ -181,7 +182,12 @@ func (q *Queries) ListFriends(ctx context.Context, userID string) ([]ListFriends
 	var items []ListFriendsRow
 	for rows.Next() {
 		var i ListFriendsRow
-		if err := rows.Scan(&i.ID, &i.Username, &i.State); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Avatar,
+			&i.State,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -190,4 +196,13 @@ func (q *Queries) ListFriends(ctx context.Context, userID string) ([]ListFriends
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockFriendPair = `-- name: LockFriendPair :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
+`
+
+func (q *Queries) LockFriendPair(ctx context.Context, pairKey string) error {
+	_, err := q.db.Exec(ctx, lockFriendPair, pairKey)
+	return err
 }

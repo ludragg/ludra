@@ -5,6 +5,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
@@ -20,7 +21,8 @@ const (
 )
 
 func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, content string) (database.Message, []string, error) {
-	if strings.TrimSpace(content) == "" {
+	content = strings.TrimFunc(content, invisible)
+	if content == "" {
 		return database.Message{}, nil, ErrEmptyMessage
 	}
 	if utf8.RuneCountInString(content) > maxMessageLength {
@@ -106,4 +108,10 @@ func pageSize(limit uint32) int {
 		return defaultPageSize
 	}
 	return int(min(limit, maxPageSize))
+}
+
+var fillers = map[rune]bool{'\u115f': true, '\u1160': true, '\u2800': true, '\u3164': true, '\uffa0': true}
+
+func invisible(r rune) bool {
+	return unicode.IsSpace(r) || unicode.Is(unicode.Cf, r) || fillers[r]
 }

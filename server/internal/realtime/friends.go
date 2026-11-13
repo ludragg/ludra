@@ -14,7 +14,12 @@ var friendStates = map[friends.State]protocol.FriendState{
 }
 
 func (s *session) friend(friend friends.Friend) *protocol.Friend {
-	user := &protocol.User{Id: friend.ID, Username: friend.Username, Presence: protocol.Presence_PRESENCE_OFFLINE}
+	user := &protocol.User{
+		Id:       friend.ID,
+		Username: friend.Username,
+		Avatar:   friend.Avatar,
+		Presence: protocol.Presence_PRESENCE_OFFLINE,
+	}
 	if friend.State == friends.Accepted {
 		user.Presence = s.hub.presence(friend.ID)
 	}
@@ -68,7 +73,7 @@ func (s *session) removeFriend(ctx context.Context, req *protocol.RemoveFriend) 
 
 func (s *session) relate(friend friends.Friend, mirror friends.State) *protocol.ServerFrame {
 	reply := friendUpdatedFrame(s.friend(friend))
-	other := friendUpdatedFrame(s.friend(friends.Friend{ID: s.user.Id, Username: s.user.Username, State: mirror}))
+	other := friendUpdatedFrame(s.friend(friends.Friend{ID: s.user.Id, Username: s.user.Username, Avatar: s.user.Avatar, State: mirror}))
 
 	s.hub.publish([]string{s.user.Id}, reply, s)
 	s.hub.publish([]string{friend.ID}, other, nil)

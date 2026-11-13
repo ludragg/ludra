@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TextField } from "@/components";
+  import { t } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
   import { chat } from "@/stores/chat.svelte";
@@ -18,10 +19,10 @@
   function validate(): Partial<Record<Field, string>> {
     const result: Partial<Record<Field, string>> = {};
     if (!login.trim()) {
-      result.login = "Digite seu usuário ou e-mail.";
+      result.login = t("login.loginRequired");
     }
     if (!password) {
-      result.password = "Digite sua senha.";
+      result.password = t("login.passwordRequired");
     }
     return result;
   }
@@ -34,9 +35,11 @@
 
     submitting = true;
     try {
-      const pendingEmail = await chat.login(login.trim(), password);
-      if (pendingEmail) {
-        navigate({ name: "verify", email: pendingEmail });
+      const next = await chat.login(login.trim(), password);
+      if (next && "verify" in next) {
+        navigate({ name: "verify", email: next.verify });
+      } else if (next && "twoFactor" in next) {
+        navigate({ name: "twoFactor", email: next.twoFactor });
       }
     } catch (cause) {
       errors = { password: describe(cause) };
@@ -47,15 +50,15 @@
 
   function describe(cause: unknown): string {
     if (cause instanceof ServerError && cause.code === ErrorCode.INVALID_CREDENTIALS) {
-      return "Usuário, e-mail ou senha incorretos.";
+      return t("login.invalidCredentials");
     }
     if (cause instanceof ServerError && cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-      return "Muitas tentativas. Aguarde alguns minutos.";
+      return t("common.tooManyRequests");
     }
     if (cause instanceof ServerError) {
-      return "Não foi possível entrar.";
+      return t("login.failed");
     }
-    return "Não foi possível conectar ao servidor.";
+    return t("common.connectionFailed");
   }
 
   function clear(field: Field) {
@@ -65,18 +68,20 @@
 </script>
 
 <AuthLayout
-  title="Entrar no Ludra"
-  subtitle="Que bom te ver de novo."
-  submitLabel={submitting ? "Entrando…" : "Entrar"}
+  title={t("login.title")}
+  subtitle={t("login.subtitle")}
+  submitLabel={submitting ? t("common.signingIn") : t("common.signIn")}
   {submitting}
-  links={[{ prompt: "Não tem uma conta?", label: "Criar conta", onclick: () => navigate({ name: "register" }) }]}
+  links={[
+    { prompt: t("login.noAccount"), label: t("login.createAccount"), onclick: () => navigate({ name: "register" }) },
+  ]}
   onsubmit={submit}
 >
   {#snippet fields()}
     <TextField
       id="login"
-      label="Usuário ou e-mail"
-      placeholder="Usuário ou e-mail"
+      label={t("login.login")}
+      placeholder={t("login.login")}
       hideLabel
       focus
       maxlength={254}
@@ -87,15 +92,16 @@
     <TextField
       id="password"
       type="password"
-      label="Senha"
-      placeholder="Senha"
+      label={t("common.password")}
+      placeholder={t("common.password")}
       hideLabel
       maxlength={128}
       error={errors.password || chat.notice}
       bind:value={password}
       oninput={() => clear("password")}
     />
-    <button type="button" class="login__forgot" onclick={() => navigate({ name: "forgot" })}>Esqueceu a senha?</button>
+    <button type="button" class="login__forgot" onclick={() => navigate({ name: "forgot" })}>{t("login.forgot")}</button
+    >
   {/snippet}
 </AuthLayout>
 

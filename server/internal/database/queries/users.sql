@@ -30,3 +30,11 @@ WHERE id = $1;
 -- name: SetInvisible :exec
 UPDATE users SET invisible = $2
 WHERE id = $1;
+
+-- name: SetAvatar :exec
+UPDATE users SET avatar = $2
+WHERE id = $1;
+
+-- name: SetTwoFactor :exec
+UPDATE users SET two_factor = $2
+WHERE id = $1;

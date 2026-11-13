@@ -11,6 +11,7 @@ import (
 const (
 	maxConnectionsPerIP = 20
 	authTimeout         = 30 * time.Second
+	challengeTimeout    = 15 * time.Minute
 )
 
 type guard struct {
@@ -26,6 +27,8 @@ type guard struct {
 	friendRequests  *limit.Limiter
 	friendChanges   *limit.Limiter
 	presenceChanges *limit.Limiter
+	passwordChecks  *limit.Limiter
+	avatarChanges   *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -42,6 +45,8 @@ func newGuard() *guard {
 		friendRequests:  limit.New(20, time.Hour),
 		friendChanges:   limit.New(60, time.Minute),
 		presenceChanges: limit.New(20, time.Minute),
+		passwordChecks:  limit.New(10, 15*time.Minute),
+		avatarChanges:   limit.New(10, 10*time.Minute),
 	}
 }
 

@@ -32,6 +32,7 @@ type session struct {
 	ip        string
 	user      *protocol.User
 	sessionID string
+	challenge *account.Challenge
 	send      chan []byte
 }
 
@@ -73,7 +74,12 @@ func (s *session) read(ctx context.Context) (websocket.MessageType, []byte, erro
 		return s.conn.Read(ctx)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, authTimeout)
+	timeout := authTimeout
+	if s.challenge != nil {
+		timeout = challengeTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	return s.conn.Read(ctx)
 }
@@ -121,7 +127,7 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.signIn(func() (account.Outcome, error) {
-			return s.account.Register(ctx, req.Email, req.Username, req.Password)
+			return s.account.Register(ctx, req.Email, req.Username, req.Password, req.Locale)
 		})
 	case *protocol.ClientFrame_Login:
 		req := payload.Login
@@ -129,7 +135,7 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.signIn(func() (account.Outcome, error) {
-			return s.account.Login(ctx, req.Login, req.Password)
+			return s.account.Login(ctx, req.Login, req.Password, req.Locale)
 		})
 	case *protocol.ClientFrame_Resume:
 		req := payload.Resume
@@ -164,6 +170,10 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.sendCode(ctx, payload.SendCode)
+	case *protocol.ClientFrame_VerifyTwoFactor:
+		return s.verifyTwoFactor(ctx, payload.VerifyTwoFactor)
+	case *protocol.ClientFrame_ResendTwoFactor:
+		return s.resendTwoFactor(ctx, payload.ResendTwoFactor)
 	}
 
 	if s.user == nil {
@@ -209,6 +219,14 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.setPresence(ctx, payload.SetPresence)
+	case *protocol.ClientFrame_ChangePassword:
+		return s.changePassword(ctx, payload.ChangePassword)
+	case *protocol.ClientFrame_SetTwoFactor:
+		return s.setTwoFactor(ctx, payload.SetTwoFactor)
+	case *protocol.ClientFrame_SetAvatar:
+		return s.setAvatar(ctx, payload.SetAvatar)
+	case *protocol.ClientFrame_RemoveAvatar:
+		return s.removeAvatar(ctx)
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "unsupported request")
 	}

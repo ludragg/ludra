@@ -1,6 +1,7 @@
 <script lang="ts">
   import Avatar from "@/components/avatar/avatar.svelte";
   import { formatRecent, toDate } from "@/helpers/time";
+  import { t } from "@/i18n";
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
@@ -10,7 +11,11 @@
   const last = $derived(conversation.lastMessage);
   const unread = $derived(chat.unread[conversation.id] ?? 0);
   const preview = $derived(
-    !last ? "Nenhuma mensagem ainda" : last.senderId === chat.user?.id ? `Você: ${last.content}` : last.content,
+    !last
+      ? t("sidebar.noMessages")
+      : last.senderId === chat.user?.id
+        ? t("sidebar.youSaid", { content: last.content })
+        : last.content,
   );
 </script>
 
@@ -21,7 +26,7 @@
   aria-current={active}
   onclick={() => chat.select(conversation.id)}
 >
-  <Avatar id={peer.id} name={peer.username} size="small" />
+  <Avatar user={peer} size="small" />
   <span class="sidebar-conversation__body">
     <span class="sidebar-conversation__row">
       <span class="sidebar-conversation__name">{peer.username}</span>
@@ -32,7 +37,7 @@
     <span class="sidebar-conversation__row">
       <span class="sidebar-conversation__preview">{preview}</span>
       {#if unread > 0}
-        <span class="sidebar-conversation__badge" aria-label="{unread} não lidas">{unread}</span>
+        <span class="sidebar-conversation__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
       {/if}
     </span>
   </span>

@@ -21,6 +21,10 @@ message ServerFrame {
     FriendList friend_list = 12;
     FriendUpdated friend_updated = 13;
     FriendRemoved friend_removed = 14;
+    TwoFactorRequired two_factor_required = 15;
+    PasswordChanged password_changed = 16;
+    TwoFactorChanged two_factor_changed = 17;
+    UserUpdated user_updated = 18;
   }
 }
 
@@ -45,6 +49,8 @@ message Error {
 message LoggedIn {
   User user = 1;
   string token = 2;
+  string email = 3;
+  bool two_factor = 4;
 }
 
 message LoggedOut {}
@@ -88,4 +94,18 @@ message FriendUpdated {
 
 message FriendRemoved {
   string user_id = 1;
+}
+
+message TwoFactorRequired {
+  string email = 1;
+}
+
+message PasswordChanged {}
+
+message TwoFactorChanged {
+  bool enabled = 1;
+}
+
+message UserUpdated {
+  User user = 1;
 }

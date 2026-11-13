@@ -1,36 +1,33 @@
 import { timestampDate, type Timestamp } from "@bufbuild/protobuf/wkt";
-
-const clock = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
-const shortDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" });
-const longDate = new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long" });
+import { localeTag, t } from "@/i18n";
 
 export function toDate(timestamp: Timestamp | undefined): Date {
   return timestamp ? timestampDate(timestamp) : new Date(0);
 }
 
 export function formatTime(date: Date): string {
-  return clock.format(date);
+  return date.toLocaleTimeString(localeTag(), { hour: "2-digit", minute: "2-digit" });
 }
 
 export function formatRecent(date: Date): string {
   switch (daysAgo(date)) {
     case 0:
-      return clock.format(date);
+      return formatTime(date);
     case 1:
-      return "Ontem";
+      return t("time.yesterday");
     default:
-      return shortDate.format(date);
+      return date.toLocaleDateString(localeTag(), { day: "2-digit", month: "2-digit" });
   }
 }
 
 export function formatDay(date: Date): string {
   switch (daysAgo(date)) {
     case 0:
-      return "Hoje";
+      return t("time.today");
     case 1:
-      return "Ontem";
+      return t("time.yesterday");
     default:
-      return longDate.format(date);
+      return date.toLocaleDateString(localeTag(), { day: "numeric", month: "long" });
   }
 }
 

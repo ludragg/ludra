@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "@/components";
+  import { t, type Key } from "@/i18n";
   import { FriendState } from "@/protocol/ludra/v1/models_pb";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
@@ -7,9 +8,9 @@
 
   type Feedback = { text: string; tone: "success" | "error" | "neutral" };
 
-  const conflicts: Record<string, Feedback> = {
-    "already friends": { text: "Vocês já são amigos.", tone: "neutral" },
-    "friend request already sent": { text: "Você já enviou um pedido para essa pessoa.", tone: "neutral" },
+  const conflicts: Record<string, Key> = {
+    "already friends": "friends.alreadyFriends",
+    "friend request already sent": "friends.alreadyRequested",
   };
 
   let username = $state("");
@@ -29,8 +30,8 @@
       const peer = friend.user!.username;
       feedback =
         friend.state === FriendState.ACCEPTED
-          ? { text: `Agora você e ${peer} são amigos.`, tone: "success" }
-          : { text: `Pedido enviado para ${peer}.`, tone: "success" };
+          ? { text: t("friends.nowFriends", { name: peer }), tone: "success" }
+          : { text: t("friends.requestSentTo", { name: peer }), tone: "success" };
     } catch (cause) {
       feedback = describe(cause);
     } finally {
@@ -40,37 +41,38 @@
 
   function describe(cause: unknown): Feedback {
     if (!(cause instanceof ServerError)) {
-      return { text: "Não foi possível conectar ao servidor.", tone: "error" };
+      return { text: t("common.connectionFailed"), tone: "error" };
     }
     if (cause.code === ErrorCode.NOT_FOUND) {
-      return { text: "Não encontramos ninguém com esse nome de usuário.", tone: "error" };
+      return { text: t("friends.userNotFound"), tone: "error" };
     }
     if (cause.code === ErrorCode.INVALID_REQUEST) {
-      return { text: "Você não pode adicionar você mesmo.", tone: "error" };
+      return { text: t("friends.cannotAddSelf"), tone: "error" };
     }
     if (cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-      return { text: "Muitas tentativas. Aguarde alguns minutos.", tone: "error" };
+      return { text: t("common.tooManyRequests"), tone: "error" };
     }
-    return conflicts[cause.message] ?? { text: "Não foi possível enviar o pedido.", tone: "error" };
+    const conflict = conflicts[cause.message];
+    return conflict ? { text: t(conflict), tone: "neutral" } : { text: t("friends.requestFailed"), tone: "error" };
   }
 </script>
 
 <div class="friends-add">
-  <h2 class="friends-add__title">Adicionar amigo</h2>
-  <p class="friends-add__description">Digite o nome de usuário da pessoa para enviar um pedido de amizade.</p>
+  <h2 class="friends-add__title">{t("friends.add")}</h2>
+  <p class="friends-add__description">{t("friends.addDescription")}</p>
   <form class="friends-add__form friends-add__form--{feedback?.tone ?? 'idle'}" onsubmit={submit}>
-    <label for="friend-username" class="sr-only">Nome de usuário</label>
+    <label for="friend-username" class="sr-only">{t("friends.usernameLabel")}</label>
     <input
       id="friend-username"
       class="friends-add__input"
-      placeholder="Nome de usuário"
+      placeholder={t("friends.usernameLabel")}
       maxlength="32"
       autocomplete="off"
       bind:value={username}
       oninput={() => (feedback = null)}
       {@attach (input) => input.focus()}
     />
-    <Button type="submit" size="small" disabled={!username.trim() || submitting}>Enviar pedido</Button>
+    <Button type="submit" size="small" disabled={!username.trim() || submitting}>{t("friends.sendRequest")}</Button>
   </form>
   {#if feedback}
     <span class="friends-add__feedback friends-add__feedback--{feedback.tone}">{feedback.text}</span>

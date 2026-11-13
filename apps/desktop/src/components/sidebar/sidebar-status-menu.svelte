@@ -1,12 +1,13 @@
 <script lang="ts">
+  import { t, type Key } from "@/i18n";
   import { Presence } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
   let { onclose }: { onclose: () => void } = $props();
 
-  const options = [
-    { presence: Presence.ONLINE, label: "Online" },
-    { presence: Presence.INVISIBLE, label: "Invisível" },
+  const options: { presence: Presence; label: Key }[] = [
+    { presence: Presence.ONLINE, label: "presence.online" },
+    { presence: Presence.INVISIBLE, label: "presence.invisible" },
   ];
 
   async function choose(presence: Presence) {
@@ -17,7 +18,7 @@
   }
 </script>
 
-<div class="sidebar-status-menu" role="menu" aria-label="Status">
+<div class="sidebar-status-menu" role="menu" aria-label={t("sidebar.status")}>
   {#each options as option (option.presence)}
     {@const checked = option.presence === chat.user?.presence}
     <button
@@ -30,7 +31,7 @@
         class="sidebar-status-menu__dot"
         class:sidebar-status-menu__dot--online={option.presence === Presence.ONLINE}
       ></span>
-      <span class="sidebar-status-menu__label">{option.label}</span>
+      <span class="sidebar-status-menu__label">{t(option.label)}</span>
       {#if checked}
         <svg
           class="sidebar-status-menu__check"

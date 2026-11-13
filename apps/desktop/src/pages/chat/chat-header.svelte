@@ -6,7 +6,7 @@
 </script>
 
 <header class="chat-header">
-  <Avatar id={peer.id} name={peer.username} size="small" />
+  <Avatar user={peer} size="small" />
   <div class="chat-header__info">
     <h1 class="chat-header__name">{peer.username}</h1>
     <Status presence={peer.presence} />

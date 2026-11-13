@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import type { CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import {
   FriendState,
@@ -7,10 +8,11 @@ import {
   type Message,
   type User,
 } from "@/protocol/ludra/v1/models_pb";
-import { Client, ServerError, type SignIn } from "@/services/client";
+import { Client, ServerError, type Account, type SignIn } from "@/services/client";
+import { notify, playMessageSound, windowFocused } from "@/services/desktop";
+import { serverUrl } from "@/services/server";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
-
-const serverUrl = import.meta.env.VITE_LUDRA_SERVER ?? "ws://127.0.0.1:8080/ws";
+import { preferences } from "@/stores/preferences.svelte";
 
 type Thread = {
   messages: Message[];
@@ -18,10 +20,17 @@ type Thread = {
   loading: boolean;
 };
 
+export type View = "friends" | "settings";
+
+export type Next = { verify: string } | { twoFactor: string } | null;
+
 class ChatStore {
   user = $state<User | null>(null);
+  email = $state("");
+  twoFactor = $state(false);
   restoring = $state(true);
   notice = $state("");
+  view = $state<View>("friends");
   conversations = $state<Conversation[]>([]);
   friends = $state<Friend[]>([]);
   activeId = $state<string | null>(null);
@@ -33,17 +42,18 @@ class ChatStore {
   incoming = $derived(this.friends.filter(({ state }) => state === FriendState.INCOMING).length);
 
   #client: Client | null = null;
+  #challenge: Client | null = null;
 
   constructor() {
     this.#restore();
   }
 
   register(email: string, username: string, password: string) {
-    return this.#authenticate((client) => client.register(email, username, password));
+    return this.#authenticate((client) => client.register(email, username, password, preferences.values.language));
   }
 
   login(login: string, password: string) {
-    return this.#authenticate((client) => client.login(login, password));
+    return this.#authenticate((client) => client.login(login, password, preferences.values.language));
   }
 
   verifyEmail(email: string, code: string) {
@@ -54,10 +64,31 @@ class ChatStore {
     return this.#authenticate((client) => client.resetPassword(email, code, password));
   }
 
+  async verifyTwoFactor(code: string) {
+    const client = this.#challenge;
+    if (!client) {
+      throw new Error(t("common.connectionLost"));
+    }
+    await this.#authenticate((pending) => pending.verifyTwoFactor(code), client);
+    this.#challenge = null;
+  }
+
+  async resendTwoFactor() {
+    if (!this.#challenge) {
+      throw new Error(t("common.connectionLost"));
+    }
+    await this.#challenge.resendTwoFactor(preferences.values.language);
+  }
+
+  cancelTwoFactor() {
+    this.#challenge?.close();
+    this.#challenge = null;
+  }
+
   async sendCode(email: string, purpose: CodePurpose) {
     const client = await Client.connect(serverUrl);
     try {
-      await client.sendCode(email, purpose);
+      await client.sendCode(email, purpose, preferences.values.language);
     } finally {
       client.close();
     }
@@ -84,7 +115,7 @@ class ChatStore {
         if (error instanceof ServerError) {
           clearSessionToken();
         } else {
-          this.notice = "Não foi possível conectar ao servidor.";
+          this.notice = t("common.connectionFailed");
         }
       }
     }
@@ -92,40 +123,61 @@ class ChatStore {
     this.restoring = false;
   }
 
-  async #authenticate(start: (client: Client) => Promise<SignIn>): Promise<string | null> {
-    const client = await Client.connect(serverUrl);
+  async #authenticate(start: (client: Client) => Promise<SignIn>, existing?: Client): Promise<Next> {
+    const client = existing ?? (await Client.connect(serverUrl));
 
     try {
       const result = await start(client);
       if ("pendingEmail" in result) {
         client.close();
-        return result.pendingEmail;
+        return { verify: result.pendingEmail };
+      }
+      if ("twoFactorEmail" in result) {
+        this.#challenge?.close();
+        this.#challenge = client;
+        return { twoFactor: result.twoFactorEmail };
       }
 
-      const { user, token } = result.account;
-      const [conversations, friends] = await Promise.all([client.listConversations(), client.listFriends()]);
-      saveSessionToken(token);
-
-      client.onMessage = (message) => this.#receive(message);
-      client.onPresence = (userId, presence) => this.#presence(userId, presence);
-      client.onFriend = (friend) => this.#friend(friend);
-      client.onFriendRemoved = (userId) => this.#unfriend(userId);
-      client.onClose = () => this.#reset("Conexão com o servidor perdida.");
-
-      this.#client = client;
-      this.user = user;
-      this.conversations = conversations;
-      this.friends = friends;
-      this.notice = "";
+      await this.#open(client, result.account);
       return null;
     } catch (error) {
-      client.close();
+      if (!existing) {
+        client.close();
+      }
       throw error;
     }
   }
 
+  async #open(client: Client, account: Account) {
+    const [conversations, friends] = await Promise.all([client.listConversations(), client.listFriends()]);
+    saveSessionToken(account.token);
+
+    client.onMessage = (message) => this.#receive(message);
+    client.onPresence = (userId, presence) => this.#presence(userId, presence);
+    client.onFriend = (friend) => this.#friend(friend, true);
+    client.onFriendRemoved = (userId) => this.#unfriend(userId);
+    client.onUserUpdated = (user) => this.#userUpdated(user);
+    client.onTwoFactorChanged = (enabled) => (this.twoFactor = enabled);
+    client.onClose = () => this.#reset(t("common.connectionLost"));
+
+    this.#client = client;
+    this.user = account.user;
+    this.email = account.email;
+    this.twoFactor = account.twoFactor;
+    this.conversations = conversations;
+    this.friends = friends;
+    this.view = "friends";
+    this.notice = "";
+  }
+
   showFriends() {
     this.activeId = null;
+    this.view = "friends";
+  }
+
+  showSettings() {
+    this.activeId = null;
+    this.view = "settings";
   }
 
   isFriend(userId: string) {
@@ -150,6 +202,23 @@ class ChatStore {
   async setPresence(presence: Presence) {
     await this.#client!.setPresence(presence);
     this.#presence(this.user!.id, presence);
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    await this.#client!.changePassword(currentPassword, newPassword);
+  }
+
+  async setTwoFactor(enabled: boolean, password = "") {
+    await this.#client!.setTwoFactor(enabled, password);
+    this.twoFactor = enabled;
+  }
+
+  async setAvatar(image: Uint8Array) {
+    this.#userUpdated(await this.#client!.setAvatar(image));
+  }
+
+  async removeAvatar() {
+    this.#userUpdated(await this.#client!.removeAvatar());
   }
 
   async select(conversationId: string) {
@@ -212,8 +281,24 @@ class ChatStore {
       this.conversations.unshift(conversation);
     }
 
-    if (message.senderId !== this.user?.id && message.conversationId !== this.activeId) {
+    if (message.senderId === this.user?.id) {
+      return;
+    }
+
+    const watching = message.conversationId === this.activeId && windowFocused();
+    if (message.conversationId !== this.activeId) {
       this.unread[message.conversationId] = (this.unread[message.conversationId] ?? 0) + 1;
+    }
+    if (watching) {
+      return;
+    }
+
+    if (preferences.values.sound) {
+      playMessageSound();
+    }
+    if (preferences.values.notifyMessages) {
+      const sender = this.conversations.find(({ id }) => id === message.conversationId)?.peer;
+      notify(sender?.username ?? "Ludra", message.content);
     }
   }
 
@@ -231,8 +316,9 @@ class ChatStore {
     this.#peerPresence(userId, presence);
   }
 
-  #friend(friend: Friend) {
+  #friend(friend: Friend, pushed = false) {
     const id = friend.user!.id;
+    const known = this.friends.some(({ user }) => user?.id === id);
     this.friends = [...this.friends.filter(({ user }) => user?.id !== id), friend].sort((a, b) =>
       a.user!.username.localeCompare(b.user!.username),
     );
@@ -240,11 +326,30 @@ class ChatStore {
     if (friend.state === FriendState.ACCEPTED) {
       this.#peerPresence(id, friend.user!.presence);
     }
+    if (pushed && !known && friend.state === FriendState.INCOMING && preferences.values.notifyRequests) {
+      notify("Ludra", t("notifications.friendRequest", { name: friend.user!.username }));
+    }
   }
 
   #unfriend(userId: string) {
     this.friends = this.friends.filter(({ user }) => user?.id !== userId);
     this.#peerPresence(userId, Presence.OFFLINE);
+  }
+
+  #userUpdated(updated: User) {
+    if (this.user?.id === updated.id) {
+      this.user.avatar = updated.avatar;
+    }
+    for (const { user } of this.friends) {
+      if (user?.id === updated.id) {
+        user.avatar = updated.avatar;
+      }
+    }
+    for (const { peer } of this.conversations) {
+      if (peer?.id === updated.id) {
+        peer.avatar = updated.avatar;
+      }
+    }
   }
 
   #peerPresence(userId: string, presence: Presence) {
@@ -258,6 +363,9 @@ class ChatStore {
   #reset(notice: string) {
     this.#client = null;
     this.user = null;
+    this.email = "";
+    this.twoFactor = false;
+    this.view = "friends";
     this.conversations = [];
     this.friends = [];
     this.activeId = null;

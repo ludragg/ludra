@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { CodeInput } from "@/components";
   import { Cooldown } from "@/helpers/cooldown.svelte";
+  import { t } from "@/i18n";
   import { CodePurpose } from "@/protocol/ludra/v1/client_pb";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
@@ -24,7 +25,7 @@
 
   async function submit() {
     if (code.length !== 6) {
-      error = "Digite os 6 números do código.";
+      error = t("common.codeRequired");
       return;
     }
 
@@ -50,38 +51,38 @@
 
   function describe(cause: unknown): string {
     if (cause instanceof ServerError && cause.code === ErrorCode.INVALID_CODE) {
-      return "Código inválido ou expirado.";
+      return t("common.invalidCode");
     }
     if (cause instanceof ServerError && cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-      return "Muitas tentativas. Aguarde alguns minutos.";
+      return t("common.tooManyRequests");
     }
     if (cause instanceof ServerError) {
-      return "Não foi possível confirmar o e-mail.";
+      return t("verify.failed");
     }
-    return "Não foi possível conectar ao servidor.";
+    return t("common.connectionFailed");
   }
 </script>
 
 <AuthLayout
-  title="Confirme seu e-mail"
-  submitLabel={submitting ? "Confirmando…" : "Confirmar"}
+  title={t("verify.title")}
+  submitLabel={submitting ? t("verify.submitting") : t("verify.submit")}
   {submitting}
   links={[
     {
-      prompt: "Não recebeu o código?",
-      label: cooldown.remaining > 0 ? `Reenviar em ${cooldown.remaining}s` : "Reenviar",
+      prompt: t("common.noCode"),
+      label: cooldown.remaining > 0 ? t("common.resendIn", { seconds: cooldown.remaining }) : t("common.resend"),
       disabled: cooldown.remaining > 0,
       onclick: resend,
     },
-    { label: "Voltar", onclick: () => navigate({ name: "login" }) },
+    { label: t("common.back"), onclick: () => navigate({ name: "login" }) },
   ]}
   onsubmit={submit}
 >
   {#snippet subtitle()}
-    Enviamos um código de 6 números para <span class="verify__email">{email}</span>.
+    {t("common.codeSentBefore")}<span class="verify__email">{email}</span>{t("common.codeSentAfter")}
   {/snippet}
   {#snippet fields()}
-    <CodeInput id="code" label="Código de verificação" focus {error} bind:value={code} oninput={() => (error = "")} />
+    <CodeInput id="code" label={t("common.codeLabel")} focus {error} bind:value={code} oninput={() => (error = "")} />
   {/snippet}
 </AuthLayout>
 

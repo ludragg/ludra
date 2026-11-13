@@ -79,6 +79,7 @@ SELECT
     c.id,
     peer.id AS peer_id,
     peer.username AS peer_username,
+    peer.avatar AS peer_avatar,
     EXISTS (
         SELECT 1 FROM friendships f
         WHERE f.user_id = me.user_id AND f.friend_id = peer.id
@@ -105,6 +106,7 @@ type ListConversationsRow struct {
 	ID                   string
 	PeerID               string
 	PeerUsername         string
+	PeerAvatar           string
 	IsFriend             bool
 	LastMessageID        *string
 	LastMessageSenderID  *string
@@ -125,6 +127,7 @@ func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListC
 			&i.ID,
 			&i.PeerID,
 			&i.PeerUsername,
+			&i.PeerAvatar,
 			&i.IsFriend,
 			&i.LastMessageID,
 			&i.LastMessageSenderID,

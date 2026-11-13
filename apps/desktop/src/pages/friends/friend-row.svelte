@@ -9,15 +9,11 @@
 </script>
 
 <li class="friend-row">
-  <Avatar id={user.id} name={user.username} />
+  <Avatar {user} />
   <div class="friend-row__info">
     <span class="friend-row__name">{user.username}</span>
     {#if friend.state === FriendState.ACCEPTED}
       <Status presence={user.presence} />
-    {:else}
-      <span class="friend-row__hint">
-        {friend.state === FriendState.INCOMING ? "Quer ser seu amigo" : "Pedido enviado"}
-      </span>
     {/if}
   </div>
   {@render children()}
@@ -52,10 +48,5 @@
     white-space: nowrap;
     font-weight: 600;
     color: var(--muted-color);
-  }
-
-  .friend-row__hint {
-    font-size: var(--small-font-size);
-    color: var(--subtle-color);
   }
 </style>

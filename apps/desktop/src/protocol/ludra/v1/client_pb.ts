@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/client.proto.
  */
 export const file_ludra_v1_client: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIogGCgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAEiYKCHJlZ2lzdGVyGAcgASgLMhIubHVkcmEudjEuUmVnaXN0ZXJIABIiCgZyZXN1bWUYCCABKAsyEC5sdWRyYS52MS5SZXN1bWVIABIiCgZsb2dvdXQYCSABKAsyEC5sdWRyYS52MS5Mb2dvdXRIABItCgx2ZXJpZnlfZW1haWwYCiABKAsyFS5sdWRyYS52MS5WZXJpZnlFbWFpbEgAEicKCXNlbmRfY29kZRgLIAEoCzISLmx1ZHJhLnYxLlNlbmRDb2RlSAASMQoOcmVzZXRfcGFzc3dvcmQYDCABKAsyFy5sdWRyYS52MS5SZXNldFBhc3N3b3JkSAASLQoMbGlzdF9mcmllbmRzGA0gASgLMhUubHVkcmEudjEuTGlzdEZyaWVuZHNIABIpCgphZGRfZnJpZW5kGA4gASgLMhMubHVkcmEudjEuQWRkRnJpZW5kSAASLwoNYWNjZXB0X2ZyaWVuZBgPIAEoCzIWLmx1ZHJhLnYxLkFjY2VwdEZyaWVuZEgAEi8KDXJlbW92ZV9mcmllbmQYECABKAsyFi5sdWRyYS52MS5SZW1vdmVGcmllbmRIABItCgxzZXRfcHJlc2VuY2UYESABKAsyFS5sdWRyYS52MS5TZXRQcmVzZW5jZUgAQgkKB3BheWxvYWQiPQoIUmVnaXN0ZXISDQoFZW1haWwYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkiKAoFTG9naW4SDQoFbG9naW4YASABKAkSEAoIcGFzc3dvcmQYAiABKAkiKgoLVmVyaWZ5RW1haWwSDQoFZW1haWwYASABKAkSDAoEY29kZRgCIAEoCSJBCghTZW5kQ29kZRINCgVlbWFpbBgBIAEoCRImCgdwdXJwb3NlGAIgASgOMhUubHVkcmEudjEuQ29kZVB1cnBvc2UiPgoNUmVzZXRQYXNzd29yZBINCgVlbWFpbBgBIAEoCRIMCgRjb2RlGAIgASgJEhAKCHBhc3N3b3JkGAMgASgJIhcKBlJlc3VtZRINCgV0b2tlbhgBIAEoCSIICgZMb2dvdXQiDQoLTGlzdEZyaWVuZHMiHQoJQWRkRnJpZW5kEhAKCHVzZXJuYW1lGAEgASgJIh8KDEFjY2VwdEZyaWVuZBIPCgd1c2VyX2lkGAEgASgJIh8KDFJlbW92ZUZyaWVuZBIPCgd1c2VyX2lkGAEgASgJIjMKC1NldFByZXNlbmNlEiQKCHByZXNlbmNlGAEgASgOMhIubHVkcmEudjEuUHJlc2VuY2UiEwoRTGlzdENvbnZlcnNhdGlvbnMiJAoQT3BlbkNvbnZlcnNhdGlvbhIQCgh1c2VybmFtZRgBIAEoCSJJCgxMb2FkTWVzc2FnZXMSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhEKCWJlZm9yZV9pZBgCIAEoCRINCgVsaW1pdBgDIAEoDSI3CgtTZW5kTWVzc2FnZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDwoHY29udGVudBgCIAEoCSprCgtDb2RlUHVycG9zZRIcChhDT0RFX1BVUlBPU0VfVU5TUEVDSUZJRUQQABIdChlDT0RFX1BVUlBPU0VfVkVSSUZZX0VNQUlMEAESHwobQ09ERV9QVVJQT1NFX1JFU0VUX1BBU1NXT1JEEAJCdQoMY29tLmx1ZHJhLnYxQgtDbGllbnRQcm90b1ABWhdsdWRyYS9pbnRlcm5hbC9wcm90b2NvbKICA0xYWKoCCEx1ZHJhLlYxygIITHVkcmFcVjHiAhRMdWRyYVxWMVxHUEJNZXRhZGF0YeoCCUx1ZHJhOjpWMWIGcHJvdG8z", [file_ludra_v1_models]);
+  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIrsICgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAEiYKCHJlZ2lzdGVyGAcgASgLMhIubHVkcmEudjEuUmVnaXN0ZXJIABIiCgZyZXN1bWUYCCABKAsyEC5sdWRyYS52MS5SZXN1bWVIABIiCgZsb2dvdXQYCSABKAsyEC5sdWRyYS52MS5Mb2dvdXRIABItCgx2ZXJpZnlfZW1haWwYCiABKAsyFS5sdWRyYS52MS5WZXJpZnlFbWFpbEgAEicKCXNlbmRfY29kZRgLIAEoCzISLmx1ZHJhLnYxLlNlbmRDb2RlSAASMQoOcmVzZXRfcGFzc3dvcmQYDCABKAsyFy5sdWRyYS52MS5SZXNldFBhc3N3b3JkSAASLQoMbGlzdF9mcmllbmRzGA0gASgLMhUubHVkcmEudjEuTGlzdEZyaWVuZHNIABIpCgphZGRfZnJpZW5kGA4gASgLMhMubHVkcmEudjEuQWRkRnJpZW5kSAASLwoNYWNjZXB0X2ZyaWVuZBgPIAEoCzIWLmx1ZHJhLnYxLkFjY2VwdEZyaWVuZEgAEi8KDXJlbW92ZV9mcmllbmQYECABKAsyFi5sdWRyYS52MS5SZW1vdmVGcmllbmRIABItCgxzZXRfcHJlc2VuY2UYESABKAsyFS5sdWRyYS52MS5TZXRQcmVzZW5jZUgAEjYKEXZlcmlmeV90d29fZmFjdG9yGBIgASgLMhkubHVkcmEudjEuVmVyaWZ5VHdvRmFjdG9ySAASNgoRcmVzZW5kX3R3b19mYWN0b3IYEyABKAsyGS5sdWRyYS52MS5SZXNlbmRUd29GYWN0b3JIABIzCg9jaGFuZ2VfcGFzc3dvcmQYFCABKAsyGC5sdWRyYS52MS5DaGFuZ2VQYXNzd29yZEgAEjAKDnNldF90d29fZmFjdG9yGBUgASgLMhYubHVkcmEudjEuU2V0VHdvRmFjdG9ySAASKQoKc2V0X2F2YXRhchgWIAEoCzITLmx1ZHJhLnYxLlNldEF2YXRhckgAEi8KDXJlbW92ZV9hdmF0YXIYFyABKAsyFi5sdWRyYS52MS5SZW1vdmVBdmF0YXJIAEIJCgdwYXlsb2FkIk0KCFJlZ2lzdGVyEg0KBWVtYWlsGAEgASgJEhAKCHVzZXJuYW1lGAIgASgJEhAKCHBhc3N3b3JkGAMgASgJEg4KBmxvY2FsZRgEIAEoCSI4CgVMb2dpbhINCgVsb2dpbhgBIAEoCRIQCghwYXNzd29yZBgCIAEoCRIOCgZsb2NhbGUYAyABKAkiKgoLVmVyaWZ5RW1haWwSDQoFZW1haWwYASABKAkSDAoEY29kZRgCIAEoCSJRCghTZW5kQ29kZRINCgVlbWFpbBgBIAEoCRImCgdwdXJwb3NlGAIgASgOMhUubHVkcmEudjEuQ29kZVB1cnBvc2USDgoGbG9jYWxlGAMgASgJIj4KDVJlc2V0UGFzc3dvcmQSDQoFZW1haWwYASABKAkSDAoEY29kZRgCIAEoCRIQCghwYXNzd29yZBgDIAEoCSIfCg9WZXJpZnlUd29GYWN0b3ISDAoEY29kZRgBIAEoCSIhCg9SZXNlbmRUd29GYWN0b3ISDgoGbG9jYWxlGAEgASgJIkAKDkNoYW5nZVBhc3N3b3JkEhgKEGN1cnJlbnRfcGFzc3dvcmQYASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIjEKDFNldFR3b0ZhY3RvchIPCgdlbmFibGVkGAEgASgIEhAKCHBhc3N3b3JkGAIgASgJIhoKCVNldEF2YXRhchINCgVpbWFnZRgBIAEoDCIOCgxSZW1vdmVBdmF0YXIiFwoGUmVzdW1lEg0KBXRva2VuGAEgASgJIggKBkxvZ291dCINCgtMaXN0RnJpZW5kcyIdCglBZGRGcmllbmQSEAoIdXNlcm5hbWUYASABKAkiHwoMQWNjZXB0RnJpZW5kEg8KB3VzZXJfaWQYASABKAkiHwoMUmVtb3ZlRnJpZW5kEg8KB3VzZXJfaWQYASABKAkiMwoLU2V0UHJlc2VuY2USJAoIcHJlc2VuY2UYASABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSITChFMaXN0Q29udmVyc2F0aW9ucyIkChBPcGVuQ29udmVyc2F0aW9uEhAKCHVzZXJuYW1lGAEgASgJIkkKDExvYWRNZXNzYWdlcxIXCg9jb252ZXJzYXRpb25faWQYASABKAkSEQoJYmVmb3JlX2lkGAIgASgJEg0KBWxpbWl0GAMgASgNIjcKC1NlbmRNZXNzYWdlEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIPCgdjb250ZW50GAIgASgJKmsKC0NvZGVQdXJwb3NlEhwKGENPREVfUFVSUE9TRV9VTlNQRUNJRklFRBAAEh0KGUNPREVfUFVSUE9TRV9WRVJJRllfRU1BSUwQARIfChtDT0RFX1BVUlBPU0VfUkVTRVRfUEFTU1dPUkQQAkJ1Cgxjb20ubHVkcmEudjFCC0NsaWVudFByb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ClientFrame
@@ -122,6 +122,42 @@ export type ClientFrame = Message<"ludra.v1.ClientFrame"> & {
      */
     value: SetPresence;
     case: "setPresence";
+  } | {
+    /**
+     * @generated from field: ludra.v1.VerifyTwoFactor verify_two_factor = 18;
+     */
+    value: VerifyTwoFactor;
+    case: "verifyTwoFactor";
+  } | {
+    /**
+     * @generated from field: ludra.v1.ResendTwoFactor resend_two_factor = 19;
+     */
+    value: ResendTwoFactor;
+    case: "resendTwoFactor";
+  } | {
+    /**
+     * @generated from field: ludra.v1.ChangePassword change_password = 20;
+     */
+    value: ChangePassword;
+    case: "changePassword";
+  } | {
+    /**
+     * @generated from field: ludra.v1.SetTwoFactor set_two_factor = 21;
+     */
+    value: SetTwoFactor;
+    case: "setTwoFactor";
+  } | {
+    /**
+     * @generated from field: ludra.v1.SetAvatar set_avatar = 22;
+     */
+    value: SetAvatar;
+    case: "setAvatar";
+  } | {
+    /**
+     * @generated from field: ludra.v1.RemoveAvatar remove_avatar = 23;
+     */
+    value: RemoveAvatar;
+    case: "removeAvatar";
   } | { case: undefined; value?: undefined };
 };
 
@@ -150,6 +186,11 @@ export type Register = Message<"ludra.v1.Register"> & {
    * @generated from field: string password = 3;
    */
   password: string;
+
+  /**
+   * @generated from field: string locale = 4;
+   */
+  locale: string;
 };
 
 /**
@@ -172,6 +213,11 @@ export type Login = Message<"ludra.v1.Login"> & {
    * @generated from field: string password = 2;
    */
   password: string;
+
+  /**
+   * @generated from field: string locale = 3;
+   */
+  locale: string;
 };
 
 /**
@@ -216,6 +262,11 @@ export type SendCode = Message<"ludra.v1.SendCode"> & {
    * @generated from field: ludra.v1.CodePurpose purpose = 2;
    */
   purpose: CodePurpose;
+
+  /**
+   * @generated from field: string locale = 3;
+   */
+  locale: string;
 };
 
 /**
@@ -253,6 +304,114 @@ export const ResetPasswordSchema: GenMessage<ResetPassword> = /*@__PURE__*/
   messageDesc(file_ludra_v1_client, 5);
 
 /**
+ * @generated from message ludra.v1.VerifyTwoFactor
+ */
+export type VerifyTwoFactor = Message<"ludra.v1.VerifyTwoFactor"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message ludra.v1.VerifyTwoFactor.
+ * Use `create(VerifyTwoFactorSchema)` to create a new message.
+ */
+export const VerifyTwoFactorSchema: GenMessage<VerifyTwoFactor> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 6);
+
+/**
+ * @generated from message ludra.v1.ResendTwoFactor
+ */
+export type ResendTwoFactor = Message<"ludra.v1.ResendTwoFactor"> & {
+  /**
+   * @generated from field: string locale = 1;
+   */
+  locale: string;
+};
+
+/**
+ * Describes the message ludra.v1.ResendTwoFactor.
+ * Use `create(ResendTwoFactorSchema)` to create a new message.
+ */
+export const ResendTwoFactorSchema: GenMessage<ResendTwoFactor> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 7);
+
+/**
+ * @generated from message ludra.v1.ChangePassword
+ */
+export type ChangePassword = Message<"ludra.v1.ChangePassword"> & {
+  /**
+   * @generated from field: string current_password = 1;
+   */
+  currentPassword: string;
+
+  /**
+   * @generated from field: string new_password = 2;
+   */
+  newPassword: string;
+};
+
+/**
+ * Describes the message ludra.v1.ChangePassword.
+ * Use `create(ChangePasswordSchema)` to create a new message.
+ */
+export const ChangePasswordSchema: GenMessage<ChangePassword> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 8);
+
+/**
+ * @generated from message ludra.v1.SetTwoFactor
+ */
+export type SetTwoFactor = Message<"ludra.v1.SetTwoFactor"> & {
+  /**
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * @generated from field: string password = 2;
+   */
+  password: string;
+};
+
+/**
+ * Describes the message ludra.v1.SetTwoFactor.
+ * Use `create(SetTwoFactorSchema)` to create a new message.
+ */
+export const SetTwoFactorSchema: GenMessage<SetTwoFactor> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 9);
+
+/**
+ * @generated from message ludra.v1.SetAvatar
+ */
+export type SetAvatar = Message<"ludra.v1.SetAvatar"> & {
+  /**
+   * @generated from field: bytes image = 1;
+   */
+  image: Uint8Array;
+};
+
+/**
+ * Describes the message ludra.v1.SetAvatar.
+ * Use `create(SetAvatarSchema)` to create a new message.
+ */
+export const SetAvatarSchema: GenMessage<SetAvatar> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 10);
+
+/**
+ * @generated from message ludra.v1.RemoveAvatar
+ */
+export type RemoveAvatar = Message<"ludra.v1.RemoveAvatar"> & {
+};
+
+/**
+ * Describes the message ludra.v1.RemoveAvatar.
+ * Use `create(RemoveAvatarSchema)` to create a new message.
+ */
+export const RemoveAvatarSchema: GenMessage<RemoveAvatar> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 11);
+
+/**
  * @generated from message ludra.v1.Resume
  */
 export type Resume = Message<"ludra.v1.Resume"> & {
@@ -267,7 +426,7 @@ export type Resume = Message<"ludra.v1.Resume"> & {
  * Use `create(ResumeSchema)` to create a new message.
  */
 export const ResumeSchema: GenMessage<Resume> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 6);
+  messageDesc(file_ludra_v1_client, 12);
 
 /**
  * @generated from message ludra.v1.Logout
@@ -280,7 +439,7 @@ export type Logout = Message<"ludra.v1.Logout"> & {
  * Use `create(LogoutSchema)` to create a new message.
  */
 export const LogoutSchema: GenMessage<Logout> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 7);
+  messageDesc(file_ludra_v1_client, 13);
 
 /**
  * @generated from message ludra.v1.ListFriends
@@ -293,7 +452,7 @@ export type ListFriends = Message<"ludra.v1.ListFriends"> & {
  * Use `create(ListFriendsSchema)` to create a new message.
  */
 export const ListFriendsSchema: GenMessage<ListFriends> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 8);
+  messageDesc(file_ludra_v1_client, 14);
 
 /**
  * @generated from message ludra.v1.AddFriend
@@ -310,7 +469,7 @@ export type AddFriend = Message<"ludra.v1.AddFriend"> & {
  * Use `create(AddFriendSchema)` to create a new message.
  */
 export const AddFriendSchema: GenMessage<AddFriend> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 9);
+  messageDesc(file_ludra_v1_client, 15);
 
 /**
  * @generated from message ludra.v1.AcceptFriend
@@ -327,7 +486,7 @@ export type AcceptFriend = Message<"ludra.v1.AcceptFriend"> & {
  * Use `create(AcceptFriendSchema)` to create a new message.
  */
 export const AcceptFriendSchema: GenMessage<AcceptFriend> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 10);
+  messageDesc(file_ludra_v1_client, 16);
 
 /**
  * @generated from message ludra.v1.RemoveFriend
@@ -344,7 +503,7 @@ export type RemoveFriend = Message<"ludra.v1.RemoveFriend"> & {
  * Use `create(RemoveFriendSchema)` to create a new message.
  */
 export const RemoveFriendSchema: GenMessage<RemoveFriend> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 11);
+  messageDesc(file_ludra_v1_client, 17);
 
 /**
  * @generated from message ludra.v1.SetPresence
@@ -361,7 +520,7 @@ export type SetPresence = Message<"ludra.v1.SetPresence"> & {
  * Use `create(SetPresenceSchema)` to create a new message.
  */
 export const SetPresenceSchema: GenMessage<SetPresence> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 12);
+  messageDesc(file_ludra_v1_client, 18);
 
 /**
  * @generated from message ludra.v1.ListConversations
@@ -374,7 +533,7 @@ export type ListConversations = Message<"ludra.v1.ListConversations"> & {
  * Use `create(ListConversationsSchema)` to create a new message.
  */
 export const ListConversationsSchema: GenMessage<ListConversations> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 13);
+  messageDesc(file_ludra_v1_client, 19);
 
 /**
  * @generated from message ludra.v1.OpenConversation
@@ -391,7 +550,7 @@ export type OpenConversation = Message<"ludra.v1.OpenConversation"> & {
  * Use `create(OpenConversationSchema)` to create a new message.
  */
 export const OpenConversationSchema: GenMessage<OpenConversation> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 14);
+  messageDesc(file_ludra_v1_client, 20);
 
 /**
  * @generated from message ludra.v1.LoadMessages
@@ -418,7 +577,7 @@ export type LoadMessages = Message<"ludra.v1.LoadMessages"> & {
  * Use `create(LoadMessagesSchema)` to create a new message.
  */
 export const LoadMessagesSchema: GenMessage<LoadMessages> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 15);
+  messageDesc(file_ludra_v1_client, 21);
 
 /**
  * @generated from message ludra.v1.SendMessage
@@ -440,7 +599,7 @@ export type SendMessage = Message<"ludra.v1.SendMessage"> & {
  * Use `create(SendMessageSchema)` to create a new message.
  */
 export const SendMessageSchema: GenMessage<SendMessage> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 16);
+  messageDesc(file_ludra_v1_client, 22);
 
 /**
  * @generated from enum ludra.v1.CodePurpose

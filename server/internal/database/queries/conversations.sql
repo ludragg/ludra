@@ -35,6 +35,7 @@ SELECT
     c.id,
     peer.id AS peer_id,
     peer.username AS peer_username,
+    peer.avatar AS peer_avatar,
     EXISTS (
         SELECT 1 FROM friendships f
         WHERE f.user_id = me.user_id AND f.friend_id = peer.id

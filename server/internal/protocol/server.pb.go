@@ -109,6 +109,10 @@ type ServerFrame struct {
 	//	*ServerFrame_FriendList
 	//	*ServerFrame_FriendUpdated
 	//	*ServerFrame_FriendRemoved
+	//	*ServerFrame_TwoFactorRequired
+	//	*ServerFrame_PasswordChanged
+	//	*ServerFrame_TwoFactorChanged
+	//	*ServerFrame_UserUpdated
 	Payload       isServerFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -275,6 +279,42 @@ func (x *ServerFrame) GetFriendRemoved() *FriendRemoved {
 	return nil
 }
 
+func (x *ServerFrame) GetTwoFactorRequired() *TwoFactorRequired {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_TwoFactorRequired); ok {
+			return x.TwoFactorRequired
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetPasswordChanged() *PasswordChanged {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_PasswordChanged); ok {
+			return x.PasswordChanged
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetTwoFactorChanged() *TwoFactorChanged {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_TwoFactorChanged); ok {
+			return x.TwoFactorChanged
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetUserUpdated() *UserUpdated {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_UserUpdated); ok {
+			return x.UserUpdated
+		}
+	}
+	return nil
+}
+
 type isServerFrame_Payload interface {
 	isServerFrame_Payload()
 }
@@ -331,6 +371,22 @@ type ServerFrame_FriendRemoved struct {
 	FriendRemoved *FriendRemoved `protobuf:"bytes,14,opt,name=friend_removed,json=friendRemoved,proto3,oneof"`
 }
 
+type ServerFrame_TwoFactorRequired struct {
+	TwoFactorRequired *TwoFactorRequired `protobuf:"bytes,15,opt,name=two_factor_required,json=twoFactorRequired,proto3,oneof"`
+}
+
+type ServerFrame_PasswordChanged struct {
+	PasswordChanged *PasswordChanged `protobuf:"bytes,16,opt,name=password_changed,json=passwordChanged,proto3,oneof"`
+}
+
+type ServerFrame_TwoFactorChanged struct {
+	TwoFactorChanged *TwoFactorChanged `protobuf:"bytes,17,opt,name=two_factor_changed,json=twoFactorChanged,proto3,oneof"`
+}
+
+type ServerFrame_UserUpdated struct {
+	UserUpdated *UserUpdated `protobuf:"bytes,18,opt,name=user_updated,json=userUpdated,proto3,oneof"`
+}
+
 func (*ServerFrame_Error) isServerFrame_Payload() {}
 
 func (*ServerFrame_LoggedIn) isServerFrame_Payload() {}
@@ -356,6 +412,14 @@ func (*ServerFrame_FriendList) isServerFrame_Payload() {}
 func (*ServerFrame_FriendUpdated) isServerFrame_Payload() {}
 
 func (*ServerFrame_FriendRemoved) isServerFrame_Payload() {}
+
+func (*ServerFrame_TwoFactorRequired) isServerFrame_Payload() {}
+
+func (*ServerFrame_PasswordChanged) isServerFrame_Payload() {}
+
+func (*ServerFrame_TwoFactorChanged) isServerFrame_Payload() {}
+
+func (*ServerFrame_UserUpdated) isServerFrame_Payload() {}
 
 type Error struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -413,6 +477,8 @@ type LoggedIn struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	TwoFactor     bool                   `protobuf:"varint,4,opt,name=two_factor,json=twoFactor,proto3" json:"two_factor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -459,6 +525,20 @@ func (x *LoggedIn) GetToken() string {
 		return x.Token
 	}
 	return ""
+}
+
+func (x *LoggedIn) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *LoggedIn) GetTwoFactor() bool {
+	if x != nil {
+		return x.TwoFactor
+	}
+	return false
 }
 
 type LoggedOut struct {
@@ -953,11 +1033,179 @@ func (x *FriendRemoved) GetUserId() string {
 	return ""
 }
 
+type TwoFactorRequired struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TwoFactorRequired) Reset() {
+	*x = TwoFactorRequired{}
+	mi := &file_ludra_v1_server_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TwoFactorRequired) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TwoFactorRequired) ProtoMessage() {}
+
+func (x *TwoFactorRequired) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TwoFactorRequired.ProtoReflect.Descriptor instead.
+func (*TwoFactorRequired) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *TwoFactorRequired) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+type PasswordChanged struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PasswordChanged) Reset() {
+	*x = PasswordChanged{}
+	mi := &file_ludra_v1_server_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PasswordChanged) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PasswordChanged) ProtoMessage() {}
+
+func (x *PasswordChanged) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PasswordChanged.ProtoReflect.Descriptor instead.
+func (*PasswordChanged) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{15}
+}
+
+type TwoFactorChanged struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Enabled       bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TwoFactorChanged) Reset() {
+	*x = TwoFactorChanged{}
+	mi := &file_ludra_v1_server_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TwoFactorChanged) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TwoFactorChanged) ProtoMessage() {}
+
+func (x *TwoFactorChanged) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TwoFactorChanged.ProtoReflect.Descriptor instead.
+func (*TwoFactorChanged) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *TwoFactorChanged) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type UserUpdated struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserUpdated) Reset() {
+	*x = UserUpdated{}
+	mi := &file_ludra_v1_server_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserUpdated) ProtoMessage() {}
+
+func (x *UserUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserUpdated.ProtoReflect.Descriptor instead.
+func (*UserUpdated) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *UserUpdated) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
 var File_ludra_v1_server_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_server_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xfe\x06\n" +
+	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\x9d\t\n" +
 	"\vServerFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -976,14 +1224,21 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\vfriend_list\x18\f \x01(\v2\x14.ludra.v1.FriendListH\x00R\n" +
 	"friendList\x12@\n" +
 	"\x0efriend_updated\x18\r \x01(\v2\x17.ludra.v1.FriendUpdatedH\x00R\rfriendUpdated\x12@\n" +
-	"\x0efriend_removed\x18\x0e \x01(\v2\x17.ludra.v1.FriendRemovedH\x00R\rfriendRemovedB\t\n" +
+	"\x0efriend_removed\x18\x0e \x01(\v2\x17.ludra.v1.FriendRemovedH\x00R\rfriendRemoved\x12M\n" +
+	"\x13two_factor_required\x18\x0f \x01(\v2\x1b.ludra.v1.TwoFactorRequiredH\x00R\x11twoFactorRequired\x12F\n" +
+	"\x10password_changed\x18\x10 \x01(\v2\x19.ludra.v1.PasswordChangedH\x00R\x0fpasswordChanged\x12J\n" +
+	"\x12two_factor_changed\x18\x11 \x01(\v2\x1a.ludra.v1.TwoFactorChangedH\x00R\x10twoFactorChanged\x12:\n" +
+	"\fuser_updated\x18\x12 \x01(\v2\x15.ludra.v1.UserUpdatedH\x00R\vuserUpdatedB\t\n" +
 	"\apayload\"J\n" +
 	"\x05Error\x12'\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x13.ludra.v1.ErrorCodeR\x04code\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"D\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"y\n" +
 	"\bLoggedIn\x12\"\n" +
 	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\"\v\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1d\n" +
+	"\n" +
+	"two_factor\x18\x04 \x01(\bR\ttwoFactor\"\v\n" +
 	"\tLoggedOut\",\n" +
 	"\x14VerificationRequired\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\"\n" +
@@ -1008,7 +1263,14 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\rFriendUpdated\x12(\n" +
 	"\x06friend\x18\x01 \x01(\v2\x10.ludra.v1.FriendR\x06friend\"(\n" +
 	"\rFriendRemoved\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId*\xb6\x02\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\")\n" +
+	"\x11TwoFactorRequired\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"\x11\n" +
+	"\x0fPasswordChanged\",\n" +
+	"\x10TwoFactorChanged\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"1\n" +
+	"\vUserUpdated\x12\"\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user*\xb6\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aERROR_CODE_INVALID_REQUEST\x10\x01\x12\x1e\n" +
@@ -1035,7 +1297,7 @@ func file_ludra_v1_server_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_server_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_ludra_v1_server_proto_goTypes = []any{
 	(ErrorCode)(0),               // 0: ludra.v1.ErrorCode
 	(*ServerFrame)(nil),          // 1: ludra.v1.ServerFrame
@@ -1052,11 +1314,15 @@ var file_ludra_v1_server_proto_goTypes = []any{
 	(*FriendList)(nil),           // 12: ludra.v1.FriendList
 	(*FriendUpdated)(nil),        // 13: ludra.v1.FriendUpdated
 	(*FriendRemoved)(nil),        // 14: ludra.v1.FriendRemoved
-	(*User)(nil),                 // 15: ludra.v1.User
-	(*Conversation)(nil),         // 16: ludra.v1.Conversation
-	(*Message)(nil),              // 17: ludra.v1.Message
-	(Presence)(0),                // 18: ludra.v1.Presence
-	(*Friend)(nil),               // 19: ludra.v1.Friend
+	(*TwoFactorRequired)(nil),    // 15: ludra.v1.TwoFactorRequired
+	(*PasswordChanged)(nil),      // 16: ludra.v1.PasswordChanged
+	(*TwoFactorChanged)(nil),     // 17: ludra.v1.TwoFactorChanged
+	(*UserUpdated)(nil),          // 18: ludra.v1.UserUpdated
+	(*User)(nil),                 // 19: ludra.v1.User
+	(*Conversation)(nil),         // 20: ludra.v1.Conversation
+	(*Message)(nil),              // 21: ludra.v1.Message
+	(Presence)(0),                // 22: ludra.v1.Presence
+	(*Friend)(nil),               // 23: ludra.v1.Friend
 }
 var file_ludra_v1_server_proto_depIdxs = []int32{
 	2,  // 0: ludra.v1.ServerFrame.error:type_name -> ludra.v1.Error
@@ -1072,20 +1338,25 @@ var file_ludra_v1_server_proto_depIdxs = []int32{
 	12, // 10: ludra.v1.ServerFrame.friend_list:type_name -> ludra.v1.FriendList
 	13, // 11: ludra.v1.ServerFrame.friend_updated:type_name -> ludra.v1.FriendUpdated
 	14, // 12: ludra.v1.ServerFrame.friend_removed:type_name -> ludra.v1.FriendRemoved
-	0,  // 13: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
-	15, // 14: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
-	16, // 15: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
-	16, // 16: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
-	17, // 17: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
-	17, // 18: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
-	18, // 19: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
-	19, // 20: ludra.v1.FriendList.friends:type_name -> ludra.v1.Friend
-	19, // 21: ludra.v1.FriendUpdated.friend:type_name -> ludra.v1.Friend
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	15, // 13: ludra.v1.ServerFrame.two_factor_required:type_name -> ludra.v1.TwoFactorRequired
+	16, // 14: ludra.v1.ServerFrame.password_changed:type_name -> ludra.v1.PasswordChanged
+	17, // 15: ludra.v1.ServerFrame.two_factor_changed:type_name -> ludra.v1.TwoFactorChanged
+	18, // 16: ludra.v1.ServerFrame.user_updated:type_name -> ludra.v1.UserUpdated
+	0,  // 17: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
+	19, // 18: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
+	20, // 19: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
+	20, // 20: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
+	21, // 21: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
+	21, // 22: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
+	22, // 23: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
+	23, // 24: ludra.v1.FriendList.friends:type_name -> ludra.v1.Friend
+	23, // 25: ludra.v1.FriendUpdated.friend:type_name -> ludra.v1.Friend
+	19, // 26: ludra.v1.UserUpdated.user:type_name -> ludra.v1.User
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_server_proto_init() }
@@ -1108,6 +1379,10 @@ func file_ludra_v1_server_proto_init() {
 		(*ServerFrame_FriendList)(nil),
 		(*ServerFrame_FriendUpdated)(nil),
 		(*ServerFrame_FriendRemoved)(nil),
+		(*ServerFrame_TwoFactorRequired)(nil),
+		(*ServerFrame_PasswordChanged)(nil),
+		(*ServerFrame_TwoFactorChanged)(nil),
+		(*ServerFrame_UserUpdated)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1115,7 +1390,7 @@ func file_ludra_v1_server_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_server_proto_rawDesc), len(file_ludra_v1_server_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

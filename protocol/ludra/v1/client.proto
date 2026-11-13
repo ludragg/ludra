@@ -24,6 +24,12 @@ message ClientFrame {
     AcceptFriend accept_friend = 15;
     RemoveFriend remove_friend = 16;
     SetPresence set_presence = 17;
+    VerifyTwoFactor verify_two_factor = 18;
+    ResendTwoFactor resend_two_factor = 19;
+    ChangePassword change_password = 20;
+    SetTwoFactor set_two_factor = 21;
+    SetAvatar set_avatar = 22;
+    RemoveAvatar remove_avatar = 23;
   }
 }
 
@@ -37,11 +43,13 @@ message Register {
   string email = 1;
   string username = 2;
   string password = 3;
+  string locale = 4;
 }
 
 message Login {
   string login = 1;
   string password = 2;
+  string locale = 3;
 }
 
 message VerifyEmail {
@@ -52,6 +60,7 @@ message VerifyEmail {
 message SendCode {
   string email = 1;
   CodePurpose purpose = 2;
+  string locale = 3;
 }
 
 message ResetPassword {
@@ -59,6 +68,30 @@ message ResetPassword {
   string code = 2;
   string password = 3;
 }
+
+message VerifyTwoFactor {
+  string code = 1;
+}
+
+message ResendTwoFactor {
+  string locale = 1;
+}
+
+message ChangePassword {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message SetTwoFactor {
+  bool enabled = 1;
+  string password = 2;
+}
+
+message SetAvatar {
+  bytes image = 1;
+}
+
+message RemoveAvatar {}
 
 message Resume {
   string token = 1;

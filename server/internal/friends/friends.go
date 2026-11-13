@@ -29,6 +29,7 @@ var states = map[string]State{
 type Friend struct {
 	ID       string
 	Username string
+	Avatar   string
 	State    State
 }
 
@@ -49,7 +50,7 @@ func (s *Service) List(ctx context.Context, userID string) ([]Friend, error) {
 
 	friends := make([]Friend, len(rows))
 	for i, row := range rows {
-		friends[i] = Friend{ID: row.ID, Username: row.Username, State: states[row.State]}
+		friends[i] = Friend{ID: row.ID, Username: row.Username, Avatar: row.Avatar, State: states[row.State]}
 	}
 	return friends, nil
 }
@@ -73,6 +74,10 @@ func (s *Service) Add(ctx context.Context, userID, username string) (Friend, err
 	state := Outgoing
 	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
+
+		if err := q.LockFriendPair(ctx, pairKey(userID, target.ID)); err != nil {
+			return err
+		}
 
 		friends, err := q.AreFriends(ctx, database.AreFriendsParams{UserID: userID, FriendID: target.ID})
 		if err != nil {
@@ -105,7 +110,14 @@ func (s *Service) Add(ctx context.Context, userID, username string) (Friend, err
 		return Friend{}, err
 	}
 
-	return Friend{ID: target.ID, Username: target.Username, State: state}, nil
+	return Friend{ID: target.ID, Username: target.Username, Avatar: target.Avatar, State: state}, nil
+}
+
+func pairKey(a, b string) string {
+	if a > b {
+		a, b = b, a
+	}
+	return a + ":" + b
 }
 
 func (s *Service) Accept(ctx context.Context, userID, requesterID string) (Friend, error) {
@@ -136,7 +148,7 @@ func (s *Service) Accept(ctx context.Context, userID, requesterID string) (Frien
 		return Friend{}, err
 	}
 
-	return Friend{ID: requester.ID, Username: requester.Username, State: Accepted}, nil
+	return Friend{ID: requester.ID, Username: requester.Username, Avatar: requester.Avatar, State: Accepted}, nil
 }
 
 func (s *Service) Remove(ctx context.Context, userID, otherID string) error {

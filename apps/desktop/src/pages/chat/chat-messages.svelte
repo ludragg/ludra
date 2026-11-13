@@ -2,6 +2,7 @@
   import { tick } from "svelte";
   import { Avatar } from "@/components";
   import { formatDay, formatTime, sameDay, toDate } from "@/helpers/time";
+  import { t } from "@/i18n";
   import type { Message } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
@@ -65,8 +66,8 @@
   }
 
   function sender(id: string) {
-    const name = id === chat.user?.id ? chat.user.username : chat.active?.peer?.username;
-    return { id, name: name ?? "?" };
+    const person = id === chat.user?.id ? chat.user : chat.active?.peer;
+    return { id, username: person?.username ?? "?", avatar: person?.avatar ?? "" };
   }
 
   async function onscroll() {
@@ -81,9 +82,9 @@
   }
 </script>
 
-<section class="chat-messages" aria-label="Mensagens" bind:this={list} {onscroll}>
+<section class="chat-messages" aria-label={t("chat.messages")} bind:this={list} {onscroll}>
   {#if thread && !thread.loading && thread.messages.length === 0}
-    <p class="chat-messages__empty">Nenhuma mensagem ainda. Diga oi!</p>
+    <p class="chat-messages__empty">{t("chat.empty")}</p>
   {/if}
 
   {#each groups as group (group.key)}
@@ -92,10 +93,10 @@
     {/if}
     {@const who = sender(group.senderId)}
     <article class="chat-messages__group">
-      <Avatar id={who.id} name={who.name} />
+      <Avatar user={who} />
       <div class="chat-messages__content">
         <header class="chat-messages__meta">
-          <span class="chat-messages__author">{who.name}</span>
+          <span class="chat-messages__author">{who.username}</span>
           <time class="chat-messages__time">{group.time}</time>
         </header>
         {#each group.messages as message (message.id)}

@@ -20,6 +20,7 @@ type Purpose string
 const (
 	PurposeVerifyEmail   Purpose = "verify_email"
 	PurposeResetPassword Purpose = "reset_password"
+	PurposeTwoFactor     Purpose = "two_factor"
 )
 
 const (
@@ -28,7 +29,7 @@ const (
 	maxCodeAttempts = 5
 )
 
-func (s *Service) sendCode(ctx context.Context, user database.User, purpose Purpose) error {
+func (s *Service) sendCode(ctx context.Context, user database.User, purpose Purpose, locale string) error {
 	existing, err := s.queries.GetCode(ctx, database.GetCodeParams{UserID: user.ID, Purpose: string(purpose)})
 	if err == nil && time.Since(existing.CreatedAt) < codeCooldown {
 		return ErrCodeCooldown
@@ -52,7 +53,7 @@ func (s *Service) sendCode(ctx context.Context, user database.User, purpose Purp
 		return err
 	}
 
-	message := codeMessage(purpose, user.Username, code)
+	message := codeMessage(purpose, locale, user.Username, code)
 	return s.mailer.Send(ctx, user.Email, message.subject, message.body)
 }
 

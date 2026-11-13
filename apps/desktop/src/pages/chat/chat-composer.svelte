@@ -1,5 +1,7 @@
 <script lang="ts">
   import { Button } from "@/components";
+  import { clean } from "@/helpers/text";
+  import { t } from "@/i18n";
   import { chat } from "@/stores/chat.svelte";
 
   let { recipient }: { recipient: string } = $props();
@@ -8,8 +10,8 @@
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
-    const text = content;
-    if (!text.trim()) {
+    const text = clean(content);
+    if (!text) {
       return;
     }
 
@@ -23,18 +25,18 @@
 </script>
 
 <form class="chat-composer" onsubmit={submit}>
-  <label for="message" class="sr-only">Mensagem</label>
+  <label for="message" class="sr-only">{t("chat.message")}</label>
   <input
     id="message"
     class="chat-composer__input"
     bind:value={content}
-    placeholder="Mensagem para {recipient}"
+    placeholder={t("chat.messageTo", { name: recipient })}
     maxlength="4000"
     autocomplete="off"
     {@attach (input) => input.focus()}
   />
-  <Button type="submit" size="small" disabled={!content.trim()}>
-    Enviar
+  <Button type="submit" size="small" disabled={!clean(content)}>
+    {t("chat.send")}
     <svg
       class="chat-composer__icon"
       viewBox="0 0 24 24"

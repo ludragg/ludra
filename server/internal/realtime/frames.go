@@ -3,6 +3,7 @@ package realtime
 import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"ludra/internal/account"
 	"ludra/internal/chat"
 	"ludra/internal/database"
 	"ludra/internal/protocol"
@@ -16,10 +17,45 @@ func errorFrame(code protocol.ErrorCode, message string) *protocol.ServerFrame {
 	}
 }
 
-func loggedInFrame(user *protocol.User, token string) *protocol.ServerFrame {
+func loggedInFrame(user *protocol.User, session account.Session) *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_LoggedIn{
-			LoggedIn: &protocol.LoggedIn{User: user, Token: token},
+			LoggedIn: &protocol.LoggedIn{
+				User:      user,
+				Token:     session.Token,
+				Email:     session.Email,
+				TwoFactor: session.TwoFactor,
+			},
+		},
+	}
+}
+
+func twoFactorRequiredFrame(email string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_TwoFactorRequired{
+			TwoFactorRequired: &protocol.TwoFactorRequired{Email: email},
+		},
+	}
+}
+
+func passwordChangedFrame() *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_PasswordChanged{PasswordChanged: &protocol.PasswordChanged{}},
+	}
+}
+
+func twoFactorChangedFrame(enabled bool) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_TwoFactorChanged{
+			TwoFactorChanged: &protocol.TwoFactorChanged{Enabled: enabled},
+		},
+	}
+}
+
+func userUpdatedFrame(user *protocol.User) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_UserUpdated{
+			UserUpdated: &protocol.UserUpdated{User: user},
 		},
 	}
 }
@@ -115,7 +151,7 @@ func friendRemovedFrame(userID string) *protocol.ServerFrame {
 }
 
 func toUser(user database.User) *protocol.User {
-	return &protocol.User{Id: user.ID, Username: user.Username}
+	return &protocol.User{Id: user.ID, Username: user.Username, Avatar: user.Avatar}
 }
 
 func toConversation(conversation chat.Conversation) *protocol.Conversation {

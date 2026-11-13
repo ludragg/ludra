@@ -1,10 +1,23 @@
 <script lang="ts">
-  let { id, name, size = "medium" }: { id: string; name: string; size?: "small" | "medium" | "large" } = $props();
+  import type { User } from "@/protocol/ludra/v1/models_pb";
+  import { avatarUrl } from "@/services/server";
 
-  const tone = $derived(parseInt(id.slice(-8), 16) % 6);
+  type Person = Pick<User, "id" | "username" | "avatar">;
+
+  let { user, size = "medium" }: { user: Person; size?: "small" | "medium" | "large" | "huge" } = $props();
+
+  let failed = $state<string | null>(null);
+
+  const tone = $derived(parseInt(user.id.slice(-8), 16) % 6);
+  const initial = $derived(user.username.charAt(0).toUpperCase());
+  const source = $derived(user.avatar && failed !== user.avatar ? avatarUrl(user.id, user.avatar) : null);
 </script>
 
-<span class="avatar avatar--{size} avatar--tone-{tone}" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+{#if source}
+  <img class="avatar avatar--{size}" src={source} alt="" onerror={() => (failed = user.avatar)} />
+{:else}
+  <span class="avatar avatar--{size} avatar--tone-{tone}" aria-hidden="true">{initial}</span>
+{/if}
 
 <style>
   .avatar {
@@ -14,6 +27,7 @@
     border-radius: 50%;
     color: var(--dark-background-color);
     font-weight: 600;
+    object-fit: cover;
   }
 
   .avatar--small {
@@ -30,6 +44,12 @@
   .avatar--large {
     width: 40px;
     height: 40px;
+  }
+
+  .avatar--huge {
+    width: 72px;
+    height: 72px;
+    font-size: 26px;
   }
 
   .avatar--tone-0 {

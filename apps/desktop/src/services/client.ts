@@ -1,4 +1,5 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
+import { t } from "@/i18n";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import type { Conversation, Friend, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode, ServerFrameSchema, type ServerFrame } from "@/protocol/ludra/v1/server_pb";
@@ -12,9 +13,11 @@ type Settle = (reply: Reply | null) => void;
 export type Account = {
   user: User;
   token: string;
+  email: string;
+  twoFactor: boolean;
 };
 
-export type SignIn = { account: Account } | { pendingEmail: string };
+export type SignIn = { account: Account } | { pendingEmail: string } | { twoFactorEmail: string };
 
 export class ServerError extends Error {
   constructor(
@@ -30,6 +33,8 @@ export class Client {
   onPresence: (userId: string, presence: Presence) => void = () => {};
   onFriend: (friend: Friend) => void = () => {};
   onFriendRemoved: (userId: string) => void = () => {};
+  onUserUpdated: (user: User) => void = () => {};
+  onTwoFactorChanged: (enabled: boolean) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -41,7 +46,7 @@ export class Client {
       const socket = new WebSocket(url);
       socket.binaryType = "arraybuffer";
       socket.onopen = () => resolve(new Client(socket));
-      socket.onerror = () => reject(new Error("Não foi possível conectar ao servidor."));
+      socket.onerror = () => reject(new Error(t("common.connectionFailed")));
     });
   }
 
@@ -56,16 +61,20 @@ export class Client {
     };
   }
 
-  register(email: string, username: string, password: string): Promise<SignIn> {
-    return this.#signIn({ case: "register", value: { email, username, password } });
+  register(email: string, username: string, password: string, locale: string): Promise<SignIn> {
+    return this.#signIn({ case: "register", value: { email, username, password, locale } });
   }
 
-  login(login: string, password: string): Promise<SignIn> {
-    return this.#signIn({ case: "login", value: { login, password } });
+  login(login: string, password: string, locale: string): Promise<SignIn> {
+    return this.#signIn({ case: "login", value: { login, password, locale } });
   }
 
   verifyEmail(email: string, code: string): Promise<SignIn> {
     return this.#signIn({ case: "verifyEmail", value: { email, code } });
+  }
+
+  verifyTwoFactor(code: string): Promise<SignIn> {
+    return this.#signIn({ case: "verifyTwoFactor", value: { code } });
   }
 
   resetPassword(email: string, code: string, password: string): Promise<SignIn> {
@@ -76,8 +85,12 @@ export class Client {
     return this.#signIn({ case: "resume", value: { token } });
   }
 
-  async sendCode(email: string, purpose: CodePurpose) {
-    await this.#request({ case: "sendCode", value: { email, purpose } }, "codeSent");
+  async sendCode(email: string, purpose: CodePurpose, locale: string) {
+    await this.#request({ case: "sendCode", value: { email, purpose, locale } }, "codeSent");
+  }
+
+  async resendTwoFactor(locale: string) {
+    await this.#request({ case: "resendTwoFactor", value: { locale } }, "codeSent");
   }
 
   async logout() {
@@ -132,6 +145,24 @@ export class Client {
     await this.#request({ case: "setPresence", value: { presence } }, "presenceChanged");
   }
 
+  async changePassword(currentPassword: string, newPassword: string) {
+    await this.#request({ case: "changePassword", value: { currentPassword, newPassword } }, "passwordChanged");
+  }
+
+  async setTwoFactor(enabled: boolean, password: string) {
+    await this.#request({ case: "setTwoFactor", value: { enabled, password } }, "twoFactorChanged");
+  }
+
+  async setAvatar(image: Uint8Array): Promise<User> {
+    const { user } = await this.#request({ case: "setAvatar", value: { image } }, "userUpdated");
+    return user!;
+  }
+
+  async removeAvatar(): Promise<User> {
+    const { user } = await this.#request({ case: "removeAvatar", value: {} }, "userUpdated");
+    return user!;
+  }
+
   close() {
     this.onClose = () => {};
     this.#socket.close();
@@ -141,19 +172,23 @@ export class Client {
     const reply = await this.#send(payload);
 
     switch (reply.case) {
-      case "loggedIn":
-        return { account: { user: reply.value.user!, token: reply.value.token } };
+      case "loggedIn": {
+        const { user, token, email, twoFactor } = reply.value;
+        return { account: { user: user!, token, email, twoFactor } };
+      }
       case "verificationRequired":
         return { pendingEmail: reply.value.email };
+      case "twoFactorRequired":
+        return { twoFactorEmail: reply.value.email };
       default:
-        throw new Error("Resposta inesperada do servidor.");
+        throw new Error(t("common.unexpectedReply"));
     }
   }
 
   async #request<C extends ReplyCase>(payload: Request, expected: C): Promise<Replies[C]> {
     const reply = await this.#send(payload);
     if (reply.case !== expected) {
-      throw new Error("Resposta inesperada do servidor.");
+      throw new Error(t("common.unexpectedReply"));
     }
     return reply.value as Replies[C];
   }
@@ -164,7 +199,7 @@ export class Client {
     return new Promise((resolve, reject) => {
       this.#pending.set(requestId, (reply) => {
         if (!reply) {
-          reject(new Error("Conexão com o servidor perdida."));
+          reject(new Error(t("common.connectionLost")));
         } else if (reply.case === "error") {
           reject(new ServerError(reply.value.code, reply.value.message));
         } else {
@@ -205,6 +240,14 @@ export class Client {
         break;
       case "friendRemoved":
         this.onFriendRemoved(payload.value.userId);
+        break;
+      case "userUpdated":
+        if (payload.value.user) {
+          this.onUserUpdated(payload.value.user);
+        }
+        break;
+      case "twoFactorChanged":
+        this.onTwoFactorChanged(payload.value.enabled);
         break;
     }
   }

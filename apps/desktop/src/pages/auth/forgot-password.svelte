@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TextField } from "@/components";
+  import { t } from "@/i18n";
   import { CodePurpose } from "@/protocol/ludra/v1/client_pb";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
@@ -18,7 +19,7 @@
   async function submit() {
     const address = email.trim();
     if (!emailPattern.test(address)) {
-      error = "Digite um e-mail válido.";
+      error = t("common.invalidEmail");
       return;
     }
 
@@ -35,29 +36,29 @@
 
   function describe(cause: unknown): string {
     if (cause instanceof ServerError && cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-      return "Muitas tentativas. Aguarde alguns minutos.";
+      return t("common.tooManyRequests");
     }
     if (cause instanceof ServerError) {
-      return "Não foi possível enviar o código.";
+      return t("forgot.failed");
     }
-    return "Não foi possível conectar ao servidor.";
+    return t("common.connectionFailed");
   }
 </script>
 
 <AuthLayout
-  title="Redefinir senha"
-  subtitle="Digite seu e-mail e enviaremos um código."
-  submitLabel={submitting ? "Enviando…" : "Enviar código"}
+  title={t("forgot.title")}
+  subtitle={t("forgot.subtitle")}
+  submitLabel={submitting ? t("forgot.submitting") : t("forgot.submit")}
   {submitting}
-  links={[{ prompt: "Lembrou a senha?", label: "Entrar", onclick: () => navigate({ name: "login" }) }]}
+  links={[{ prompt: t("forgot.remembered"), label: t("common.signIn"), onclick: () => navigate({ name: "login" }) }]}
   onsubmit={submit}
 >
   {#snippet fields()}
     <TextField
       id="email"
       type="email"
-      label="E-mail"
-      placeholder="E-mail"
+      label={t("common.email")}
+      placeholder={t("common.email")}
       hideLabel
       focus
       maxlength={254}

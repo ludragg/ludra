@@ -29,6 +29,21 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (s
 	return id, err
 }
 
+const deleteOtherSessions = `-- name: DeleteOtherSessions :exec
+DELETE FROM sessions
+WHERE user_id = $1 AND id <> $2
+`
+
+type DeleteOtherSessionsParams struct {
+	UserID string
+	ID     string
+}
+
+func (q *Queries) DeleteOtherSessions(ctx context.Context, arg DeleteOtherSessionsParams) error {
+	_, err := q.db.Exec(ctx, deleteOtherSessions, arg.UserID, arg.ID)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions
 WHERE id = $1
@@ -69,7 +84,10 @@ SELECT
     s.id AS session_id,
     u.id,
     u.username,
-    u.invisible
+    u.email,
+    u.avatar,
+    u.invisible,
+    u.two_factor
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now()
@@ -79,7 +97,10 @@ type GetSessionRow struct {
 	SessionID string
 	ID        string
 	Username  string
+	Email     string
+	Avatar    string
 	Invisible bool
+	TwoFactor bool
 }
 
 func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
@@ -89,7 +110,10 @@ func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionR
 		&i.SessionID,
 		&i.ID,
 		&i.Username,
+		&i.Email,
+		&i.Avatar,
 		&i.Invisible,
+		&i.TwoFactor,
 	)
 	return i, err
 }

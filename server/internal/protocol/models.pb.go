@@ -131,6 +131,7 @@ type User struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Presence      Presence               `protobuf:"varint,3,opt,name=presence,proto3,enum=ludra.v1.Presence" json:"presence,omitempty"`
+	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,6 +185,13 @@ func (x *User) GetPresence() Presence {
 		return x.Presence
 	}
 	return Presence_PRESENCE_UNSPECIFIED
+}
+
+func (x *User) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
 }
 
 type Message struct {
@@ -378,11 +386,12 @@ var File_ludra_v1_models_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_models_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/models.proto\x12\bludra.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"b\n" +
+	"\x15ludra/v1/models.proto\x12\bludra.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"z\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12.\n" +
-	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\"\xae\x01\n" +
+	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\x12\x16\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xae\x01\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +

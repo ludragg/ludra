@@ -93,6 +93,11 @@ input::placeholder {
   color: var(--subtle-color);
 }
 
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 ::-webkit-scrollbar {
   width: 9px;
 }

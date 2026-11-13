@@ -1,5 +1,7 @@
 <script lang="ts">
   import { TextField } from "@/components";
+  import { validPassword } from "@/helpers/password";
+  import { t, type Key } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
   import { chat } from "@/stores/chat.svelte";
@@ -13,10 +15,10 @@
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const usernamePattern = /^[a-zA-Z0-9_.]{3,32}$/;
 
-  const messages: Record<string, { field: Field; text: string }> = {
-    "invalid email": { field: "email", text: "Digite um e-mail válido." },
-    "email already in use": { field: "email", text: "Este e-mail já está em uso." },
-    "username already in use": { field: "username", text: "Este nome de usuário já está em uso." },
+  const messages: Record<string, { field: Field; text: Key }> = {
+    "invalid email": { field: "email", text: "common.invalidEmail" },
+    "email already in use": { field: "email", text: "register.emailTaken" },
+    "username already in use": { field: "username", text: "register.usernameTaken" },
   };
 
   let email = $state("");
@@ -28,13 +30,13 @@
   function validate(): Partial<Record<Field, string>> {
     const result: Partial<Record<Field, string>> = {};
     if (!emailPattern.test(email.trim())) {
-      result.email = "Digite um e-mail válido.";
+      result.email = t("common.invalidEmail");
     }
     if (!usernamePattern.test(username.trim())) {
-      result.username = "Use 3 a 32 caracteres: letras, números, _ ou .";
+      result.username = t("register.usernameRule");
     }
-    if ([...password].length < 8) {
-      result.password = "A senha precisa ter pelo menos 8 caracteres.";
+    if (!validPassword(password)) {
+      result.password = t("common.passwordRule");
     }
     return result;
   }
@@ -47,9 +49,9 @@
 
     submitting = true;
     try {
-      const pendingEmail = await chat.register(email.trim(), username.trim(), password);
-      if (pendingEmail) {
-        navigate({ name: "verify", email: pendingEmail });
+      const next = await chat.register(email.trim(), username.trim(), password);
+      if (next && "verify" in next) {
+        navigate({ name: "verify", email: next.verify });
       }
     } catch (cause) {
       errors = describe(cause);
@@ -62,17 +64,17 @@
     if (cause instanceof ServerError) {
       const known = messages[cause.message];
       if (known) {
-        return { [known.field]: known.text };
+        return { [known.field]: t(known.text) };
       }
       if (cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-        return { password: "Muitas tentativas. Aguarde alguns minutos." };
+        return { password: t("common.tooManyRequests") };
       }
       if (cause.code === ErrorCode.INVALID_REQUEST) {
-        return { password: "Confira os dados e tente de novo." };
+        return { password: t("register.checkData") };
       }
-      return { password: "Não foi possível criar a conta." };
+      return { password: t("register.failed") };
     }
-    return { password: "Não foi possível conectar ao servidor." };
+    return { password: t("common.connectionFailed") };
   }
 
   function clear(field: Field) {
@@ -82,19 +84,19 @@
 </script>
 
 <AuthLayout
-  title="Criar conta"
-  subtitle="Escolha como serás reconhecido."
-  submitLabel={submitting ? "Criando…" : "Criar conta"}
+  title={t("register.title")}
+  subtitle={t("register.subtitle")}
+  submitLabel={submitting ? t("register.submitting") : t("register.submit")}
   {submitting}
-  links={[{ prompt: "Já tem uma conta?", label: "Entrar", onclick: () => navigate({ name: "login" }) }]}
+  links={[{ prompt: t("register.hasAccount"), label: t("common.signIn"), onclick: () => navigate({ name: "login" }) }]}
   onsubmit={submit}
 >
   {#snippet fields()}
     <TextField
       id="email"
       type="email"
-      label="E-mail"
-      placeholder="E-mail"
+      label={t("common.email")}
+      placeholder={t("common.email")}
       hideLabel
       focus
       maxlength={254}
@@ -104,8 +106,8 @@
     />
     <TextField
       id="username"
-      label="Usuário"
-      placeholder="Usuário"
+      label={t("common.username")}
+      placeholder={t("common.username")}
       hideLabel
       maxlength={32}
       error={errors.username}
@@ -115,11 +117,12 @@
     <TextField
       id="password"
       type="password"
-      label="Senha"
-      placeholder="Senha"
+      label={t("common.password")}
+      placeholder={t("common.password")}
       hideLabel
       maxlength={128}
-      hint="Mínimo de 8 caracteres."
+      hint={t("common.passwordHint")}
+      strength
       error={errors.password}
       bind:value={password}
       oninput={() => clear("password")}

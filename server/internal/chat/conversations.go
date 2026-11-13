@@ -26,7 +26,7 @@ func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conve
 	for _, row := range rows {
 		conversation := Conversation{
 			ID:       row.ID,
-			Peer:     database.User{ID: row.PeerID, Username: row.PeerUsername},
+			Peer:     database.User{ID: row.PeerID, Username: row.PeerUsername, Avatar: row.PeerAvatar},
 			IsFriend: row.IsFriend,
 		}
 

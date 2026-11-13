@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { CodeInput, TextField } from "@/components";
   import { Cooldown } from "@/helpers/cooldown.svelte";
+  import { validPassword } from "@/helpers/password";
+  import { t } from "@/i18n";
   import { CodePurpose } from "@/protocol/ludra/v1/client_pb";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
@@ -28,10 +30,10 @@
   function validate(): Partial<Record<Field, string>> {
     const result: Partial<Record<Field, string>> = {};
     if (code.length !== 6) {
-      result.code = "Digite os 6 números do código.";
+      result.code = t("common.codeRequired");
     }
-    if ([...password].length < 8) {
-      result.password = "A senha precisa ter pelo menos 8 caracteres.";
+    if (!validPassword(password)) {
+      result.password = t("common.passwordRule");
     }
     return result;
   }
@@ -64,43 +66,43 @@
 
   function describe(cause: unknown): Partial<Record<Field, string>> {
     if (cause instanceof ServerError && cause.code === ErrorCode.INVALID_CODE) {
-      return { code: "Código inválido ou expirado." };
+      return { code: t("common.invalidCode") };
     }
     if (cause instanceof ServerError && cause.code === ErrorCode.TOO_MANY_REQUESTS) {
-      return { code: "Muitas tentativas. Aguarde alguns minutos." };
+      return { code: t("common.tooManyRequests") };
     }
     if (cause instanceof ServerError && cause.code === ErrorCode.INVALID_REQUEST) {
-      return { password: "A senha precisa ter de 8 a 128 caracteres." };
+      return { password: t("common.passwordLength") };
     }
     if (cause instanceof ServerError) {
-      return { password: "Não foi possível redefinir a senha." };
+      return { password: t("reset.failed") };
     }
-    return { password: "Não foi possível conectar ao servidor." };
+    return { password: t("common.connectionFailed") };
   }
 </script>
 
 <AuthLayout
-  title="Nova senha"
-  submitLabel={submitting ? "Redefinindo…" : "Redefinir senha"}
+  title={t("reset.title")}
+  submitLabel={submitting ? t("reset.submitting") : t("reset.submit")}
   {submitting}
   links={[
     {
-      prompt: "Não recebeu o código?",
-      label: cooldown.remaining > 0 ? `Reenviar em ${cooldown.remaining}s` : "Reenviar",
+      prompt: t("common.noCode"),
+      label: cooldown.remaining > 0 ? t("common.resendIn", { seconds: cooldown.remaining }) : t("common.resend"),
       disabled: cooldown.remaining > 0,
       onclick: resend,
     },
-    { label: "Voltar", onclick: () => navigate({ name: "forgot" }) },
+    { label: t("common.back"), onclick: () => navigate({ name: "forgot" }) },
   ]}
   onsubmit={submit}
 >
   {#snippet subtitle()}
-    Digite o código enviado para <span class="reset__email">{email}</span> e escolha a nova senha.
+    {t("reset.subtitleBefore")}<span class="reset__email">{email}</span>{t("reset.subtitleAfter")}
   {/snippet}
   {#snippet fields()}
     <CodeInput
       id="code"
-      label="Código de verificação"
+      label={t("common.codeLabel")}
       focus
       error={errors.code}
       bind:value={code}
@@ -109,11 +111,12 @@
     <TextField
       id="password"
       type="password"
-      label="Nova senha"
-      placeholder="Nova senha"
+      label={t("reset.newPassword")}
+      placeholder={t("reset.newPassword")}
       hideLabel
       maxlength={128}
-      hint="Mínimo de 8 caracteres."
+      hint={t("common.passwordHint")}
+      strength
       error={errors.password}
       bind:value={password}
       oninput={() => delete errors.password}

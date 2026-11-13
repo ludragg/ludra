@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+type Avatar struct {
+	UserID    string
+	Image     []byte
+	UpdatedAt time.Time
+}
+
 type Conversation struct {
 	ID        string
 	CreatedAt time.Time
@@ -55,6 +61,8 @@ type User struct {
 	PasswordHash    string
 	EmailVerifiedAt *time.Time
 	Invisible       bool
+	Avatar          string
+	TwoFactor       bool
 }
 
 type VerificationCode struct {

@@ -11,7 +11,7 @@
     class:status__dot--online={presence === Presence.ONLINE}
     class:status__dot--invisible={presence === Presence.INVISIBLE}
   ></span>
-  <span class="status__label">{presenceLabel[presence]}</span>
+  <span class="status__label">{presenceLabel(presence)}</span>
 </span>
 
 <style>

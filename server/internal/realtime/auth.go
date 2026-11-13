@@ -24,6 +24,10 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 	if outcome.PendingEmail != "" {
 		return verificationRequiredFrame(outcome.PendingEmail)
 	}
+	if outcome.Challenge != nil {
+		s.challenge = outcome.Challenge
+		return twoFactorRequiredFrame(outcome.Challenge.Hint())
+	}
 
 	session := outcome.Session
 	presence := protocol.Presence_PRESENCE_ONLINE
@@ -32,11 +36,11 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 	}
 
 	s.sessionID = session.ID
-	s.user = &protocol.User{Id: session.UserID, Username: session.Username, Presence: presence}
+	s.user = &protocol.User{Id: session.UserID, Username: session.Username, Avatar: session.Avatar, Presence: presence}
 	if s.hub.register(s.user.Id, s, session.Invisible) {
 		s.announce(protocol.Presence_PRESENCE_ONLINE)
 	}
-	return loggedInFrame(s.user, session.Token)
+	return loggedInFrame(s.user, session)
 }
 
 func (s *session) sendCode(ctx context.Context, req *protocol.SendCode) *protocol.ServerFrame {
@@ -44,7 +48,7 @@ func (s *session) sendCode(ctx context.Context, req *protocol.SendCode) *protoco
 	if !ok {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "invalid purpose")
 	}
-	if err := s.account.SendCode(ctx, req.Email, purpose); err != nil {
+	if err := s.account.SendCode(ctx, req.Email, purpose, req.Locale); err != nil {
 		return failed(err)
 	}
 	return codeSentFrame()

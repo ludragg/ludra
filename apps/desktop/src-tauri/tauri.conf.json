@@ -19,12 +19,13 @@
         "minHeight": 560,
         "center": true,
         "decorations": false,
+        "visible": false,
         "backgroundColor": "#0D0D0D"
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080; style-src 'self'; font-src 'self'; img-src 'self'",
-      "devCsp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:1420; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080; style-src 'self'; font-src 'self'; img-src 'self' http://127.0.0.1:8080",
+      "devCsp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:1420; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' http://127.0.0.1:8080"
     }
   },
   "bundle": {

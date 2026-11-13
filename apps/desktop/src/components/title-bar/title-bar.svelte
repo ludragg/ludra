@@ -2,6 +2,8 @@
   import { isTauri } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import Logo from "@/components/logo/logo.svelte";
+  import { t } from "@/i18n";
+  import { closeWindow } from "@/services/desktop";
 
   const appWindow = isTauri() ? getCurrentWindow() : null;
 
@@ -31,7 +33,7 @@
   </div>
 
   <div class="title-bar__controls">
-    <button class="title-bar__button" aria-label="Minimizar" onclick={() => appWindow?.minimize()}>
+    <button class="title-bar__button" aria-label={t("titleBar.minimize")} onclick={() => appWindow?.minimize()}>
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -45,7 +47,7 @@
     </button>
     <button
       class="title-bar__button"
-      aria-label={maximized ? "Restaurar" : "Maximizar"}
+      aria-label={maximized ? t("titleBar.restore") : t("titleBar.maximize")}
       onclick={() => appWindow?.toggleMaximize()}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -57,7 +59,7 @@
         {/if}
       </svg>
     </button>
-    <button class="title-bar__button title-bar__button--close" aria-label="Fechar" onclick={() => appWindow?.close()}>
+    <button class="title-bar__button title-bar__button--close" aria-label={t("titleBar.close")} onclick={closeWindow}>
       <svg
         viewBox="0 0 24 24"
         fill="none"

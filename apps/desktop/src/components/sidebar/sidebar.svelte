@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from "@/i18n";
   import { chat } from "@/stores/chat.svelte";
   import SidebarConversation from "./sidebar-conversation.svelte";
   import SidebarProfile from "./sidebar-profile.svelte";
@@ -6,12 +7,12 @@
   let expanded = $state(true);
 </script>
 
-<nav class="sidebar" aria-label="Navegação">
+<nav class="sidebar" aria-label={t("sidebar.navigation")}>
   <div class="sidebar__top">
     <button
       class="sidebar__friends"
-      class:sidebar__friends--active={chat.activeId === null}
-      aria-current={chat.activeId === null ? "page" : undefined}
+      class:sidebar__friends--active={chat.activeId === null && chat.view === "friends"}
+      aria-current={chat.activeId === null && chat.view === "friends" ? "page" : undefined}
       onclick={() => chat.showFriends()}
     >
       <svg
@@ -29,9 +30,11 @@
         <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
-      Amigos
+      {t("sidebar.friends")}
       {#if chat.incoming > 0}
-        <span class="sidebar__badge" aria-label="{chat.incoming} pedidos pendentes">{chat.incoming}</span>
+        <span class="sidebar__badge" aria-label={t("sidebar.pendingRequests", { count: chat.incoming })}>
+          {chat.incoming}
+        </span>
       {/if}
     </button>
   </div>
@@ -51,7 +54,7 @@
       >
         <path d="M6 9l6 6 6-6" />
       </svg>
-      Mensagens diretas
+      {t("sidebar.directMessages")}
     </button>
 
     {#if expanded}
@@ -61,7 +64,7 @@
             <SidebarConversation {conversation} active={conversation.id === chat.activeId} />
           </li>
         {:else}
-          <li class="sidebar__empty">Nenhuma conversa ainda.</li>
+          <li class="sidebar__empty">{t("sidebar.noConversations")}</li>
         {/each}
       </ul>
     {/if}
