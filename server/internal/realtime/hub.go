@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
 	"ludra/internal/protocol"
@@ -39,6 +40,21 @@ func (h *hub) unregister(userID string, s *session) (last bool) {
 	}
 	delete(h.sessions, userID)
 	return true
+}
+
+func (h *hub) disconnect(userID string, keep *session) {
+	h.mu.RLock()
+	targets := make([]*session, 0, len(h.sessions[userID]))
+	for s := range h.sessions[userID] {
+		if s != keep {
+			targets = append(targets, s)
+		}
+	}
+	h.mu.RUnlock()
+
+	for _, s := range targets {
+		go s.conn.Close(websocket.StatusPolicyViolation, "session revoked")
+	}
 }
 
 func (h *hub) presence(userID string) protocol.Presence {

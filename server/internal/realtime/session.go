@@ -9,7 +9,9 @@ import (
 	"github.com/coder/websocket"
 	"google.golang.org/protobuf/proto"
 
+	"ludra/internal/account"
 	"ludra/internal/chat"
+	"ludra/internal/failure"
 	"ludra/internal/protocol"
 )
 
@@ -20,11 +22,15 @@ const (
 )
 
 type session struct {
-	conn *websocket.Conn
-	hub  *hub
-	chat *chat.Service
-	user *protocol.User
-	send chan []byte
+	conn      *websocket.Conn
+	hub       *hub
+	guard     *guard
+	chat      *chat.Service
+	account   *account.Service
+	ip        string
+	user      *protocol.User
+	sessionID string
+	send      chan []byte
 }
 
 func (s *session) run(ctx context.Context) {
@@ -33,15 +39,12 @@ func (s *session) run(ctx context.Context) {
 
 	go s.writeLoop(ctx, cancel)
 	s.readLoop(ctx)
-
-	if s.user != nil && s.hub.unregister(s.user.Id, s) {
-		s.announce(protocol.Presence_PRESENCE_OFFLINE)
-	}
+	s.signOut()
 }
 
 func (s *session) readLoop(ctx context.Context) {
 	for {
-		kind, data, err := s.conn.Read(ctx)
+		kind, data, err := s.read(ctx)
 		if err != nil {
 			return
 		}
@@ -61,6 +64,16 @@ func (s *session) readLoop(ctx context.Context) {
 		reply.RequestId = frame.RequestId
 		s.reply(reply)
 	}
+}
+
+func (s *session) read(ctx context.Context) (websocket.MessageType, []byte, error) {
+	if s.user != nil {
+		return s.conn.Read(ctx)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, authTimeout)
+	defer cancel()
+	return s.conn.Read(ctx)
 }
 
 func (s *session) writeLoop(ctx context.Context, cancel context.CancelFunc) {
@@ -99,8 +112,56 @@ func (s *session) push(data []byte) {
 }
 
 func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *protocol.ServerFrame {
-	if login, ok := frame.Payload.(*protocol.ClientFrame_Login); ok {
-		return s.login(ctx, login.Login)
+	switch payload := frame.Payload.(type) {
+	case *protocol.ClientFrame_Register:
+		req := payload.Register
+		if !s.guard.allowAuth(s.ip) {
+			return tooManyRequests()
+		}
+		return s.signIn(func() (account.Outcome, error) {
+			return s.account.Register(ctx, req.Email, req.Username, req.Password)
+		})
+	case *protocol.ClientFrame_Login:
+		req := payload.Login
+		if !s.guard.allowLogin(s.ip, req.Login) {
+			return tooManyRequests()
+		}
+		return s.signIn(func() (account.Outcome, error) {
+			return s.account.Login(ctx, req.Login, req.Password)
+		})
+	case *protocol.ClientFrame_Resume:
+		req := payload.Resume
+		if !s.guard.allowAuth(s.ip) {
+			return tooManyRequests()
+		}
+		return s.signIn(func() (account.Outcome, error) {
+			return s.account.Resume(ctx, req.Token)
+		})
+	case *protocol.ClientFrame_VerifyEmail:
+		req := payload.VerifyEmail
+		if !s.guard.allowCodeCheck(s.ip, req.Email) {
+			return tooManyRequests()
+		}
+		return s.signIn(func() (account.Outcome, error) {
+			return s.account.VerifyEmail(ctx, req.Email, req.Code)
+		})
+	case *protocol.ClientFrame_ResetPassword:
+		req := payload.ResetPassword
+		if !s.guard.allowCodeCheck(s.ip, req.Email) {
+			return tooManyRequests()
+		}
+		reply := s.signIn(func() (account.Outcome, error) {
+			return s.account.ResetPassword(ctx, req.Email, req.Code, req.Password)
+		})
+		if reply.GetLoggedIn() != nil {
+			s.hub.disconnect(s.user.Id, s)
+		}
+		return reply
+	case *protocol.ClientFrame_SendCode:
+		if !s.guard.allowCodeSend(s.ip, payload.SendCode.Email) {
+			return tooManyRequests()
+		}
+		return s.sendCode(ctx, payload.SendCode)
 	}
 
 	if s.user == nil {
@@ -108,35 +169,25 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 	}
 
 	switch payload := frame.Payload.(type) {
+	case *protocol.ClientFrame_Logout:
+		return s.logout(ctx)
 	case *protocol.ClientFrame_ListConversations:
 		return s.listConversations(ctx)
 	case *protocol.ClientFrame_LoadMessages:
 		return s.loadMessages(ctx, payload.LoadMessages)
 	case *protocol.ClientFrame_OpenConversation:
+		if !s.guard.openings.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
 		return s.openConversation(ctx, payload.OpenConversation)
 	case *protocol.ClientFrame_SendMessage:
+		if !s.guard.messages.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
 		return s.sendMessage(ctx, payload.SendMessage)
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "unsupported request")
 	}
-}
-
-func (s *session) login(ctx context.Context, req *protocol.Login) *protocol.ServerFrame {
-	if s.user != nil {
-		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "already logged in")
-	}
-
-	user, err := s.chat.Login(ctx, req.Username)
-	if err != nil {
-		return failure(err)
-	}
-
-	s.user = toUser(user)
-	s.user.Presence = protocol.Presence_PRESENCE_ONLINE
-	if s.hub.register(user.ID, s) {
-		s.announce(protocol.Presence_PRESENCE_ONLINE)
-	}
-	return loggedInFrame(s.user)
 }
 
 func (s *session) announce(presence protocol.Presence) {
@@ -160,7 +211,7 @@ func (s *session) conversation(conversation chat.Conversation) *protocol.Convers
 func (s *session) listConversations(ctx context.Context) *protocol.ServerFrame {
 	conversations, err := s.chat.ListConversations(ctx, s.user.Id)
 	if err != nil {
-		return failure(err)
+		return failed(err)
 	}
 
 	list := make([]*protocol.Conversation, len(conversations))
@@ -173,7 +224,7 @@ func (s *session) listConversations(ctx context.Context) *protocol.ServerFrame {
 func (s *session) loadMessages(ctx context.Context, req *protocol.LoadMessages) *protocol.ServerFrame {
 	messages, hasMore, err := s.chat.LoadMessages(ctx, s.user.Id, req.ConversationId, req.BeforeId, req.Limit)
 	if err != nil {
-		return failure(err)
+		return failed(err)
 	}
 	return messageHistoryFrame(req.ConversationId, messages, hasMore)
 }
@@ -181,7 +232,7 @@ func (s *session) loadMessages(ctx context.Context, req *protocol.LoadMessages) 
 func (s *session) openConversation(ctx context.Context, req *protocol.OpenConversation) *protocol.ServerFrame {
 	conversation, err := s.chat.OpenConversation(ctx, s.user.Id, req.Username)
 	if err != nil {
-		return failure(err)
+		return failed(err)
 	}
 	return conversationOpenedFrame(s.conversation(conversation))
 }
@@ -189,22 +240,27 @@ func (s *session) openConversation(ctx context.Context, req *protocol.OpenConver
 func (s *session) sendMessage(ctx context.Context, req *protocol.SendMessage) *protocol.ServerFrame {
 	message, recipients, err := s.chat.SendMessage(ctx, s.user.Id, req.ConversationId, req.Content)
 	if err != nil {
-		return failure(err)
+		return failed(err)
 	}
 
 	s.hub.publish(recipients, messageCreatedFrame(toMessage(message)), s)
 	return messageCreatedFrame(toMessage(message))
 }
 
-func failure(err error) *protocol.ServerFrame {
-	var chatErr *chat.Error
-	if errors.As(err, &chatErr) {
-		switch chatErr.Kind {
-		case chat.NotFound:
-			return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, chatErr.Message)
-		case chat.Invalid:
-			return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, chatErr.Message)
-		}
+var errorCodes = map[failure.Kind]protocol.ErrorCode{
+	failure.Invalid:         protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST,
+	failure.NotFound:        protocol.ErrorCode_ERROR_CODE_NOT_FOUND,
+	failure.Conflict:        protocol.ErrorCode_ERROR_CODE_ALREADY_EXISTS,
+	failure.Denied:          protocol.ErrorCode_ERROR_CODE_INVALID_CREDENTIALS,
+	failure.Unauthorized:    protocol.ErrorCode_ERROR_CODE_UNAUTHENTICATED,
+	failure.InvalidCode:     protocol.ErrorCode_ERROR_CODE_INVALID_CODE,
+	failure.TooManyRequests: protocol.ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS,
+}
+
+func failed(err error) *protocol.ServerFrame {
+	var appErr *failure.Error
+	if errors.As(err, &appErr) {
+		return errorFrame(errorCodes[appErr.Kind], appErr.Message)
 	}
 
 	slog.Error("request failed", "error", err)

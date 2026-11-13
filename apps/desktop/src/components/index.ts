@@ -1,5 +1,6 @@
 export { default as Avatar } from "./avatar/avatar.svelte";
 export { default as Button } from "./button/button.svelte";
+export { default as CodeInput } from "./code-input/code-input.svelte";
 export { default as Logo } from "./logo/logo.svelte";
 export { default as Sidebar } from "./sidebar/sidebar.svelte";
 export { default as Status } from "./status/status.svelte";

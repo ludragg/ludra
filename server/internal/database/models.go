@@ -27,8 +27,28 @@ type Participant struct {
 	UserID         string
 }
 
-type User struct {
+type Session struct {
 	ID        string
-	Username  string
+	UserID    string
+	TokenHash []byte
 	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+type User struct {
+	ID              string
+	Username        string
+	CreatedAt       time.Time
+	Email           string
+	PasswordHash    string
+	EmailVerifiedAt *time.Time
+}
+
+type VerificationCode struct {
+	UserID    string
+	Purpose   string
+	CodeHash  []byte
+	Attempts  int32
+	CreatedAt time.Time
+	ExpiresAt time.Time
 }

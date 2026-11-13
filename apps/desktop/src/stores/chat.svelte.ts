@@ -1,5 +1,7 @@
-import { Client } from "@/services/client";
+import type { CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import type { Conversation, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
+import { Client, ServerError, type SignIn } from "@/services/client";
+import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
 
 const serverUrl = import.meta.env.VITE_LUDRA_SERVER ?? "ws://127.0.0.1:8080/ws";
 
@@ -11,8 +13,8 @@ type Thread = {
 
 class ChatStore {
   user = $state<User | null>(null);
-  connecting = $state(false);
-  error = $state("");
+  restoring = $state(true);
+  notice = $state("");
   conversations = $state<Conversation[]>([]);
   activeId = $state<string | null>(null);
   threads = $state<Record<string, Thread>>({});
@@ -23,15 +25,77 @@ class ChatStore {
 
   #client: Client | null = null;
 
-  async login(username: string) {
-    this.connecting = true;
-    this.error = "";
-    let client: Client | null = null;
+  constructor() {
+    this.#restore();
+  }
+
+  register(email: string, username: string, password: string) {
+    return this.#authenticate((client) => client.register(email, username, password));
+  }
+
+  login(login: string, password: string) {
+    return this.#authenticate((client) => client.login(login, password));
+  }
+
+  verifyEmail(email: string, code: string) {
+    return this.#authenticate((client) => client.verifyEmail(email, code));
+  }
+
+  resetPassword(email: string, code: string, password: string) {
+    return this.#authenticate((client) => client.resetPassword(email, code, password));
+  }
+
+  async sendCode(email: string, purpose: CodePurpose) {
+    const client = await Client.connect(serverUrl);
+    try {
+      await client.sendCode(email, purpose);
+    } finally {
+      client.close();
+    }
+  }
+
+  async logout() {
+    const client = this.#client;
+    clearSessionToken();
+    this.#reset("");
+
+    if (client) {
+      await client.logout().catch(() => undefined);
+      client.close();
+    }
+  }
+
+  async #restore() {
+    const token = readSessionToken();
+
+    if (token) {
+      try {
+        await this.#authenticate((client) => client.resume(token));
+      } catch (error) {
+        if (error instanceof ServerError) {
+          clearSessionToken();
+        } else {
+          this.notice = "Não foi possível conectar ao servidor.";
+        }
+      }
+    }
+
+    this.restoring = false;
+  }
+
+  async #authenticate(start: (client: Client) => Promise<SignIn>): Promise<string | null> {
+    const client = await Client.connect(serverUrl);
 
     try {
-      client = await Client.connect(serverUrl);
-      const user = await client.login(username);
+      const result = await start(client);
+      if ("pendingEmail" in result) {
+        client.close();
+        return result.pendingEmail;
+      }
+
+      const { user, token } = result.account;
       const conversations = await client.listConversations();
+      saveSessionToken(token);
 
       client.onMessage = (message) => this.#receive(message);
       client.onPresence = (userId, presence) => this.#presence(userId, presence);
@@ -40,17 +104,12 @@ class ChatStore {
       this.#client = client;
       this.user = user;
       this.conversations = conversations;
+      this.notice = "";
+      return null;
     } catch (error) {
-      client?.close();
-      this.error = error instanceof Error ? error.message : String(error);
-    } finally {
-      this.connecting = false;
+      client.close();
+      throw error;
     }
-  }
-
-  logout() {
-    this.#client?.close();
-    this.#reset("");
   }
 
   async select(conversationId: string) {
@@ -126,14 +185,14 @@ class ChatStore {
     }
   }
 
-  #reset(error: string) {
+  #reset(notice: string) {
     this.#client = null;
     this.user = null;
     this.conversations = [];
     this.activeId = null;
     this.threads = {};
     this.unread = {};
-    this.error = error;
+    this.notice = notice;
   }
 }
 

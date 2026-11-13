@@ -49,7 +49,7 @@ func (s *Service) Contacts(ctx context.Context, userID string) ([]string, error)
 }
 
 func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername string) (Conversation, error) {
-	peer, err := s.queries.GetUserByUsername(ctx, peerUsername)
+	peer, err := s.queries.GetVerifiedUserByUsername(ctx, peerUsername)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Conversation{}, ErrUserNotFound
 	}

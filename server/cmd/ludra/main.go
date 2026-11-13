@@ -11,10 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"ludra/internal/account"
 	"ludra/internal/api"
 	"ludra/internal/chat"
 	"ludra/internal/config"
 	"ludra/internal/database"
+	"ludra/internal/mail"
 	"ludra/internal/realtime"
 )
 
@@ -37,13 +39,23 @@ func run() error {
 	}
 	defer pool.Close()
 
-	service := chat.NewService(pool)
-	gateway := realtime.NewGateway(service, cfg.Origins)
+	accounts, err := account.NewService(database.New(pool), mail.New(cfg.Mail))
+	if err != nil {
+		return err
+	}
+	gateway := realtime.NewGateway(chat.NewService(pool), accounts, cfg.Origins)
+	go cleanup(ctx, accounts)
+
+	if cfg.Mail.Host == "" {
+		slog.Warn("SMTP is not configured, verification codes will be written to this log")
+	}
 
 	server := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           api.NewHandler(pool, gateway),
 		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       time.Minute,
+		MaxHeaderBytes:    16 << 10,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 
@@ -64,4 +76,21 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return server.Shutdown(shutdownCtx)
+}
+
+func cleanup(ctx context.Context, accounts *account.Service) {
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+
+	for {
+		if err := accounts.Cleanup(ctx); err != nil && ctx.Err() == nil {
+			slog.Error("cleanup failed", "error", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

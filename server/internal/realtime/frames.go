@@ -16,11 +16,31 @@ func errorFrame(code protocol.ErrorCode, message string) *protocol.ServerFrame {
 	}
 }
 
-func loggedInFrame(user *protocol.User) *protocol.ServerFrame {
+func loggedInFrame(user *protocol.User, token string) *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_LoggedIn{
-			LoggedIn: &protocol.LoggedIn{User: user},
+			LoggedIn: &protocol.LoggedIn{User: user, Token: token},
 		},
+	}
+}
+
+func verificationRequiredFrame(email string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_VerificationRequired{
+			VerificationRequired: &protocol.VerificationRequired{Email: email},
+		},
+	}
+}
+
+func codeSentFrame() *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CodeSent{CodeSent: &protocol.CodeSent{}},
+	}
+}
+
+func loggedOutFrame() *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_LoggedOut{LoggedOut: &protocol.LoggedOut{}},
 	}
 }
 

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/server.proto.
  */
 export const file_ludra_v1_server: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIo4DCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAQgkKB3BheWxvYWQiOwoFRXJyb3ISIQoEY29kZRgBIAEoDjITLmx1ZHJhLnYxLkVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJIigKCExvZ2dlZEluEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyIkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSqaAQoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpFUlJPUl9DT0RFX0lOVkFMSURfUkVRVUVTVBABEh4KGkVSUk9SX0NPREVfVU5BVVRIRU5USUNBVEVEEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEARCdQoMY29tLmx1ZHJhLnYxQgtTZXJ2ZXJQcm90b1ABWhdsdWRyYS9pbnRlcm5hbC9wcm90b2NvbKICA0xYWKoCCEx1ZHJhLlYxygIITHVkcmFcVjHiAhRMdWRyYVxWMVxHUEJNZXRhZGF0YeoCCUx1ZHJhOjpWMWIGcHJvdG8z", [file_ludra_v1_models]);
+  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIqMECgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SABCCQoHcGF5bG9hZCI7CgVFcnJvchIhCgRjb2RlGAEgASgOMhMubHVkcmEudjEuRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkiNwoITG9nZ2VkSW4SHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXISDQoFdG9rZW4YAiABKAkiCwoJTG9nZ2VkT3V0IiUKFFZlcmlmaWNhdGlvblJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIgoKCENvZGVTZW50IkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSqcAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpFUlJPUl9DT0RFX0lOVkFMSURfUkVRVUVTVBABEh4KGkVSUk9SX0NPREVfVU5BVVRIRU5USUNBVEVEEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEAQSIgoeRVJST1JfQ09ERV9JTlZBTElEX0NSRURFTlRJQUxTEAUSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAGEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9DT0RFEAcSIAocRVJST1JfQ09ERV9UT09fTUFOWV9SRVFVRVNUUxAIQnUKDGNvbS5sdWRyYS52MUILU2VydmVyUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ServerFrame
@@ -68,6 +68,24 @@ export type ServerFrame = Message<"ludra.v1.ServerFrame"> & {
      */
     value: PresenceChanged;
     case: "presenceChanged";
+  } | {
+    /**
+     * @generated from field: ludra.v1.LoggedOut logged_out = 9;
+     */
+    value: LoggedOut;
+    case: "loggedOut";
+  } | {
+    /**
+     * @generated from field: ludra.v1.VerificationRequired verification_required = 10;
+     */
+    value: VerificationRequired;
+    case: "verificationRequired";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CodeSent code_sent = 11;
+     */
+    value: CodeSent;
+    case: "codeSent";
   } | { case: undefined; value?: undefined };
 };
 
@@ -108,6 +126,11 @@ export type LoggedIn = Message<"ludra.v1.LoggedIn"> & {
    * @generated from field: ludra.v1.User user = 1;
    */
   user?: User | undefined;
+
+  /**
+   * @generated from field: string token = 2;
+   */
+  token: string;
 };
 
 /**
@@ -116,6 +139,49 @@ export type LoggedIn = Message<"ludra.v1.LoggedIn"> & {
  */
 export const LoggedInSchema: GenMessage<LoggedIn> = /*@__PURE__*/
   messageDesc(file_ludra_v1_server, 2);
+
+/**
+ * @generated from message ludra.v1.LoggedOut
+ */
+export type LoggedOut = Message<"ludra.v1.LoggedOut"> & {
+};
+
+/**
+ * Describes the message ludra.v1.LoggedOut.
+ * Use `create(LoggedOutSchema)` to create a new message.
+ */
+export const LoggedOutSchema: GenMessage<LoggedOut> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 3);
+
+/**
+ * @generated from message ludra.v1.VerificationRequired
+ */
+export type VerificationRequired = Message<"ludra.v1.VerificationRequired"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message ludra.v1.VerificationRequired.
+ * Use `create(VerificationRequiredSchema)` to create a new message.
+ */
+export const VerificationRequiredSchema: GenMessage<VerificationRequired> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 4);
+
+/**
+ * @generated from message ludra.v1.CodeSent
+ */
+export type CodeSent = Message<"ludra.v1.CodeSent"> & {
+};
+
+/**
+ * Describes the message ludra.v1.CodeSent.
+ * Use `create(CodeSentSchema)` to create a new message.
+ */
+export const CodeSentSchema: GenMessage<CodeSent> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 5);
 
 /**
  * @generated from message ludra.v1.ConversationList
@@ -132,7 +198,7 @@ export type ConversationList = Message<"ludra.v1.ConversationList"> & {
  * Use `create(ConversationListSchema)` to create a new message.
  */
 export const ConversationListSchema: GenMessage<ConversationList> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 3);
+  messageDesc(file_ludra_v1_server, 6);
 
 /**
  * @generated from message ludra.v1.ConversationOpened
@@ -149,7 +215,7 @@ export type ConversationOpened = Message<"ludra.v1.ConversationOpened"> & {
  * Use `create(ConversationOpenedSchema)` to create a new message.
  */
 export const ConversationOpenedSchema: GenMessage<ConversationOpened> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 4);
+  messageDesc(file_ludra_v1_server, 7);
 
 /**
  * @generated from message ludra.v1.MessageHistory
@@ -176,7 +242,7 @@ export type MessageHistory = Message<"ludra.v1.MessageHistory"> & {
  * Use `create(MessageHistorySchema)` to create a new message.
  */
 export const MessageHistorySchema: GenMessage<MessageHistory> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 5);
+  messageDesc(file_ludra_v1_server, 8);
 
 /**
  * @generated from message ludra.v1.MessageCreated
@@ -193,7 +259,7 @@ export type MessageCreated = Message<"ludra.v1.MessageCreated"> & {
  * Use `create(MessageCreatedSchema)` to create a new message.
  */
 export const MessageCreatedSchema: GenMessage<MessageCreated> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 6);
+  messageDesc(file_ludra_v1_server, 9);
 
 /**
  * @generated from message ludra.v1.PresenceChanged
@@ -215,7 +281,7 @@ export type PresenceChanged = Message<"ludra.v1.PresenceChanged"> & {
  * Use `create(PresenceChangedSchema)` to create a new message.
  */
 export const PresenceChangedSchema: GenMessage<PresenceChanged> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 7);
+  messageDesc(file_ludra_v1_server, 10);
 
 /**
  * @generated from enum ludra.v1.ErrorCode
@@ -245,6 +311,26 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_INTERNAL = 4;
    */
   INTERNAL = 4,
+
+  /**
+   * @generated from enum value: ERROR_CODE_INVALID_CREDENTIALS = 5;
+   */
+  INVALID_CREDENTIALS = 5,
+
+  /**
+   * @generated from enum value: ERROR_CODE_ALREADY_EXISTS = 6;
+   */
+  ALREADY_EXISTS = 6,
+
+  /**
+   * @generated from enum value: ERROR_CODE_INVALID_CODE = 7;
+   */
+  INVALID_CODE = 7,
+
+  /**
+   * @generated from enum value: ERROR_CODE_TOO_MANY_REQUESTS = 8;
+   */
+  TOO_MANY_REQUESTS = 8,
 }
 
 /**

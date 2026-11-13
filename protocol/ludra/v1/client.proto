@@ -11,12 +11,53 @@ message ClientFrame {
     OpenConversation open_conversation = 4;
     LoadMessages load_messages = 5;
     SendMessage send_message = 6;
+    Register register = 7;
+    Resume resume = 8;
+    Logout logout = 9;
+    VerifyEmail verify_email = 10;
+    SendCode send_code = 11;
+    ResetPassword reset_password = 12;
   }
 }
 
-message Login {
-  string username = 1;
+enum CodePurpose {
+  CODE_PURPOSE_UNSPECIFIED = 0;
+  CODE_PURPOSE_VERIFY_EMAIL = 1;
+  CODE_PURPOSE_RESET_PASSWORD = 2;
 }
+
+message Register {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+}
+
+message Login {
+  string login = 1;
+  string password = 2;
+}
+
+message VerifyEmail {
+  string email = 1;
+  string code = 2;
+}
+
+message SendCode {
+  string email = 1;
+  CodePurpose purpose = 2;
+}
+
+message ResetPassword {
+  string email = 1;
+  string code = 2;
+  string password = 3;
+}
+
+message Resume {
+  string token = 1;
+}
+
+message Logout {}
 
 message ListConversations {}
 

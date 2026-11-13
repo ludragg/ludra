@@ -1,0 +1,62 @@
+package realtime
+
+import (
+	"strings"
+	"time"
+
+	"ludra/internal/limit"
+	"ludra/internal/protocol"
+)
+
+const (
+	maxConnectionsPerIP = 20
+	authTimeout         = 30 * time.Second
+)
+
+type guard struct {
+	connections *limit.Counter
+	authByIP    *limit.Limiter
+	logins      *limit.Limiter
+	codeChecks  *limit.Limiter
+	codeSends   *limit.Limiter
+	codesByIP   *limit.Limiter
+	messages    *limit.Limiter
+	openings    *limit.Limiter
+}
+
+func newGuard() *guard {
+	return &guard{
+		connections: limit.NewCounter(maxConnectionsPerIP),
+		authByIP:    limit.New(30, 10*time.Minute),
+		logins:      limit.New(10, 15*time.Minute),
+		codeChecks:  limit.New(10, time.Hour),
+		codeSends:   limit.New(5, time.Hour),
+		codesByIP:   limit.New(10, time.Hour),
+		messages:    limit.New(20, 10*time.Second),
+		openings:    limit.New(30, time.Minute),
+	}
+}
+
+func (g *guard) allowAuth(ip string) bool {
+	return g.authByIP.Allow(ip)
+}
+
+func (g *guard) allowLogin(ip, login string) bool {
+	return g.allowAuth(ip) && g.logins.Allow(normalize(login))
+}
+
+func (g *guard) allowCodeCheck(ip, email string) bool {
+	return g.allowAuth(ip) && g.codeChecks.Allow(normalize(email))
+}
+
+func (g *guard) allowCodeSend(ip, email string) bool {
+	return g.codesByIP.Allow(ip) && g.codeSends.Allow(normalize(email))
+}
+
+func normalize(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func tooManyRequests() *protocol.ServerFrame {
+	return errorFrame(protocol.ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS, "too many requests")
+}

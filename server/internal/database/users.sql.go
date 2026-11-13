@@ -9,28 +9,110 @@ import (
 	"context"
 )
 
-const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, created_at FROM users
-WHERE lower(username) = lower($1)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, email, password_hash)
+VALUES ($1, $2, $3)
+RETURNING id, username, created_at, email, password_hash, email_verified_at
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, lower string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByUsername, lower)
+type CreateUserParams struct {
+	Username     string
+	Email        string
+	PasswordHash string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email, arg.PasswordHash)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.EmailVerifiedAt,
+	)
 	return i, err
 }
 
-const upsertUser = `-- name: UpsertUser :one
-INSERT INTO users (username)
-VALUES ($1)
-ON CONFLICT ((lower(username))) DO UPDATE SET username = users.username
-RETURNING id, username, created_at
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, username, created_at, email, password_hash, email_verified_at FROM users
+WHERE lower(email) = lower($1)
 `
 
-func (q *Queries) UpsertUser(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRow(ctx, upsertUser, username)
+func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, lower)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.EmailVerifiedAt,
+	)
 	return i, err
+}
+
+const getUserByLogin = `-- name: GetUserByLogin :one
+SELECT id, username, created_at, email, password_hash, email_verified_at FROM users
+WHERE lower(username) = lower($1) OR lower(email) = lower($1)
+`
+
+func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByLogin, login)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.EmailVerifiedAt,
+	)
+	return i, err
+}
+
+const getVerifiedUserByUsername = `-- name: GetVerifiedUserByUsername :one
+SELECT id, username, created_at, email, password_hash, email_verified_at FROM users
+WHERE lower(username) = lower($1) AND email_verified_at IS NOT NULL
+`
+
+func (q *Queries) GetVerifiedUserByUsername(ctx context.Context, lower string) (User, error) {
+	row := q.db.QueryRow(ctx, getVerifiedUserByUsername, lower)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.EmailVerifiedAt,
+	)
+	return i, err
+}
+
+const markEmailVerified = `-- name: MarkEmailVerified :exec
+UPDATE users SET email_verified_at = now()
+WHERE id = $1 AND email_verified_at IS NULL
+`
+
+func (q *Queries) MarkEmailVerified(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, markEmailVerified, id)
+	return err
+}
+
+const updatePassword = `-- name: UpdatePassword :exec
+UPDATE users SET password_hash = $2
+WHERE id = $1
+`
+
+type UpdatePasswordParams struct {
+	ID           string
+	PasswordHash string
+}
+
+func (q *Queries) UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error {
+	_, err := q.db.Exec(ctx, updatePassword, arg.ID, arg.PasswordHash)
+	return err
 }

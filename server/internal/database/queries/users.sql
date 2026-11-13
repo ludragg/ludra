@@ -1,9 +1,24 @@
--- name: UpsertUser :one
-INSERT INTO users (username)
-VALUES ($1)
-ON CONFLICT ((lower(username))) DO UPDATE SET username = users.username
+-- name: CreateUser :one
+INSERT INTO users (username, email, password_hash)
+VALUES ($1, $2, $3)
 RETURNING *;
 
--- name: GetUserByUsername :one
+-- name: GetUserByLogin :one
 SELECT * FROM users
-WHERE lower(username) = lower($1);
+WHERE lower(username) = lower(sqlc.arg(login)) OR lower(email) = lower(sqlc.arg(login));
+
+-- name: GetUserByEmail :one
+SELECT * FROM users
+WHERE lower(email) = lower($1);
+
+-- name: GetVerifiedUserByUsername :one
+SELECT * FROM users
+WHERE lower(username) = lower($1) AND email_verified_at IS NOT NULL;
+
+-- name: MarkEmailVerified :exec
+UPDATE users SET email_verified_at = now()
+WHERE id = $1 AND email_verified_at IS NULL;
+
+-- name: UpdatePassword :exec
+UPDATE users SET password_hash = $2
+WHERE id = $1;

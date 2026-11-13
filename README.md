@@ -54,6 +54,10 @@ The server runs on `127.0.0.1:8080` and creates the database tables on startup. 
 `LUDRA_ADDR`, `LUDRA_DATABASE_URL` and `LUDRA_ORIGINS`. The app connects to `ws://127.0.0.1:8080/ws`, or to
 `VITE_LUDRA_SERVER` if set.
 
+Without SMTP settings, the server prints verification and password reset codes to its log instead of sending
+emails. To send real emails, set the variables listed in [`.env.example`](.env.example). With Gmail, use an
+[app password](https://myaccount.google.com/apppasswords).
+
 ## Project layout
 
 - `apps/desktop`: the desktop app

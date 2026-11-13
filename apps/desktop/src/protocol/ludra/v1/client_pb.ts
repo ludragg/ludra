@@ -2,15 +2,15 @@
 // @generated from file ludra/v1/client.proto (package ludra.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file ludra/v1/client.proto.
  */
 export const file_ludra_v1_client: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIqICCgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAQgkKB3BheWxvYWQiGQoFTG9naW4SEAoIdXNlcm5hbWUYASABKAkiEwoRTGlzdENvbnZlcnNhdGlvbnMiJAoQT3BlbkNvbnZlcnNhdGlvbhIQCgh1c2VybmFtZRgBIAEoCSJJCgxMb2FkTWVzc2FnZXMSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhEKCWJlZm9yZV9pZBgCIAEoCRINCgVsaW1pdBgDIAEoDSI3CgtTZW5kTWVzc2FnZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDwoHY29udGVudBgCIAEoCUJ1Cgxjb20ubHVkcmEudjFCC0NsaWVudFByb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM");
+  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIp0ECgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAEiYKCHJlZ2lzdGVyGAcgASgLMhIubHVkcmEudjEuUmVnaXN0ZXJIABIiCgZyZXN1bWUYCCABKAsyEC5sdWRyYS52MS5SZXN1bWVIABIiCgZsb2dvdXQYCSABKAsyEC5sdWRyYS52MS5Mb2dvdXRIABItCgx2ZXJpZnlfZW1haWwYCiABKAsyFS5sdWRyYS52MS5WZXJpZnlFbWFpbEgAEicKCXNlbmRfY29kZRgLIAEoCzISLmx1ZHJhLnYxLlNlbmRDb2RlSAASMQoOcmVzZXRfcGFzc3dvcmQYDCABKAsyFy5sdWRyYS52MS5SZXNldFBhc3N3b3JkSABCCQoHcGF5bG9hZCI9CghSZWdpc3RlchINCgVlbWFpbBgBIAEoCRIQCgh1c2VybmFtZRgCIAEoCRIQCghwYXNzd29yZBgDIAEoCSIoCgVMb2dpbhINCgVsb2dpbhgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSIqCgtWZXJpZnlFbWFpbBINCgVlbWFpbBgBIAEoCRIMCgRjb2RlGAIgASgJIkEKCFNlbmRDb2RlEg0KBWVtYWlsGAEgASgJEiYKB3B1cnBvc2UYAiABKA4yFS5sdWRyYS52MS5Db2RlUHVycG9zZSI+Cg1SZXNldFBhc3N3b3JkEg0KBWVtYWlsGAEgASgJEgwKBGNvZGUYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkiFwoGUmVzdW1lEg0KBXRva2VuGAEgASgJIggKBkxvZ291dCITChFMaXN0Q29udmVyc2F0aW9ucyIkChBPcGVuQ29udmVyc2F0aW9uEhAKCHVzZXJuYW1lGAEgASgJIkkKDExvYWRNZXNzYWdlcxIXCg9jb252ZXJzYXRpb25faWQYASABKAkSEQoJYmVmb3JlX2lkGAIgASgJEg0KBWxpbWl0GAMgASgNIjcKC1NlbmRNZXNzYWdlEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIPCgdjb250ZW50GAIgASgJKmsKC0NvZGVQdXJwb3NlEhwKGENPREVfUFVSUE9TRV9VTlNQRUNJRklFRBAAEh0KGUNPREVfUFVSUE9TRV9WRVJJRllfRU1BSUwQARIfChtDT0RFX1BVUlBPU0VfUkVTRVRfUEFTU1dPUkQQAkJ1Cgxjb20ubHVkcmEudjFCC0NsaWVudFByb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM");
 
 /**
  * @generated from message ludra.v1.ClientFrame
@@ -54,6 +54,42 @@ export type ClientFrame = Message<"ludra.v1.ClientFrame"> & {
      */
     value: SendMessage;
     case: "sendMessage";
+  } | {
+    /**
+     * @generated from field: ludra.v1.Register register = 7;
+     */
+    value: Register;
+    case: "register";
+  } | {
+    /**
+     * @generated from field: ludra.v1.Resume resume = 8;
+     */
+    value: Resume;
+    case: "resume";
+  } | {
+    /**
+     * @generated from field: ludra.v1.Logout logout = 9;
+     */
+    value: Logout;
+    case: "logout";
+  } | {
+    /**
+     * @generated from field: ludra.v1.VerifyEmail verify_email = 10;
+     */
+    value: VerifyEmail;
+    case: "verifyEmail";
+  } | {
+    /**
+     * @generated from field: ludra.v1.SendCode send_code = 11;
+     */
+    value: SendCode;
+    case: "sendCode";
+  } | {
+    /**
+     * @generated from field: ludra.v1.ResetPassword reset_password = 12;
+     */
+    value: ResetPassword;
+    case: "resetPassword";
   } | { case: undefined; value?: undefined };
 };
 
@@ -65,13 +101,45 @@ export const ClientFrameSchema: GenMessage<ClientFrame> = /*@__PURE__*/
   messageDesc(file_ludra_v1_client, 0);
 
 /**
+ * @generated from message ludra.v1.Register
+ */
+export type Register = Message<"ludra.v1.Register"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string username = 2;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string password = 3;
+   */
+  password: string;
+};
+
+/**
+ * Describes the message ludra.v1.Register.
+ * Use `create(RegisterSchema)` to create a new message.
+ */
+export const RegisterSchema: GenMessage<Register> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 1);
+
+/**
  * @generated from message ludra.v1.Login
  */
 export type Login = Message<"ludra.v1.Login"> & {
   /**
-   * @generated from field: string username = 1;
+   * @generated from field: string login = 1;
    */
-  username: string;
+  login: string;
+
+  /**
+   * @generated from field: string password = 2;
+   */
+  password: string;
 };
 
 /**
@@ -79,7 +147,108 @@ export type Login = Message<"ludra.v1.Login"> & {
  * Use `create(LoginSchema)` to create a new message.
  */
 export const LoginSchema: GenMessage<Login> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 1);
+  messageDesc(file_ludra_v1_client, 2);
+
+/**
+ * @generated from message ludra.v1.VerifyEmail
+ */
+export type VerifyEmail = Message<"ludra.v1.VerifyEmail"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string code = 2;
+   */
+  code: string;
+};
+
+/**
+ * Describes the message ludra.v1.VerifyEmail.
+ * Use `create(VerifyEmailSchema)` to create a new message.
+ */
+export const VerifyEmailSchema: GenMessage<VerifyEmail> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 3);
+
+/**
+ * @generated from message ludra.v1.SendCode
+ */
+export type SendCode = Message<"ludra.v1.SendCode"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: ludra.v1.CodePurpose purpose = 2;
+   */
+  purpose: CodePurpose;
+};
+
+/**
+ * Describes the message ludra.v1.SendCode.
+ * Use `create(SendCodeSchema)` to create a new message.
+ */
+export const SendCodeSchema: GenMessage<SendCode> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 4);
+
+/**
+ * @generated from message ludra.v1.ResetPassword
+ */
+export type ResetPassword = Message<"ludra.v1.ResetPassword"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: string code = 2;
+   */
+  code: string;
+
+  /**
+   * @generated from field: string password = 3;
+   */
+  password: string;
+};
+
+/**
+ * Describes the message ludra.v1.ResetPassword.
+ * Use `create(ResetPasswordSchema)` to create a new message.
+ */
+export const ResetPasswordSchema: GenMessage<ResetPassword> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 5);
+
+/**
+ * @generated from message ludra.v1.Resume
+ */
+export type Resume = Message<"ludra.v1.Resume"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message ludra.v1.Resume.
+ * Use `create(ResumeSchema)` to create a new message.
+ */
+export const ResumeSchema: GenMessage<Resume> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 6);
+
+/**
+ * @generated from message ludra.v1.Logout
+ */
+export type Logout = Message<"ludra.v1.Logout"> & {
+};
+
+/**
+ * Describes the message ludra.v1.Logout.
+ * Use `create(LogoutSchema)` to create a new message.
+ */
+export const LogoutSchema: GenMessage<Logout> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 7);
 
 /**
  * @generated from message ludra.v1.ListConversations
@@ -92,7 +261,7 @@ export type ListConversations = Message<"ludra.v1.ListConversations"> & {
  * Use `create(ListConversationsSchema)` to create a new message.
  */
 export const ListConversationsSchema: GenMessage<ListConversations> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 2);
+  messageDesc(file_ludra_v1_client, 8);
 
 /**
  * @generated from message ludra.v1.OpenConversation
@@ -109,7 +278,7 @@ export type OpenConversation = Message<"ludra.v1.OpenConversation"> & {
  * Use `create(OpenConversationSchema)` to create a new message.
  */
 export const OpenConversationSchema: GenMessage<OpenConversation> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 3);
+  messageDesc(file_ludra_v1_client, 9);
 
 /**
  * @generated from message ludra.v1.LoadMessages
@@ -136,7 +305,7 @@ export type LoadMessages = Message<"ludra.v1.LoadMessages"> & {
  * Use `create(LoadMessagesSchema)` to create a new message.
  */
 export const LoadMessagesSchema: GenMessage<LoadMessages> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 4);
+  messageDesc(file_ludra_v1_client, 10);
 
 /**
  * @generated from message ludra.v1.SendMessage
@@ -158,5 +327,31 @@ export type SendMessage = Message<"ludra.v1.SendMessage"> & {
  * Use `create(SendMessageSchema)` to create a new message.
  */
 export const SendMessageSchema: GenMessage<SendMessage> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 5);
+  messageDesc(file_ludra_v1_client, 11);
+
+/**
+ * @generated from enum ludra.v1.CodePurpose
+ */
+export enum CodePurpose {
+  /**
+   * @generated from enum value: CODE_PURPOSE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CODE_PURPOSE_VERIFY_EMAIL = 1;
+   */
+  VERIFY_EMAIL = 1,
+
+  /**
+   * @generated from enum value: CODE_PURPOSE_RESET_PASSWORD = 2;
+   */
+  RESET_PASSWORD = 2,
+}
+
+/**
+ * Describes the enum ludra.v1.CodePurpose.
+ */
+export const CodePurposeSchema: GenEnum<CodePurpose> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_client, 0);
 
