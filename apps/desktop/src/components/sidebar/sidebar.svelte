@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Logo from "@/components/logo/logo.svelte";
   import { chat } from "@/stores/chat.svelte";
   import SidebarConversation from "./sidebar-conversation.svelte";
   import SidebarNewConversation from "./sidebar-new-conversation.svelte";
@@ -20,11 +19,6 @@
 </script>
 
 <nav class="sidebar" aria-label="Mensagens diretas">
-  <div class="sidebar__brand">
-    <Logo />
-    <span>Ludra</span>
-  </div>
-
   <section class="sidebar__section">
     <div class="sidebar__section-header">
       <button class="sidebar__section-toggle" aria-expanded={expanded} onclick={toggle}>
@@ -83,24 +77,13 @@
   .sidebar {
     width: 250px;
     flex: none;
-    padding-top: 8px;
+    padding-top: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     background: var(--dark-background-color);
     border-right: 1px solid var(--border-color);
     color: var(--muted-color);
-  }
-
-  .sidebar__brand {
-    padding: 8px 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
   }
 
   .sidebar__section {

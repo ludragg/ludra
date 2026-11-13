@@ -4,3 +4,4 @@ export { default as Logo } from "./logo/logo.svelte";
 export { default as Sidebar } from "./sidebar/sidebar.svelte";
 export { default as Status } from "./status/status.svelte";
 export { default as TextField } from "./text-field/text-field.svelte";
+export { default as TitleBar } from "./title-bar/title-bar.svelte";
