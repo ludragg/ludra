@@ -90,6 +90,30 @@ func presenceChangedFrame(userID string, presence protocol.Presence) *protocol.S
 	}
 }
 
+func friendListFrame(friends []*protocol.Friend) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_FriendList{
+			FriendList: &protocol.FriendList{Friends: friends},
+		},
+	}
+}
+
+func friendUpdatedFrame(friend *protocol.Friend) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_FriendUpdated{
+			FriendUpdated: &protocol.FriendUpdated{Friend: friend},
+		},
+	}
+}
+
+func friendRemovedFrame(userID string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_FriendRemoved{
+			FriendRemoved: &protocol.FriendRemoved{UserId: userID},
+		},
+	}
+}
+
 func toUser(user database.User) *protocol.User {
 	return &protocol.User{Id: user.ID, Username: user.Username}
 }

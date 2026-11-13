@@ -33,6 +33,7 @@ const (
 	ErrorCode_ERROR_CODE_ALREADY_EXISTS      ErrorCode = 6
 	ErrorCode_ERROR_CODE_INVALID_CODE        ErrorCode = 7
 	ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS   ErrorCode = 8
+	ErrorCode_ERROR_CODE_FORBIDDEN           ErrorCode = 9
 )
 
 // Enum value maps for ErrorCode.
@@ -47,6 +48,7 @@ var (
 		6: "ERROR_CODE_ALREADY_EXISTS",
 		7: "ERROR_CODE_INVALID_CODE",
 		8: "ERROR_CODE_TOO_MANY_REQUESTS",
+		9: "ERROR_CODE_FORBIDDEN",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":         0,
@@ -58,6 +60,7 @@ var (
 		"ERROR_CODE_ALREADY_EXISTS":      6,
 		"ERROR_CODE_INVALID_CODE":        7,
 		"ERROR_CODE_TOO_MANY_REQUESTS":   8,
+		"ERROR_CODE_FORBIDDEN":           9,
 	}
 )
 
@@ -103,6 +106,9 @@ type ServerFrame struct {
 	//	*ServerFrame_LoggedOut
 	//	*ServerFrame_VerificationRequired
 	//	*ServerFrame_CodeSent
+	//	*ServerFrame_FriendList
+	//	*ServerFrame_FriendUpdated
+	//	*ServerFrame_FriendRemoved
 	Payload       isServerFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -242,6 +248,33 @@ func (x *ServerFrame) GetCodeSent() *CodeSent {
 	return nil
 }
 
+func (x *ServerFrame) GetFriendList() *FriendList {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_FriendList); ok {
+			return x.FriendList
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetFriendUpdated() *FriendUpdated {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_FriendUpdated); ok {
+			return x.FriendUpdated
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetFriendRemoved() *FriendRemoved {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_FriendRemoved); ok {
+			return x.FriendRemoved
+		}
+	}
+	return nil
+}
+
 type isServerFrame_Payload interface {
 	isServerFrame_Payload()
 }
@@ -286,6 +319,18 @@ type ServerFrame_CodeSent struct {
 	CodeSent *CodeSent `protobuf:"bytes,11,opt,name=code_sent,json=codeSent,proto3,oneof"`
 }
 
+type ServerFrame_FriendList struct {
+	FriendList *FriendList `protobuf:"bytes,12,opt,name=friend_list,json=friendList,proto3,oneof"`
+}
+
+type ServerFrame_FriendUpdated struct {
+	FriendUpdated *FriendUpdated `protobuf:"bytes,13,opt,name=friend_updated,json=friendUpdated,proto3,oneof"`
+}
+
+type ServerFrame_FriendRemoved struct {
+	FriendRemoved *FriendRemoved `protobuf:"bytes,14,opt,name=friend_removed,json=friendRemoved,proto3,oneof"`
+}
+
 func (*ServerFrame_Error) isServerFrame_Payload() {}
 
 func (*ServerFrame_LoggedIn) isServerFrame_Payload() {}
@@ -305,6 +350,12 @@ func (*ServerFrame_LoggedOut) isServerFrame_Payload() {}
 func (*ServerFrame_VerificationRequired) isServerFrame_Payload() {}
 
 func (*ServerFrame_CodeSent) isServerFrame_Payload() {}
+
+func (*ServerFrame_FriendList) isServerFrame_Payload() {}
+
+func (*ServerFrame_FriendUpdated) isServerFrame_Payload() {}
+
+func (*ServerFrame_FriendRemoved) isServerFrame_Payload() {}
 
 type Error struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -770,11 +821,143 @@ func (x *PresenceChanged) GetPresence() Presence {
 	return Presence_PRESENCE_UNSPECIFIED
 }
 
+type FriendList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Friends       []*Friend              `protobuf:"bytes,1,rep,name=friends,proto3" json:"friends,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FriendList) Reset() {
+	*x = FriendList{}
+	mi := &file_ludra_v1_server_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendList) ProtoMessage() {}
+
+func (x *FriendList) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FriendList.ProtoReflect.Descriptor instead.
+func (*FriendList) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *FriendList) GetFriends() []*Friend {
+	if x != nil {
+		return x.Friends
+	}
+	return nil
+}
+
+type FriendUpdated struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Friend        *Friend                `protobuf:"bytes,1,opt,name=friend,proto3" json:"friend,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FriendUpdated) Reset() {
+	*x = FriendUpdated{}
+	mi := &file_ludra_v1_server_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendUpdated) ProtoMessage() {}
+
+func (x *FriendUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FriendUpdated.ProtoReflect.Descriptor instead.
+func (*FriendUpdated) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *FriendUpdated) GetFriend() *Friend {
+	if x != nil {
+		return x.Friend
+	}
+	return nil
+}
+
+type FriendRemoved struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FriendRemoved) Reset() {
+	*x = FriendRemoved{}
+	mi := &file_ludra_v1_server_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FriendRemoved) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FriendRemoved) ProtoMessage() {}
+
+func (x *FriendRemoved) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FriendRemoved.ProtoReflect.Descriptor instead.
+func (*FriendRemoved) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *FriendRemoved) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_ludra_v1_server_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_server_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xc1\x05\n" +
+	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xfe\x06\n" +
 	"\vServerFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -789,7 +972,11 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"logged_out\x18\t \x01(\v2\x13.ludra.v1.LoggedOutH\x00R\tloggedOut\x12U\n" +
 	"\x15verification_required\x18\n" +
 	" \x01(\v2\x1e.ludra.v1.VerificationRequiredH\x00R\x14verificationRequired\x121\n" +
-	"\tcode_sent\x18\v \x01(\v2\x12.ludra.v1.CodeSentH\x00R\bcodeSentB\t\n" +
+	"\tcode_sent\x18\v \x01(\v2\x12.ludra.v1.CodeSentH\x00R\bcodeSent\x127\n" +
+	"\vfriend_list\x18\f \x01(\v2\x14.ludra.v1.FriendListH\x00R\n" +
+	"friendList\x12@\n" +
+	"\x0efriend_updated\x18\r \x01(\v2\x17.ludra.v1.FriendUpdatedH\x00R\rfriendUpdated\x12@\n" +
+	"\x0efriend_removed\x18\x0e \x01(\v2\x17.ludra.v1.FriendRemovedH\x00R\rfriendRemovedB\t\n" +
 	"\apayload\"J\n" +
 	"\x05Error\x12'\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x13.ludra.v1.ErrorCodeR\x04code\x12\x18\n" +
@@ -814,7 +1001,14 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\amessage\x18\x01 \x01(\v2\x11.ludra.v1.MessageR\amessage\"Z\n" +
 	"\x0fPresenceChanged\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12.\n" +
-	"\bpresence\x18\x02 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence*\x9c\x02\n" +
+	"\bpresence\x18\x02 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\"8\n" +
+	"\n" +
+	"FriendList\x12*\n" +
+	"\afriends\x18\x01 \x03(\v2\x10.ludra.v1.FriendR\afriends\"9\n" +
+	"\rFriendUpdated\x12(\n" +
+	"\x06friend\x18\x01 \x01(\v2\x10.ludra.v1.FriendR\x06friend\"(\n" +
+	"\rFriendRemoved\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId*\xb6\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aERROR_CODE_INVALID_REQUEST\x10\x01\x12\x1e\n" +
@@ -824,7 +1018,8 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\x1eERROR_CODE_INVALID_CREDENTIALS\x10\x05\x12\x1d\n" +
 	"\x19ERROR_CODE_ALREADY_EXISTS\x10\x06\x12\x1b\n" +
 	"\x17ERROR_CODE_INVALID_CODE\x10\a\x12 \n" +
-	"\x1cERROR_CODE_TOO_MANY_REQUESTS\x10\bBu\n" +
+	"\x1cERROR_CODE_TOO_MANY_REQUESTS\x10\b\x12\x18\n" +
+	"\x14ERROR_CODE_FORBIDDEN\x10\tBu\n" +
 	"\fcom.ludra.v1B\vServerProtoP\x01Z\x17ludra/internal/protocol\xa2\x02\x03LXX\xaa\x02\bLudra.V1\xca\x02\bLudra\\V1\xe2\x02\x14Ludra\\V1\\GPBMetadata\xea\x02\tLudra::V1b\x06proto3"
 
 var (
@@ -840,7 +1035,7 @@ func file_ludra_v1_server_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_server_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_ludra_v1_server_proto_goTypes = []any{
 	(ErrorCode)(0),               // 0: ludra.v1.ErrorCode
 	(*ServerFrame)(nil),          // 1: ludra.v1.ServerFrame
@@ -854,10 +1049,14 @@ var file_ludra_v1_server_proto_goTypes = []any{
 	(*MessageHistory)(nil),       // 9: ludra.v1.MessageHistory
 	(*MessageCreated)(nil),       // 10: ludra.v1.MessageCreated
 	(*PresenceChanged)(nil),      // 11: ludra.v1.PresenceChanged
-	(*User)(nil),                 // 12: ludra.v1.User
-	(*Conversation)(nil),         // 13: ludra.v1.Conversation
-	(*Message)(nil),              // 14: ludra.v1.Message
-	(Presence)(0),                // 15: ludra.v1.Presence
+	(*FriendList)(nil),           // 12: ludra.v1.FriendList
+	(*FriendUpdated)(nil),        // 13: ludra.v1.FriendUpdated
+	(*FriendRemoved)(nil),        // 14: ludra.v1.FriendRemoved
+	(*User)(nil),                 // 15: ludra.v1.User
+	(*Conversation)(nil),         // 16: ludra.v1.Conversation
+	(*Message)(nil),              // 17: ludra.v1.Message
+	(Presence)(0),                // 18: ludra.v1.Presence
+	(*Friend)(nil),               // 19: ludra.v1.Friend
 }
 var file_ludra_v1_server_proto_depIdxs = []int32{
 	2,  // 0: ludra.v1.ServerFrame.error:type_name -> ludra.v1.Error
@@ -870,18 +1069,23 @@ var file_ludra_v1_server_proto_depIdxs = []int32{
 	4,  // 7: ludra.v1.ServerFrame.logged_out:type_name -> ludra.v1.LoggedOut
 	5,  // 8: ludra.v1.ServerFrame.verification_required:type_name -> ludra.v1.VerificationRequired
 	6,  // 9: ludra.v1.ServerFrame.code_sent:type_name -> ludra.v1.CodeSent
-	0,  // 10: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
-	12, // 11: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
-	13, // 12: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
-	13, // 13: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
-	14, // 14: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
-	14, // 15: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
-	15, // 16: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	12, // 10: ludra.v1.ServerFrame.friend_list:type_name -> ludra.v1.FriendList
+	13, // 11: ludra.v1.ServerFrame.friend_updated:type_name -> ludra.v1.FriendUpdated
+	14, // 12: ludra.v1.ServerFrame.friend_removed:type_name -> ludra.v1.FriendRemoved
+	0,  // 13: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
+	15, // 14: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
+	16, // 15: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
+	16, // 16: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
+	17, // 17: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
+	17, // 18: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
+	18, // 19: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
+	19, // 20: ludra.v1.FriendList.friends:type_name -> ludra.v1.Friend
+	19, // 21: ludra.v1.FriendUpdated.friend:type_name -> ludra.v1.Friend
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_server_proto_init() }
@@ -901,6 +1105,9 @@ func file_ludra_v1_server_proto_init() {
 		(*ServerFrame_LoggedOut)(nil),
 		(*ServerFrame_VerificationRequired)(nil),
 		(*ServerFrame_CodeSent)(nil),
+		(*ServerFrame_FriendList)(nil),
+		(*ServerFrame_FriendUpdated)(nil),
+		(*ServerFrame_FriendRemoved)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -908,7 +1115,7 @@ func file_ludra_v1_server_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_server_proto_rawDesc), len(file_ludra_v1_server_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

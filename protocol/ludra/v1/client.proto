@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ludra.v1;
 
+import "ludra/v1/models.proto";
+
 message ClientFrame {
   uint32 request_id = 1;
 
@@ -17,6 +19,11 @@ message ClientFrame {
     VerifyEmail verify_email = 10;
     SendCode send_code = 11;
     ResetPassword reset_password = 12;
+    ListFriends list_friends = 13;
+    AddFriend add_friend = 14;
+    AcceptFriend accept_friend = 15;
+    RemoveFriend remove_friend = 16;
+    SetPresence set_presence = 17;
   }
 }
 
@@ -58,6 +65,24 @@ message Resume {
 }
 
 message Logout {}
+
+message ListFriends {}
+
+message AddFriend {
+  string username = 1;
+}
+
+message AcceptFriend {
+  string user_id = 1;
+}
+
+message RemoveFriend {
+  string user_id = 1;
+}
+
+message SetPresence {
+  Presence presence = 1;
+}
 
 message ListConversations {}
 

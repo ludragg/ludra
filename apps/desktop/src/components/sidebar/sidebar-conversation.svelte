@@ -115,7 +115,7 @@
   .sidebar-conversation__badge {
     min-width: 18px;
     height: 18px;
-    padding: 0 5px;
+    padding: 0 5px 1px;
     flex: none;
     display: grid;
     place-items: center;

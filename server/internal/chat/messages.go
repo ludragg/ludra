@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"ludra/internal/database"
+	"ludra/internal/ids"
 )
 
 const (
@@ -25,8 +26,19 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 	if utf8.RuneCountInString(content) > maxMessageLength {
 		return database.Message{}, nil, ErrMessageTooLong
 	}
-	if !isUUID(conversationID) {
+	if !ids.Valid(conversationID) {
 		return database.Message{}, nil, ErrConversationNotFound
+	}
+
+	peer, err := s.queries.GetDirectPeer(ctx, database.GetDirectPeerParams{ConversationID: conversationID, UserID: senderID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return database.Message{}, nil, ErrConversationNotFound
+	}
+	if err != nil {
+		return database.Message{}, nil, err
+	}
+	if !peer.IsFriend {
+		return database.Message{}, nil, ErrNotFriends
 	}
 
 	message, err := s.queries.CreateMessage(ctx, database.CreateMessageParams{
@@ -50,13 +62,13 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 }
 
 func (s *Service) LoadMessages(ctx context.Context, userID, conversationID, beforeID string, limit uint32) ([]database.Message, bool, error) {
-	if !isUUID(conversationID) {
+	if !ids.Valid(conversationID) {
 		return nil, false, ErrConversationNotFound
 	}
 
 	var before *string
 	if beforeID != "" {
-		if !isUUID(beforeID) {
+		if !ids.Valid(beforeID) {
 			return nil, false, ErrInvalidCursor
 		}
 		before = &beforeID

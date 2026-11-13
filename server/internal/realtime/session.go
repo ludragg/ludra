@@ -12,6 +12,7 @@ import (
 	"ludra/internal/account"
 	"ludra/internal/chat"
 	"ludra/internal/failure"
+	"ludra/internal/friends"
 	"ludra/internal/protocol"
 )
 
@@ -26,6 +27,7 @@ type session struct {
 	hub       *hub
 	guard     *guard
 	chat      *chat.Service
+	friends   *friends.Service
 	account   *account.Service
 	ip        string
 	user      *protocol.User
@@ -185,6 +187,28 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.sendMessage(ctx, payload.SendMessage)
+	case *protocol.ClientFrame_ListFriends:
+		return s.listFriends(ctx)
+	case *protocol.ClientFrame_AddFriend:
+		if !s.guard.friendRequests.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.addFriend(ctx, payload.AddFriend)
+	case *protocol.ClientFrame_AcceptFriend:
+		if !s.guard.friendChanges.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.acceptFriend(ctx, payload.AcceptFriend)
+	case *protocol.ClientFrame_RemoveFriend:
+		if !s.guard.friendChanges.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.removeFriend(ctx, payload.RemoveFriend)
+	case *protocol.ClientFrame_SetPresence:
+		if !s.guard.presenceChanges.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.setPresence(ctx, payload.SetPresence)
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "unsupported request")
 	}
@@ -194,17 +218,20 @@ func (s *session) announce(presence protocol.Presence) {
 	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
 	defer cancel()
 
-	contacts, err := s.chat.Contacts(ctx, s.user.Id)
+	friendIDs, err := s.friends.IDs(ctx, s.user.Id)
 	if err != nil {
-		slog.Error("load contacts", "error", err)
+		slog.Error("load friends", "error", err)
 		return
 	}
-	s.hub.publish(contacts, presenceChangedFrame(s.user.Id, presence), nil)
+	s.hub.publish(friendIDs, presenceChangedFrame(s.user.Id, presence), nil)
 }
 
 func (s *session) conversation(conversation chat.Conversation) *protocol.Conversation {
 	result := toConversation(conversation)
-	result.Peer.Presence = s.hub.presence(result.Peer.Id)
+	result.Peer.Presence = protocol.Presence_PRESENCE_OFFLINE
+	if conversation.IsFriend {
+		result.Peer.Presence = s.hub.presence(result.Peer.Id)
+	}
 	return result
 }
 
@@ -255,6 +282,7 @@ var errorCodes = map[failure.Kind]protocol.ErrorCode{
 	failure.Unauthorized:    protocol.ErrorCode_ERROR_CODE_UNAUTHENTICATED,
 	failure.InvalidCode:     protocol.ErrorCode_ERROR_CODE_INVALID_CODE,
 	failure.TooManyRequests: protocol.ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS,
+	failure.Forbidden:       protocol.ErrorCode_ERROR_CODE_FORBIDDEN,
 }
 
 func failed(err error) *protocol.ServerFrame {

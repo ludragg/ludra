@@ -12,7 +12,7 @@ import type { Message as Message$1 } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/models.proto.
  */
 export const file_ludra_v1_models: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIkoKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSJ/CgdNZXNzYWdlEgoKAmlkGAEgASgJEhcKD2NvbnZlcnNhdGlvbl9pZBgCIAEoCRIRCglzZW5kZXJfaWQYAyABKAkSDwoHY29udGVudBgEIAEoCRIrCgdzZW50X2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJhCgxDb252ZXJzYXRpb24SCgoCaWQYASABKAkSHAoEcGVlchgCIAEoCzIOLmx1ZHJhLnYxLlVzZXISJwoMbGFzdF9tZXNzYWdlGAMgASgLMhEubHVkcmEudjEuTWVzc2FnZSpPCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhMKD1BSRVNFTkNFX09OTElORRABEhQKEFBSRVNFTkNFX09GRkxJTkUQAkJ1Cgxjb20ubHVkcmEudjFCC01vZGVsc1Byb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIkoKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSJ/CgdNZXNzYWdlEgoKAmlkGAEgASgJEhcKD2NvbnZlcnNhdGlvbl9pZBgCIAEoCRIRCglzZW5kZXJfaWQYAyABKAkSDwoHY29udGVudBgEIAEoCRIrCgdzZW50X2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJMCgZGcmllbmQSHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXISJAoFc3RhdGUYAiABKA4yFS5sdWRyYS52MS5GcmllbmRTdGF0ZSJhCgxDb252ZXJzYXRpb24SCgoCaWQYASABKAkSHAoEcGVlchgCIAEoCzIOLmx1ZHJhLnYxLlVzZXISJwoMbGFzdF9tZXNzYWdlGAMgASgLMhEubHVkcmEudjEuTWVzc2FnZSpnCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhMKD1BSRVNFTkNFX09OTElORRABEhQKEFBSRVNFTkNFX09GRkxJTkUQAhIWChJQUkVTRU5DRV9JTlZJU0lCTEUQAyp8CgtGcmllbmRTdGF0ZRIcChhGUklFTkRfU1RBVEVfVU5TUEVDSUZJRUQQABIZChVGUklFTkRfU1RBVEVfQUNDRVBURUQQARIZChVGUklFTkRfU1RBVEVfSU5DT01JTkcQAhIZChVGUklFTkRfU1RBVEVfT1VUR09JTkcQA0J1Cgxjb20ubHVkcmEudjFCC01vZGVsc1Byb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message ludra.v1.User
@@ -79,6 +79,28 @@ export const MessageSchema: GenMessage<Message> = /*@__PURE__*/
   messageDesc(file_ludra_v1_models, 1);
 
 /**
+ * @generated from message ludra.v1.Friend
+ */
+export type Friend = Message$1<"ludra.v1.Friend"> & {
+  /**
+   * @generated from field: ludra.v1.User user = 1;
+   */
+  user?: User | undefined;
+
+  /**
+   * @generated from field: ludra.v1.FriendState state = 2;
+   */
+  state: FriendState;
+};
+
+/**
+ * Describes the message ludra.v1.Friend.
+ * Use `create(FriendSchema)` to create a new message.
+ */
+export const FriendSchema: GenMessage<Friend> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 2);
+
+/**
  * @generated from message ludra.v1.Conversation
  */
 export type Conversation = Message$1<"ludra.v1.Conversation"> & {
@@ -103,7 +125,7 @@ export type Conversation = Message$1<"ludra.v1.Conversation"> & {
  * Use `create(ConversationSchema)` to create a new message.
  */
 export const ConversationSchema: GenMessage<Conversation> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 2);
+  messageDesc(file_ludra_v1_models, 3);
 
 /**
  * @generated from enum ludra.v1.Presence
@@ -123,6 +145,11 @@ export enum Presence {
    * @generated from enum value: PRESENCE_OFFLINE = 2;
    */
   OFFLINE = 2,
+
+  /**
+   * @generated from enum value: PRESENCE_INVISIBLE = 3;
+   */
+  INVISIBLE = 3,
 }
 
 /**
@@ -130,4 +157,35 @@ export enum Presence {
  */
 export const PresenceSchema: GenEnum<Presence> = /*@__PURE__*/
   enumDesc(file_ludra_v1_models, 0);
+
+/**
+ * @generated from enum ludra.v1.FriendState
+ */
+export enum FriendState {
+  /**
+   * @generated from enum value: FRIEND_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: FRIEND_STATE_ACCEPTED = 1;
+   */
+  ACCEPTED = 1,
+
+  /**
+   * @generated from enum value: FRIEND_STATE_INCOMING = 2;
+   */
+  INCOMING = 2,
+
+  /**
+   * @generated from enum value: FRIEND_STATE_OUTGOING = 3;
+   */
+  OUTGOING = 3,
+}
+
+/**
+ * Describes the enum ludra.v1.FriendState.
+ */
+export const FriendStateSchema: GenEnum<FriendState> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_models, 1);
 

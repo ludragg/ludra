@@ -16,6 +16,7 @@ import (
 	"ludra/internal/chat"
 	"ludra/internal/config"
 	"ludra/internal/database"
+	"ludra/internal/friends"
 	"ludra/internal/mail"
 	"ludra/internal/realtime"
 )
@@ -43,7 +44,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	gateway := realtime.NewGateway(chat.NewService(pool), accounts, cfg.Origins)
+	gateway := realtime.NewGateway(chat.NewService(pool), friends.NewService(pool), accounts, cfg.Origins)
 	go cleanup(ctx, accounts)
 
 	if cfg.Mail.Host == "" {

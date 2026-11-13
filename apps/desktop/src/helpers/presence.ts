@@ -4,4 +4,5 @@ export const presenceLabel: Record<Presence, string> = {
   [Presence.UNSPECIFIED]: "Offline",
   [Presence.ONLINE]: "Online",
   [Presence.OFFLINE]: "Offline",
+  [Presence.INVISIBLE]: "Invisível",
 };

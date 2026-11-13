@@ -1,0 +1,282 @@
+<script lang="ts">
+  import { FriendState, Presence, type Friend } from "@/protocol/ludra/v1/models_pb";
+  import { chat } from "@/stores/chat.svelte";
+  import FriendAction from "./friend-action.svelte";
+  import FriendRow from "./friend-row.svelte";
+  import FriendsAdd from "./friends-add.svelte";
+
+  type Tab = "online" | "all" | "pending" | "add";
+
+  const tabs: { id: Exclude<Tab, "add">; label: string }[] = [
+    { id: "online", label: "Online" },
+    { id: "all", label: "Todos" },
+    { id: "pending", label: "Pendentes" },
+  ];
+
+  let tab = $state<Tab>("online");
+
+  const accepted = $derived(chat.friends.filter(({ state }) => state === FriendState.ACCEPTED));
+  const online = $derived(accepted.filter(({ user }) => user?.presence === Presence.ONLINE));
+  const incoming = $derived(chat.friends.filter(({ state }) => state === FriendState.INCOMING));
+  const outgoing = $derived(chat.friends.filter(({ state }) => state === FriendState.OUTGOING));
+
+  function run(action: Promise<unknown>) {
+    action.catch(() => undefined);
+  }
+</script>
+
+{#snippet friendList(title: string, list: Friend[], empty: string)}
+  {#if list.length > 0}
+    <div class="friends__group">
+      <span class="friends__label">{title} — {list.length}</span>
+      <ul class="friends__list">
+        {#each list as friend (friend.user!.id)}
+          <FriendRow {friend}>
+            <FriendAction
+              icon="message"
+              label="Mensagem para {friend.user!.username}"
+              onclick={() => run(chat.start(friend.user!.username))}
+            />
+            <FriendAction
+              icon="remove"
+              label="Remover {friend.user!.username}"
+              onclick={() => run(chat.removeFriend(friend.user!.id))}
+            />
+          </FriendRow>
+        {/each}
+      </ul>
+    </div>
+  {:else}
+    <p class="friends__empty">{empty}</p>
+  {/if}
+{/snippet}
+
+<header class="friends__header">
+  <div class="friends__title">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+    <h1 class="friends__heading">Amigos</h1>
+  </div>
+  <span class="friends__divider" aria-hidden="true"></span>
+  <div class="friends__tabs" role="tablist" aria-label="Filtro de amigos">
+    {#each tabs as item (item.id)}
+      <button
+        class="friends__tab"
+        class:friends__tab--active={tab === item.id}
+        role="tab"
+        aria-selected={tab === item.id}
+        onclick={() => (tab = item.id)}
+      >
+        {item.label}
+        {#if item.id === "pending" && incoming.length > 0}
+          <span class="friends__badge">{incoming.length}</span>
+        {/if}
+      </button>
+    {/each}
+    <button
+      class="friends__tab friends__tab--add"
+      class:friends__tab--add-active={tab === "add"}
+      role="tab"
+      aria-selected={tab === "add"}
+      onclick={() => (tab = "add")}
+    >
+      Adicionar amigo
+    </button>
+  </div>
+</header>
+
+<section class="friends__content" aria-label="Amigos">
+  {#if tab === "online"}
+    {@render friendList("Online", online, "Nenhum amigo online agora.")}
+  {:else if tab === "all"}
+    {@render friendList("Todos os amigos", accepted, "Você ainda não tem amigos.")}
+  {:else if tab === "pending"}
+    {#if incoming.length === 0 && outgoing.length === 0}
+      <p class="friends__empty">Nenhum pedido pendente.</p>
+    {/if}
+    {#if incoming.length > 0}
+      <div class="friends__group">
+        <span class="friends__label">Recebidos — {incoming.length}</span>
+        <ul class="friends__list">
+          {#each incoming as friend (friend.user!.id)}
+            <FriendRow {friend}>
+              <FriendAction
+                icon="accept"
+                label="Aceitar {friend.user!.username}"
+                onclick={() => run(chat.acceptFriend(friend.user!.id))}
+              />
+              <FriendAction
+                icon="decline"
+                label="Recusar {friend.user!.username}"
+                onclick={() => run(chat.removeFriend(friend.user!.id))}
+              />
+            </FriendRow>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+    {#if outgoing.length > 0}
+      <div class="friends__group">
+        <span class="friends__label">Enviados — {outgoing.length}</span>
+        <ul class="friends__list">
+          {#each outgoing as friend (friend.user!.id)}
+            <FriendRow {friend}>
+              <FriendAction
+                icon="decline"
+                label="Cancelar pedido para {friend.user!.username}"
+                onclick={() => run(chat.removeFriend(friend.user!.id))}
+              />
+            </FriendRow>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+  {:else}
+    <FriendsAdd />
+  {/if}
+</section>
+
+<style>
+  .friends__header {
+    min-height: 57px;
+    padding: 12px var(--page-gutter);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .friends__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted-color);
+  }
+
+  .friends__title svg {
+    width: 20px;
+  }
+
+  .friends__heading {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .friends__divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-color);
+  }
+
+  .friends__tabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .friends__tab {
+    height: 32px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--subtle-color);
+    font-size: var(--hint-font-size);
+    font-weight: 600;
+    transition: all ease 0.1s;
+  }
+
+  .friends__tab:hover {
+    background: var(--surface-color);
+    color: var(--muted-color);
+  }
+
+  .friends__tab--active,
+  .friends__tab--active:hover {
+    background: var(--active-color);
+    color: var(--muted-color);
+  }
+
+  .friends__tab--add,
+  .friends__tab--add:hover {
+    background: var(--brand-color);
+    color: var(--dark-background-color);
+  }
+
+  .friends__tab--add-active,
+  .friends__tab--add-active:hover {
+    background: transparent;
+    color: var(--brand-color);
+  }
+
+  .friends__badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px 1px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: var(--brand-color);
+    color: var(--dark-background-color);
+    font-size: var(--tiny-font-size);
+    font-weight: 700;
+  }
+
+  .friends__content {
+    min-height: 0;
+    padding: 20px var(--page-gutter);
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .friends__group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .friends__label {
+    padding: 0 8px 8px;
+    font-size: var(--small-font-size);
+    font-weight: 600;
+    color: var(--subtle-color);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .friends__list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    list-style: none;
+  }
+
+  .friends__empty {
+    margin: 0;
+    padding: 0 8px;
+    color: var(--subtle-color);
+  }
+</style>

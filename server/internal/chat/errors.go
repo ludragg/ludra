@@ -9,4 +9,5 @@ var (
 	ErrInvalidCursor        = failure.New(failure.Invalid, "invalid cursor")
 	ErrUserNotFound         = failure.New(failure.NotFound, "user not found")
 	ErrConversationNotFound = failure.New(failure.NotFound, "conversation not found")
+	ErrNotFriends           = failure.New(failure.Forbidden, "not friends")
 )

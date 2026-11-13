@@ -6,8 +6,12 @@
 </script>
 
 <span class="status">
-  <span class="status__dot" class:status__dot--online={presence === Presence.ONLINE}></span>
-  {presenceLabel[presence]}
+  <span
+    class="status__dot"
+    class:status__dot--online={presence === Presence.ONLINE}
+    class:status__dot--invisible={presence === Presence.INVISIBLE}
+  ></span>
+  <span class="status__label">{presenceLabel[presence]}</span>
 </span>
 
 <style>
@@ -27,7 +31,16 @@
     background: var(--subtle-color);
   }
 
+  .status__label {
+    transform: translateY(1px);
+  }
+
   .status__dot--online {
     background: var(--success-color);
+  }
+
+  .status__dot--invisible {
+    background: transparent;
+    border: 2px solid var(--subtle-color);
   }
 </style>

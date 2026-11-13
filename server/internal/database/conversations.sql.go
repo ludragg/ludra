@@ -26,6 +26,35 @@ func (q *Queries) AddParticipant(ctx context.Context, arg AddParticipantParams) 
 	return err
 }
 
+const getDirectPeer = `-- name: GetDirectPeer :one
+SELECT
+    other.user_id,
+    EXISTS (
+        SELECT 1 FROM friendships f
+        WHERE f.user_id = me.user_id AND f.friend_id = other.user_id
+    ) AS is_friend
+FROM participants me
+JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
+WHERE me.conversation_id = $1 AND me.user_id = $2
+`
+
+type GetDirectPeerParams struct {
+	ConversationID string
+	UserID         string
+}
+
+type GetDirectPeerRow struct {
+	UserID   string
+	IsFriend bool
+}
+
+func (q *Queries) GetDirectPeer(ctx context.Context, arg GetDirectPeerParams) (GetDirectPeerRow, error) {
+	row := q.db.QueryRow(ctx, getDirectPeer, arg.ConversationID, arg.UserID)
+	var i GetDirectPeerRow
+	err := row.Scan(&i.UserID, &i.IsFriend)
+	return i, err
+}
+
 const isParticipant = `-- name: IsParticipant :one
 SELECT EXISTS (
     SELECT 1 FROM participants
@@ -45,38 +74,15 @@ func (q *Queries) IsParticipant(ctx context.Context, arg IsParticipantParams) (b
 	return exists, err
 }
 
-const listContactIDs = `-- name: ListContactIDs :many
-SELECT DISTINCT other.user_id
-FROM participants me
-JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
-WHERE me.user_id = $1
-`
-
-func (q *Queries) ListContactIDs(ctx context.Context, userID string) ([]string, error) {
-	rows, err := q.db.Query(ctx, listContactIDs, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var user_id string
-		if err := rows.Scan(&user_id); err != nil {
-			return nil, err
-		}
-		items = append(items, user_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listConversations = `-- name: ListConversations :many
 SELECT
     c.id,
     peer.id AS peer_id,
     peer.username AS peer_username,
+    EXISTS (
+        SELECT 1 FROM friendships f
+        WHERE f.user_id = me.user_id AND f.friend_id = peer.id
+    ) AS is_friend,
     last.id AS last_message_id,
     last.sender_id AS last_message_sender_id,
     last.content AS last_message_content,
@@ -99,6 +105,7 @@ type ListConversationsRow struct {
 	ID                   string
 	PeerID               string
 	PeerUsername         string
+	IsFriend             bool
 	LastMessageID        *string
 	LastMessageSenderID  *string
 	LastMessageContent   *string
@@ -118,6 +125,7 @@ func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListC
 			&i.ID,
 			&i.PeerID,
 			&i.PeerUsername,
+			&i.IsFriend,
 			&i.LastMessageID,
 			&i.LastMessageSenderID,
 			&i.LastMessageContent,

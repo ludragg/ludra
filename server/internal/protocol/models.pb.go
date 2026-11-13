@@ -28,6 +28,7 @@ const (
 	Presence_PRESENCE_UNSPECIFIED Presence = 0
 	Presence_PRESENCE_ONLINE      Presence = 1
 	Presence_PRESENCE_OFFLINE     Presence = 2
+	Presence_PRESENCE_INVISIBLE   Presence = 3
 )
 
 // Enum value maps for Presence.
@@ -36,11 +37,13 @@ var (
 		0: "PRESENCE_UNSPECIFIED",
 		1: "PRESENCE_ONLINE",
 		2: "PRESENCE_OFFLINE",
+		3: "PRESENCE_INVISIBLE",
 	}
 	Presence_value = map[string]int32{
 		"PRESENCE_UNSPECIFIED": 0,
 		"PRESENCE_ONLINE":      1,
 		"PRESENCE_OFFLINE":     2,
+		"PRESENCE_INVISIBLE":   3,
 	}
 )
 
@@ -69,6 +72,58 @@ func (x Presence) Number() protoreflect.EnumNumber {
 // Deprecated: Use Presence.Descriptor instead.
 func (Presence) EnumDescriptor() ([]byte, []int) {
 	return file_ludra_v1_models_proto_rawDescGZIP(), []int{0}
+}
+
+type FriendState int32
+
+const (
+	FriendState_FRIEND_STATE_UNSPECIFIED FriendState = 0
+	FriendState_FRIEND_STATE_ACCEPTED    FriendState = 1
+	FriendState_FRIEND_STATE_INCOMING    FriendState = 2
+	FriendState_FRIEND_STATE_OUTGOING    FriendState = 3
+)
+
+// Enum value maps for FriendState.
+var (
+	FriendState_name = map[int32]string{
+		0: "FRIEND_STATE_UNSPECIFIED",
+		1: "FRIEND_STATE_ACCEPTED",
+		2: "FRIEND_STATE_INCOMING",
+		3: "FRIEND_STATE_OUTGOING",
+	}
+	FriendState_value = map[string]int32{
+		"FRIEND_STATE_UNSPECIFIED": 0,
+		"FRIEND_STATE_ACCEPTED":    1,
+		"FRIEND_STATE_INCOMING":    2,
+		"FRIEND_STATE_OUTGOING":    3,
+	}
+)
+
+func (x FriendState) Enum() *FriendState {
+	p := new(FriendState)
+	*p = x
+	return p
+}
+
+func (x FriendState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FriendState) Descriptor() protoreflect.EnumDescriptor {
+	return file_ludra_v1_models_proto_enumTypes[1].Descriptor()
+}
+
+func (FriendState) Type() protoreflect.EnumType {
+	return &file_ludra_v1_models_proto_enumTypes[1]
+}
+
+func (x FriendState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FriendState.Descriptor instead.
+func (FriendState) EnumDescriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{1}
 }
 
 type User struct {
@@ -207,6 +262,58 @@ func (x *Message) GetSentAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type Friend struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	State         FriendState            `protobuf:"varint,2,opt,name=state,proto3,enum=ludra.v1.FriendState" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Friend) Reset() {
+	*x = Friend{}
+	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Friend) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Friend) ProtoMessage() {}
+
+func (x *Friend) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Friend.ProtoReflect.Descriptor instead.
+func (*Friend) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Friend) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *Friend) GetState() FriendState {
+	if x != nil {
+		return x.State
+	}
+	return FriendState_FRIEND_STATE_UNSPECIFIED
+}
+
 type Conversation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -218,7 +325,7 @@ type Conversation struct {
 
 func (x *Conversation) Reset() {
 	*x = Conversation{}
-	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -230,7 +337,7 @@ func (x *Conversation) String() string {
 func (*Conversation) ProtoMessage() {}
 
 func (x *Conversation) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +350,7 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
 func (*Conversation) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{2}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Conversation) GetId() string {
@@ -281,15 +388,24 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
 	"\tsender_id\x18\x03 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x04 \x01(\tR\acontent\x123\n" +
-	"\asent_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAt\"x\n" +
+	"\asent_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAt\"Y\n" +
+	"\x06Friend\x12\"\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user\x12+\n" +
+	"\x05state\x18\x02 \x01(\x0e2\x15.ludra.v1.FriendStateR\x05state\"x\n" +
 	"\fConversation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\x04peer\x18\x02 \x01(\v2\x0e.ludra.v1.UserR\x04peer\x124\n" +
-	"\flast_message\x18\x03 \x01(\v2\x11.ludra.v1.MessageR\vlastMessage*O\n" +
+	"\flast_message\x18\x03 \x01(\v2\x11.ludra.v1.MessageR\vlastMessage*g\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fPRESENCE_ONLINE\x10\x01\x12\x14\n" +
-	"\x10PRESENCE_OFFLINE\x10\x02Bu\n" +
+	"\x10PRESENCE_OFFLINE\x10\x02\x12\x16\n" +
+	"\x12PRESENCE_INVISIBLE\x10\x03*|\n" +
+	"\vFriendState\x12\x1c\n" +
+	"\x18FRIEND_STATE_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15FRIEND_STATE_ACCEPTED\x10\x01\x12\x19\n" +
+	"\x15FRIEND_STATE_INCOMING\x10\x02\x12\x19\n" +
+	"\x15FRIEND_STATE_OUTGOING\x10\x03Bu\n" +
 	"\fcom.ludra.v1B\vModelsProtoP\x01Z\x17ludra/internal/protocol\xa2\x02\x03LXX\xaa\x02\bLudra.V1\xca\x02\bLudra\\V1\xe2\x02\x14Ludra\\V1\\GPBMetadata\xea\x02\tLudra::V1b\x06proto3"
 
 var (
@@ -304,25 +420,29 @@ func file_ludra_v1_models_proto_rawDescGZIP() []byte {
 	return file_ludra_v1_models_proto_rawDescData
 }
 
-var file_ludra_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_ludra_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_ludra_v1_models_proto_goTypes = []any{
 	(Presence)(0),                 // 0: ludra.v1.Presence
-	(*User)(nil),                  // 1: ludra.v1.User
-	(*Message)(nil),               // 2: ludra.v1.Message
-	(*Conversation)(nil),          // 3: ludra.v1.Conversation
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(FriendState)(0),              // 1: ludra.v1.FriendState
+	(*User)(nil),                  // 2: ludra.v1.User
+	(*Message)(nil),               // 3: ludra.v1.Message
+	(*Friend)(nil),                // 4: ludra.v1.Friend
+	(*Conversation)(nil),          // 5: ludra.v1.Conversation
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
 }
 var file_ludra_v1_models_proto_depIdxs = []int32{
 	0, // 0: ludra.v1.User.presence:type_name -> ludra.v1.Presence
-	4, // 1: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
-	1, // 2: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
-	2, // 3: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 1: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
+	2, // 2: ludra.v1.Friend.user:type_name -> ludra.v1.User
+	1, // 3: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
+	2, // 4: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
+	3, // 5: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_models_proto_init() }
@@ -335,8 +455,8 @@ func file_ludra_v1_models_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_models_proto_rawDesc), len(file_ludra_v1_models_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

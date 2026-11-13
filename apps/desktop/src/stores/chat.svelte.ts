@@ -1,5 +1,12 @@
 import type { CodePurpose } from "@/protocol/ludra/v1/client_pb";
-import type { Conversation, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
+import {
+  FriendState,
+  Presence,
+  type Conversation,
+  type Friend,
+  type Message,
+  type User,
+} from "@/protocol/ludra/v1/models_pb";
 import { Client, ServerError, type SignIn } from "@/services/client";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
 
@@ -16,12 +23,14 @@ class ChatStore {
   restoring = $state(true);
   notice = $state("");
   conversations = $state<Conversation[]>([]);
+  friends = $state<Friend[]>([]);
   activeId = $state<string | null>(null);
   threads = $state<Record<string, Thread>>({});
   unread = $state<Record<string, number>>({});
 
   active = $derived(this.conversations.find((conversation) => conversation.id === this.activeId) ?? null);
   thread = $derived(this.activeId ? this.threads[this.activeId] : undefined);
+  incoming = $derived(this.friends.filter(({ state }) => state === FriendState.INCOMING).length);
 
   #client: Client | null = null;
 
@@ -94,22 +103,53 @@ class ChatStore {
       }
 
       const { user, token } = result.account;
-      const conversations = await client.listConversations();
+      const [conversations, friends] = await Promise.all([client.listConversations(), client.listFriends()]);
       saveSessionToken(token);
 
       client.onMessage = (message) => this.#receive(message);
       client.onPresence = (userId, presence) => this.#presence(userId, presence);
+      client.onFriend = (friend) => this.#friend(friend);
+      client.onFriendRemoved = (userId) => this.#unfriend(userId);
       client.onClose = () => this.#reset("Conexão com o servidor perdida.");
 
       this.#client = client;
       this.user = user;
       this.conversations = conversations;
+      this.friends = friends;
       this.notice = "";
       return null;
     } catch (error) {
       client.close();
       throw error;
     }
+  }
+
+  showFriends() {
+    this.activeId = null;
+  }
+
+  isFriend(userId: string) {
+    return this.friends.some(({ user, state }) => user?.id === userId && state === FriendState.ACCEPTED);
+  }
+
+  async addFriend(username: string): Promise<Friend> {
+    const friend = await this.#client!.addFriend(username);
+    this.#friend(friend);
+    return friend;
+  }
+
+  async acceptFriend(userId: string) {
+    this.#friend(await this.#client!.acceptFriend(userId));
+  }
+
+  async removeFriend(userId: string) {
+    await this.#client!.removeFriend(userId);
+    this.#unfriend(userId);
+  }
+
+  async setPresence(presence: Presence) {
+    await this.#client!.setPresence(presence);
+    this.#presence(this.user!.id, presence);
   }
 
   async select(conversationId: string) {
@@ -178,6 +218,36 @@ class ChatStore {
   }
 
   #presence(userId: string, presence: Presence) {
+    if (this.user?.id === userId) {
+      this.user.presence = presence;
+      return;
+    }
+
+    for (const { user } of this.friends) {
+      if (user?.id === userId) {
+        user.presence = presence;
+      }
+    }
+    this.#peerPresence(userId, presence);
+  }
+
+  #friend(friend: Friend) {
+    const id = friend.user!.id;
+    this.friends = [...this.friends.filter(({ user }) => user?.id !== id), friend].sort((a, b) =>
+      a.user!.username.localeCompare(b.user!.username),
+    );
+
+    if (friend.state === FriendState.ACCEPTED) {
+      this.#peerPresence(id, friend.user!.presence);
+    }
+  }
+
+  #unfriend(userId: string) {
+    this.friends = this.friends.filter(({ user }) => user?.id !== userId);
+    this.#peerPresence(userId, Presence.OFFLINE);
+  }
+
+  #peerPresence(userId: string, presence: Presence) {
     for (const { peer } of this.conversations) {
       if (peer?.id === userId) {
         peer.presence = presence;
@@ -189,6 +259,7 @@ class ChatStore {
     this.#client = null;
     this.user = null;
     this.conversations = [];
+    this.friends = [];
     this.activeId = null;
     this.threads = {};
     this.unread = {};

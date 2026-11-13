@@ -22,3 +22,11 @@ WHERE id = $1 AND email_verified_at IS NULL;
 -- name: UpdatePassword :exec
 UPDATE users SET password_hash = $2
 WHERE id = $1;
+
+-- name: GetUser :one
+SELECT * FROM users
+WHERE id = $1;
+
+-- name: SetInvisible :exec
+UPDATE users SET invisible = $2
+WHERE id = $1;

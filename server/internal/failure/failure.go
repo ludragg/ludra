@@ -10,6 +10,7 @@ const (
 	Unauthorized
 	InvalidCode
 	TooManyRequests
+	Forbidden
 )
 
 type Error struct {

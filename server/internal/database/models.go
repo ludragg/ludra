@@ -14,6 +14,18 @@ type Conversation struct {
 	DirectKey *string
 }
 
+type FriendRequest struct {
+	SenderID    string
+	RecipientID string
+	CreatedAt   time.Time
+}
+
+type Friendship struct {
+	UserID    string
+	FriendID  string
+	CreatedAt time.Time
+}
+
 type Message struct {
 	ID             string
 	ConversationID string
@@ -42,6 +54,7 @@ type User struct {
 	Email           string
 	PasswordHash    string
 	EmailVerifiedAt *time.Time
+	Invisible       bool
 }
 
 type VerificationCode struct {

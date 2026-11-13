@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Conversation, Message as Message$1, Presence, User } from "./models_pb";
+import type { Conversation, Friend, Message as Message$1, Presence, User } from "./models_pb";
 import { file_ludra_v1_models } from "./models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/server.proto.
  */
 export const file_ludra_v1_server: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIqMECgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SABCCQoHcGF5bG9hZCI7CgVFcnJvchIhCgRjb2RlGAEgASgOMhMubHVkcmEudjEuRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkiNwoITG9nZ2VkSW4SHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXISDQoFdG9rZW4YAiABKAkiCwoJTG9nZ2VkT3V0IiUKFFZlcmlmaWNhdGlvblJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIgoKCENvZGVTZW50IkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSqcAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpFUlJPUl9DT0RFX0lOVkFMSURfUkVRVUVTVBABEh4KGkVSUk9SX0NPREVfVU5BVVRIRU5USUNBVEVEEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEAQSIgoeRVJST1JfQ09ERV9JTlZBTElEX0NSRURFTlRJQUxTEAUSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAGEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9DT0RFEAcSIAocRVJST1JfQ09ERV9UT09fTUFOWV9SRVFVRVNUUxAIQnUKDGNvbS5sdWRyYS52MUILU2VydmVyUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_ludra_v1_models]);
+  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIrYFCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SAASKwoLZnJpZW5kX2xpc3QYDCABKAsyFC5sdWRyYS52MS5GcmllbmRMaXN0SAASMQoOZnJpZW5kX3VwZGF0ZWQYDSABKAsyFy5sdWRyYS52MS5GcmllbmRVcGRhdGVkSAASMQoOZnJpZW5kX3JlbW92ZWQYDiABKAsyFy5sdWRyYS52MS5GcmllbmRSZW1vdmVkSABCCQoHcGF5bG9hZCI7CgVFcnJvchIhCgRjb2RlGAEgASgOMhMubHVkcmEudjEuRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkiNwoITG9nZ2VkSW4SHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXISDQoFdG9rZW4YAiABKAkiCwoJTG9nZ2VkT3V0IiUKFFZlcmlmaWNhdGlvblJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIgoKCENvZGVTZW50IkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSIvCgpGcmllbmRMaXN0EiEKB2ZyaWVuZHMYASADKAsyEC5sdWRyYS52MS5GcmllbmQiMQoNRnJpZW5kVXBkYXRlZBIgCgZmcmllbmQYASABKAsyEC5sdWRyYS52MS5GcmllbmQiIAoNRnJpZW5kUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJKrYCCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEh4KGkVSUk9SX0NPREVfSU5WQUxJRF9SRVFVRVNUEAESHgoaRVJST1JfQ09ERV9VTkFVVEhFTlRJQ0FURUQQAhIYChRFUlJPUl9DT0RFX05PVF9GT1VORBADEhcKE0VSUk9SX0NPREVfSU5URVJOQUwQBBIiCh5FUlJPUl9DT0RFX0lOVkFMSURfQ1JFREVOVElBTFMQBRIdChlFUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAYSGwoXRVJST1JfQ09ERV9JTlZBTElEX0NPREUQBxIgChxFUlJPUl9DT0RFX1RPT19NQU5ZX1JFUVVFU1RTEAgSGAoURVJST1JfQ09ERV9GT1JCSURERU4QCUJ1Cgxjb20ubHVkcmEudjFCC1NlcnZlclByb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ServerFrame
@@ -86,6 +86,24 @@ export type ServerFrame = Message<"ludra.v1.ServerFrame"> & {
      */
     value: CodeSent;
     case: "codeSent";
+  } | {
+    /**
+     * @generated from field: ludra.v1.FriendList friend_list = 12;
+     */
+    value: FriendList;
+    case: "friendList";
+  } | {
+    /**
+     * @generated from field: ludra.v1.FriendUpdated friend_updated = 13;
+     */
+    value: FriendUpdated;
+    case: "friendUpdated";
+  } | {
+    /**
+     * @generated from field: ludra.v1.FriendRemoved friend_removed = 14;
+     */
+    value: FriendRemoved;
+    case: "friendRemoved";
   } | { case: undefined; value?: undefined };
 };
 
@@ -284,6 +302,57 @@ export const PresenceChangedSchema: GenMessage<PresenceChanged> = /*@__PURE__*/
   messageDesc(file_ludra_v1_server, 10);
 
 /**
+ * @generated from message ludra.v1.FriendList
+ */
+export type FriendList = Message<"ludra.v1.FriendList"> & {
+  /**
+   * @generated from field: repeated ludra.v1.Friend friends = 1;
+   */
+  friends: Friend[];
+};
+
+/**
+ * Describes the message ludra.v1.FriendList.
+ * Use `create(FriendListSchema)` to create a new message.
+ */
+export const FriendListSchema: GenMessage<FriendList> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 11);
+
+/**
+ * @generated from message ludra.v1.FriendUpdated
+ */
+export type FriendUpdated = Message<"ludra.v1.FriendUpdated"> & {
+  /**
+   * @generated from field: ludra.v1.Friend friend = 1;
+   */
+  friend?: Friend | undefined;
+};
+
+/**
+ * Describes the message ludra.v1.FriendUpdated.
+ * Use `create(FriendUpdatedSchema)` to create a new message.
+ */
+export const FriendUpdatedSchema: GenMessage<FriendUpdated> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 12);
+
+/**
+ * @generated from message ludra.v1.FriendRemoved
+ */
+export type FriendRemoved = Message<"ludra.v1.FriendRemoved"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+};
+
+/**
+ * Describes the message ludra.v1.FriendRemoved.
+ * Use `create(FriendRemovedSchema)` to create a new message.
+ */
+export const FriendRemovedSchema: GenMessage<FriendRemoved> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 13);
+
+/**
  * @generated from enum ludra.v1.ErrorCode
  */
 export enum ErrorCode {
@@ -331,6 +400,11 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_TOO_MANY_REQUESTS = 8;
    */
   TOO_MANY_REQUESTS = 8,
+
+  /**
+   * @generated from enum value: ERROR_CODE_FORBIDDEN = 9;
+   */
+  FORBIDDEN = 9,
 }
 
 /**

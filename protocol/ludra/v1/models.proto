@@ -8,6 +8,14 @@ enum Presence {
   PRESENCE_UNSPECIFIED = 0;
   PRESENCE_ONLINE = 1;
   PRESENCE_OFFLINE = 2;
+  PRESENCE_INVISIBLE = 3;
+}
+
+enum FriendState {
+  FRIEND_STATE_UNSPECIFIED = 0;
+  FRIEND_STATE_ACCEPTED = 1;
+  FRIEND_STATE_INCOMING = 2;
+  FRIEND_STATE_OUTGOING = 3;
 }
 
 message User {
@@ -22,6 +30,11 @@ message Message {
   string sender_id = 3;
   string content = 4;
   google.protobuf.Timestamp sent_at = 5;
+}
+
+message Friend {
+  User user = 1;
+  FriendState state = 2;
 }
 
 message Conversation {

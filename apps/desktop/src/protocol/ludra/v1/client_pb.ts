@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Presence } from "./models_pb";
+import { file_ludra_v1_models } from "./models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file ludra/v1/client.proto.
  */
 export const file_ludra_v1_client: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIp0ECgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAEiYKCHJlZ2lzdGVyGAcgASgLMhIubHVkcmEudjEuUmVnaXN0ZXJIABIiCgZyZXN1bWUYCCABKAsyEC5sdWRyYS52MS5SZXN1bWVIABIiCgZsb2dvdXQYCSABKAsyEC5sdWRyYS52MS5Mb2dvdXRIABItCgx2ZXJpZnlfZW1haWwYCiABKAsyFS5sdWRyYS52MS5WZXJpZnlFbWFpbEgAEicKCXNlbmRfY29kZRgLIAEoCzISLmx1ZHJhLnYxLlNlbmRDb2RlSAASMQoOcmVzZXRfcGFzc3dvcmQYDCABKAsyFy5sdWRyYS52MS5SZXNldFBhc3N3b3JkSABCCQoHcGF5bG9hZCI9CghSZWdpc3RlchINCgVlbWFpbBgBIAEoCRIQCgh1c2VybmFtZRgCIAEoCRIQCghwYXNzd29yZBgDIAEoCSIoCgVMb2dpbhINCgVsb2dpbhgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSIqCgtWZXJpZnlFbWFpbBINCgVlbWFpbBgBIAEoCRIMCgRjb2RlGAIgASgJIkEKCFNlbmRDb2RlEg0KBWVtYWlsGAEgASgJEiYKB3B1cnBvc2UYAiABKA4yFS5sdWRyYS52MS5Db2RlUHVycG9zZSI+Cg1SZXNldFBhc3N3b3JkEg0KBWVtYWlsGAEgASgJEgwKBGNvZGUYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkiFwoGUmVzdW1lEg0KBXRva2VuGAEgASgJIggKBkxvZ291dCITChFMaXN0Q29udmVyc2F0aW9ucyIkChBPcGVuQ29udmVyc2F0aW9uEhAKCHVzZXJuYW1lGAEgASgJIkkKDExvYWRNZXNzYWdlcxIXCg9jb252ZXJzYXRpb25faWQYASABKAkSEQoJYmVmb3JlX2lkGAIgASgJEg0KBWxpbWl0GAMgASgNIjcKC1NlbmRNZXNzYWdlEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIPCgdjb250ZW50GAIgASgJKmsKC0NvZGVQdXJwb3NlEhwKGENPREVfUFVSUE9TRV9VTlNQRUNJRklFRBAAEh0KGUNPREVfUFVSUE9TRV9WRVJJRllfRU1BSUwQARIfChtDT0RFX1BVUlBPU0VfUkVTRVRfUEFTU1dPUkQQAkJ1Cgxjb20ubHVkcmEudjFCC0NsaWVudFByb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM");
+  fileDesc("ChVsdWRyYS92MS9jbGllbnQucHJvdG8SCGx1ZHJhLnYxIogGCgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWxvZ2luGAIgASgLMg8ubHVkcmEudjEuTG9naW5IABI5ChJsaXN0X2NvbnZlcnNhdGlvbnMYAyABKAsyGy5sdWRyYS52MS5MaXN0Q29udmVyc2F0aW9uc0gAEjcKEW9wZW5fY29udmVyc2F0aW9uGAQgASgLMhoubHVkcmEudjEuT3BlbkNvbnZlcnNhdGlvbkgAEi8KDWxvYWRfbWVzc2FnZXMYBSABKAsyFi5sdWRyYS52MS5Mb2FkTWVzc2FnZXNIABItCgxzZW5kX21lc3NhZ2UYBiABKAsyFS5sdWRyYS52MS5TZW5kTWVzc2FnZUgAEiYKCHJlZ2lzdGVyGAcgASgLMhIubHVkcmEudjEuUmVnaXN0ZXJIABIiCgZyZXN1bWUYCCABKAsyEC5sdWRyYS52MS5SZXN1bWVIABIiCgZsb2dvdXQYCSABKAsyEC5sdWRyYS52MS5Mb2dvdXRIABItCgx2ZXJpZnlfZW1haWwYCiABKAsyFS5sdWRyYS52MS5WZXJpZnlFbWFpbEgAEicKCXNlbmRfY29kZRgLIAEoCzISLmx1ZHJhLnYxLlNlbmRDb2RlSAASMQoOcmVzZXRfcGFzc3dvcmQYDCABKAsyFy5sdWRyYS52MS5SZXNldFBhc3N3b3JkSAASLQoMbGlzdF9mcmllbmRzGA0gASgLMhUubHVkcmEudjEuTGlzdEZyaWVuZHNIABIpCgphZGRfZnJpZW5kGA4gASgLMhMubHVkcmEudjEuQWRkRnJpZW5kSAASLwoNYWNjZXB0X2ZyaWVuZBgPIAEoCzIWLmx1ZHJhLnYxLkFjY2VwdEZyaWVuZEgAEi8KDXJlbW92ZV9mcmllbmQYECABKAsyFi5sdWRyYS52MS5SZW1vdmVGcmllbmRIABItCgxzZXRfcHJlc2VuY2UYESABKAsyFS5sdWRyYS52MS5TZXRQcmVzZW5jZUgAQgkKB3BheWxvYWQiPQoIUmVnaXN0ZXISDQoFZW1haWwYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkiKAoFTG9naW4SDQoFbG9naW4YASABKAkSEAoIcGFzc3dvcmQYAiABKAkiKgoLVmVyaWZ5RW1haWwSDQoFZW1haWwYASABKAkSDAoEY29kZRgCIAEoCSJBCghTZW5kQ29kZRINCgVlbWFpbBgBIAEoCRImCgdwdXJwb3NlGAIgASgOMhUubHVkcmEudjEuQ29kZVB1cnBvc2UiPgoNUmVzZXRQYXNzd29yZBINCgVlbWFpbBgBIAEoCRIMCgRjb2RlGAIgASgJEhAKCHBhc3N3b3JkGAMgASgJIhcKBlJlc3VtZRINCgV0b2tlbhgBIAEoCSIICgZMb2dvdXQiDQoLTGlzdEZyaWVuZHMiHQoJQWRkRnJpZW5kEhAKCHVzZXJuYW1lGAEgASgJIh8KDEFjY2VwdEZyaWVuZBIPCgd1c2VyX2lkGAEgASgJIh8KDFJlbW92ZUZyaWVuZBIPCgd1c2VyX2lkGAEgASgJIjMKC1NldFByZXNlbmNlEiQKCHByZXNlbmNlGAEgASgOMhIubHVkcmEudjEuUHJlc2VuY2UiEwoRTGlzdENvbnZlcnNhdGlvbnMiJAoQT3BlbkNvbnZlcnNhdGlvbhIQCgh1c2VybmFtZRgBIAEoCSJJCgxMb2FkTWVzc2FnZXMSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhEKCWJlZm9yZV9pZBgCIAEoCRINCgVsaW1pdBgDIAEoDSI3CgtTZW5kTWVzc2FnZRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDwoHY29udGVudBgCIAEoCSprCgtDb2RlUHVycG9zZRIcChhDT0RFX1BVUlBPU0VfVU5TUEVDSUZJRUQQABIdChlDT0RFX1BVUlBPU0VfVkVSSUZZX0VNQUlMEAESHwobQ09ERV9QVVJQT1NFX1JFU0VUX1BBU1NXT1JEEAJCdQoMY29tLmx1ZHJhLnYxQgtDbGllbnRQcm90b1ABWhdsdWRyYS9pbnRlcm5hbC9wcm90b2NvbKICA0xYWKoCCEx1ZHJhLlYxygIITHVkcmFcVjHiAhRMdWRyYVxWMVxHUEJNZXRhZGF0YeoCCUx1ZHJhOjpWMWIGcHJvdG8z", [file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ClientFrame
@@ -90,6 +92,36 @@ export type ClientFrame = Message<"ludra.v1.ClientFrame"> & {
      */
     value: ResetPassword;
     case: "resetPassword";
+  } | {
+    /**
+     * @generated from field: ludra.v1.ListFriends list_friends = 13;
+     */
+    value: ListFriends;
+    case: "listFriends";
+  } | {
+    /**
+     * @generated from field: ludra.v1.AddFriend add_friend = 14;
+     */
+    value: AddFriend;
+    case: "addFriend";
+  } | {
+    /**
+     * @generated from field: ludra.v1.AcceptFriend accept_friend = 15;
+     */
+    value: AcceptFriend;
+    case: "acceptFriend";
+  } | {
+    /**
+     * @generated from field: ludra.v1.RemoveFriend remove_friend = 16;
+     */
+    value: RemoveFriend;
+    case: "removeFriend";
+  } | {
+    /**
+     * @generated from field: ludra.v1.SetPresence set_presence = 17;
+     */
+    value: SetPresence;
+    case: "setPresence";
   } | { case: undefined; value?: undefined };
 };
 
@@ -251,6 +283,87 @@ export const LogoutSchema: GenMessage<Logout> = /*@__PURE__*/
   messageDesc(file_ludra_v1_client, 7);
 
 /**
+ * @generated from message ludra.v1.ListFriends
+ */
+export type ListFriends = Message<"ludra.v1.ListFriends"> & {
+};
+
+/**
+ * Describes the message ludra.v1.ListFriends.
+ * Use `create(ListFriendsSchema)` to create a new message.
+ */
+export const ListFriendsSchema: GenMessage<ListFriends> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 8);
+
+/**
+ * @generated from message ludra.v1.AddFriend
+ */
+export type AddFriend = Message<"ludra.v1.AddFriend"> & {
+  /**
+   * @generated from field: string username = 1;
+   */
+  username: string;
+};
+
+/**
+ * Describes the message ludra.v1.AddFriend.
+ * Use `create(AddFriendSchema)` to create a new message.
+ */
+export const AddFriendSchema: GenMessage<AddFriend> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 9);
+
+/**
+ * @generated from message ludra.v1.AcceptFriend
+ */
+export type AcceptFriend = Message<"ludra.v1.AcceptFriend"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+};
+
+/**
+ * Describes the message ludra.v1.AcceptFriend.
+ * Use `create(AcceptFriendSchema)` to create a new message.
+ */
+export const AcceptFriendSchema: GenMessage<AcceptFriend> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 10);
+
+/**
+ * @generated from message ludra.v1.RemoveFriend
+ */
+export type RemoveFriend = Message<"ludra.v1.RemoveFriend"> & {
+  /**
+   * @generated from field: string user_id = 1;
+   */
+  userId: string;
+};
+
+/**
+ * Describes the message ludra.v1.RemoveFriend.
+ * Use `create(RemoveFriendSchema)` to create a new message.
+ */
+export const RemoveFriendSchema: GenMessage<RemoveFriend> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 11);
+
+/**
+ * @generated from message ludra.v1.SetPresence
+ */
+export type SetPresence = Message<"ludra.v1.SetPresence"> & {
+  /**
+   * @generated from field: ludra.v1.Presence presence = 1;
+   */
+  presence: Presence;
+};
+
+/**
+ * Describes the message ludra.v1.SetPresence.
+ * Use `create(SetPresenceSchema)` to create a new message.
+ */
+export const SetPresenceSchema: GenMessage<SetPresence> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_client, 12);
+
+/**
  * @generated from message ludra.v1.ListConversations
  */
 export type ListConversations = Message<"ludra.v1.ListConversations"> & {
@@ -261,7 +374,7 @@ export type ListConversations = Message<"ludra.v1.ListConversations"> & {
  * Use `create(ListConversationsSchema)` to create a new message.
  */
 export const ListConversationsSchema: GenMessage<ListConversations> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 8);
+  messageDesc(file_ludra_v1_client, 13);
 
 /**
  * @generated from message ludra.v1.OpenConversation
@@ -278,7 +391,7 @@ export type OpenConversation = Message<"ludra.v1.OpenConversation"> & {
  * Use `create(OpenConversationSchema)` to create a new message.
  */
 export const OpenConversationSchema: GenMessage<OpenConversation> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 9);
+  messageDesc(file_ludra_v1_client, 14);
 
 /**
  * @generated from message ludra.v1.LoadMessages
@@ -305,7 +418,7 @@ export type LoadMessages = Message<"ludra.v1.LoadMessages"> & {
  * Use `create(LoadMessagesSchema)` to create a new message.
  */
 export const LoadMessagesSchema: GenMessage<LoadMessages> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 10);
+  messageDesc(file_ludra_v1_client, 15);
 
 /**
  * @generated from message ludra.v1.SendMessage
@@ -327,7 +440,7 @@ export type SendMessage = Message<"ludra.v1.SendMessage"> & {
  * Use `create(SendMessageSchema)` to create a new message.
  */
 export const SendMessageSchema: GenMessage<SendMessage> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_client, 11);
+  messageDesc(file_ludra_v1_client, 16);
 
 /**
  * @generated from enum ludra.v1.CodePurpose

@@ -68,7 +68,8 @@ const getSession = `-- name: GetSession :one
 SELECT
     s.id AS session_id,
     u.id,
-    u.username
+    u.username,
+    u.invisible
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now()
@@ -78,11 +79,17 @@ type GetSessionRow struct {
 	SessionID string
 	ID        string
 	Username  string
+	Invisible bool
 }
 
 func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
 	row := q.db.QueryRow(ctx, getSession, tokenHash)
 	var i GetSessionRow
-	err := row.Scan(&i.SessionID, &i.ID, &i.Username)
+	err := row.Scan(
+		&i.SessionID,
+		&i.ID,
+		&i.Username,
+		&i.Invisible,
+	)
 	return i, err
 }

@@ -26,13 +26,14 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 	}
 
 	session := outcome.Session
-	s.sessionID = session.ID
-	s.user = &protocol.User{
-		Id:       session.UserID,
-		Username: session.Username,
-		Presence: protocol.Presence_PRESENCE_ONLINE,
+	presence := protocol.Presence_PRESENCE_ONLINE
+	if session.Invisible {
+		presence = protocol.Presence_PRESENCE_INVISIBLE
 	}
-	if s.hub.register(s.user.Id, s) {
+
+	s.sessionID = session.ID
+	s.user = &protocol.User{Id: session.UserID, Username: session.Username, Presence: presence}
+	if s.hub.register(s.user.Id, s, session.Invisible) {
 		s.announce(protocol.Presence_PRESENCE_ONLINE)
 	}
 	return loggedInFrame(s.user, session.Token)

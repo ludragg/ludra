@@ -1,6 +1,6 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
-import type { Conversation, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
+import type { Conversation, Friend, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode, ServerFrameSchema, type ServerFrame } from "@/protocol/ludra/v1/server_pb";
 
 type Request = MessageInitShape<typeof ClientFrameSchema>["payload"];
@@ -28,6 +28,8 @@ export class ServerError extends Error {
 export class Client {
   onMessage: (message: Message) => void = () => {};
   onPresence: (userId: string, presence: Presence) => void = () => {};
+  onFriend: (friend: Friend) => void = () => {};
+  onFriendRemoved: (userId: string) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -107,6 +109,29 @@ export class Client {
     return message!;
   }
 
+  async listFriends(): Promise<Friend[]> {
+    const { friends } = await this.#request({ case: "listFriends", value: {} }, "friendList");
+    return friends;
+  }
+
+  async addFriend(username: string): Promise<Friend> {
+    const { friend } = await this.#request({ case: "addFriend", value: { username } }, "friendUpdated");
+    return friend!;
+  }
+
+  async acceptFriend(userId: string): Promise<Friend> {
+    const { friend } = await this.#request({ case: "acceptFriend", value: { userId } }, "friendUpdated");
+    return friend!;
+  }
+
+  async removeFriend(userId: string) {
+    await this.#request({ case: "removeFriend", value: { userId } }, "friendRemoved");
+  }
+
+  async setPresence(presence: Presence) {
+    await this.#request({ case: "setPresence", value: { presence } }, "presenceChanged");
+  }
+
   close() {
     this.onClose = () => {};
     this.#socket.close();
@@ -172,6 +197,14 @@ export class Client {
         break;
       case "presenceChanged":
         this.onPresence(payload.value.userId, payload.value.presence);
+        break;
+      case "friendUpdated":
+        if (payload.value.friend) {
+          this.onFriend(payload.value.friend);
+        }
+        break;
+      case "friendRemoved":
+        this.onFriendRemoved(payload.value.userId);
         break;
     }
   }

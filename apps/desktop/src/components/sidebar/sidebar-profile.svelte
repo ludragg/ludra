@@ -2,15 +2,44 @@
   import Avatar from "@/components/avatar/avatar.svelte";
   import Status from "@/components/status/status.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import SidebarStatusMenu from "./sidebar-status-menu.svelte";
+
+  let menuOpen = $state(false);
+  let profile = $state<HTMLElement>();
+
+  function onpointerdown(event: PointerEvent) {
+    if (menuOpen && !profile?.contains(event.target as Node)) {
+      menuOpen = false;
+    }
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    if (menuOpen && event.key === "Escape") {
+      menuOpen = false;
+    }
+  }
 </script>
 
+<svelte:window {onpointerdown} {onkeydown} />
+
 {#if chat.user}
-  <div class="sidebar-profile">
-    <Avatar id={chat.user.id} name={chat.user.username} />
-    <span class="sidebar-profile__info">
-      <span class="sidebar-profile__name">{chat.user.username}</span>
-      <Status presence={chat.user.presence} />
-    </span>
+  <div class="sidebar-profile" bind:this={profile}>
+    {#if menuOpen}
+      <SidebarStatusMenu onclose={() => (menuOpen = false)} />
+    {/if}
+    <button
+      class="sidebar-profile__identity"
+      aria-haspopup="menu"
+      aria-expanded={menuOpen}
+      aria-label="Alterar status"
+      onclick={() => (menuOpen = !menuOpen)}
+    >
+      <Avatar id={chat.user.id} name={chat.user.username} />
+      <span class="sidebar-profile__info">
+        <span class="sidebar-profile__name">{chat.user.username}</span>
+        <Status presence={chat.user.presence} />
+      </span>
+    </button>
     <button class="sidebar-profile__logout" aria-label="Sair" title="Sair" onclick={() => chat.logout()}>
       <svg
         viewBox="0 0 24 24"
@@ -31,12 +60,32 @@
 
 <style>
   .sidebar-profile {
+    position: relative;
     margin: 0 16px 16px;
     padding: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
     border-radius: 4px;
+    background: var(--surface-color);
+  }
+
+  .sidebar-profile__identity {
+    min-width: 0;
+    margin: -4px;
+    padding: 4px;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    text-align: left;
+    transition: background ease 0.1s;
+  }
+
+  .sidebar-profile__identity:hover {
     background: var(--surface-color);
   }
 
@@ -53,6 +102,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 600;
+    color: var(--muted-color);
   }
 
   .sidebar-profile__logout {

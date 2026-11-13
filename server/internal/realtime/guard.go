@@ -22,6 +22,10 @@ type guard struct {
 	codesByIP   *limit.Limiter
 	messages    *limit.Limiter
 	openings    *limit.Limiter
+
+	friendRequests  *limit.Limiter
+	friendChanges   *limit.Limiter
+	presenceChanges *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -34,6 +38,10 @@ func newGuard() *guard {
 		codesByIP:   limit.New(10, time.Hour),
 		messages:    limit.New(20, 10*time.Second),
 		openings:    limit.New(30, time.Minute),
+
+		friendRequests:  limit.New(20, time.Hour),
+		friendChanges:   limit.New(60, time.Minute),
+		presenceChanges: limit.New(20, time.Minute),
 	}
 }
 

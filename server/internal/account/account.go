@@ -28,10 +28,11 @@ const (
 var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9_.]{3,32}$`)
 
 type Session struct {
-	ID       string
-	Token    string
-	UserID   string
-	Username string
+	ID        string
+	Token     string
+	UserID    string
+	Username  string
+	Invisible bool
 }
 
 type Outcome struct {
@@ -113,7 +114,7 @@ func (s *Service) Login(ctx context.Context, login, password string) (Outcome, e
 		return Outcome{PendingEmail: user.Email}, nil
 	}
 
-	return s.startSession(ctx, user.ID, user.Username)
+	return s.startSession(ctx, user)
 }
 
 func (s *Service) VerifyEmail(ctx context.Context, email, code string) (Outcome, error) {
@@ -132,7 +133,7 @@ func (s *Service) VerifyEmail(ctx context.Context, email, code string) (Outcome,
 		return Outcome{}, err
 	}
 
-	return s.startSession(ctx, user.ID, user.Username)
+	return s.startSession(ctx, user)
 }
 
 func (s *Service) SendCode(ctx context.Context, email string, purpose Purpose) error {
@@ -188,7 +189,7 @@ func (s *Service) ResetPassword(ctx context.Context, email, code, password strin
 		return Outcome{}, err
 	}
 
-	return s.startSession(ctx, user.ID, user.Username)
+	return s.startSession(ctx, user)
 }
 
 func (s *Service) Resume(ctx context.Context, token string) (Outcome, error) {
@@ -208,11 +209,21 @@ func (s *Service) Resume(ctx context.Context, token string) (Outcome, error) {
 		return Outcome{}, err
 	}
 
-	return Outcome{Session: Session{ID: row.SessionID, Token: token, UserID: row.ID, Username: row.Username}}, nil
+	return Outcome{Session: Session{
+		ID:        row.SessionID,
+		Token:     token,
+		UserID:    row.ID,
+		Username:  row.Username,
+		Invisible: row.Invisible,
+	}}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, sessionID string) error {
 	return s.queries.DeleteSession(ctx, sessionID)
+}
+
+func (s *Service) SetInvisible(ctx context.Context, userID string, invisible bool) error {
+	return s.queries.SetInvisible(ctx, database.SetInvisibleParams{ID: userID, Invisible: invisible})
 }
 
 func (s *Service) userByEmail(ctx context.Context, email string) (database.User, error) {
@@ -223,14 +234,14 @@ func (s *Service) userByEmail(ctx context.Context, email string) (database.User,
 	return user, err
 }
 
-func (s *Service) startSession(ctx context.Context, userID, username string) (Outcome, error) {
+func (s *Service) startSession(ctx context.Context, user database.User) (Outcome, error) {
 	token, tokenHash, err := newToken()
 	if err != nil {
 		return Outcome{}, err
 	}
 
 	id, err := s.queries.CreateSession(ctx, database.CreateSessionParams{
-		UserID:    userID,
+		UserID:    user.ID,
 		TokenHash: tokenHash,
 		ExpiresAt: time.Now().Add(sessionLifetime),
 	})
@@ -238,7 +249,13 @@ func (s *Service) startSession(ctx context.Context, userID, username string) (Ou
 		return Outcome{}, err
 	}
 
-	return Outcome{Session: Session{ID: id, Token: token, UserID: userID, Username: username}}, nil
+	return Outcome{Session: Session{
+		ID:        id,
+		Token:     token,
+		UserID:    user.ID,
+		Username:  user.Username,
+		Invisible: user.Invisible,
+	}}, nil
 }
 
 func validEmail(email string) bool {

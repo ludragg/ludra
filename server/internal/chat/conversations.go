@@ -13,6 +13,7 @@ type Conversation struct {
 	ID          string
 	Peer        database.User
 	LastMessage *database.Message
+	IsFriend    bool
 }
 
 func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conversation, error) {
@@ -24,8 +25,9 @@ func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conve
 	conversations := make([]Conversation, 0, len(rows))
 	for _, row := range rows {
 		conversation := Conversation{
-			ID:   row.ID,
-			Peer: database.User{ID: row.PeerID, Username: row.PeerUsername},
+			ID:       row.ID,
+			Peer:     database.User{ID: row.PeerID, Username: row.PeerUsername},
+			IsFriend: row.IsFriend,
 		}
 
 		if row.LastMessageID != nil {
@@ -44,10 +46,6 @@ func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conve
 	return conversations, nil
 }
 
-func (s *Service) Contacts(ctx context.Context, userID string) ([]string, error) {
-	return s.queries.ListContactIDs(ctx, userID)
-}
-
 func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername string) (Conversation, error) {
 	peer, err := s.queries.GetVerifiedUserByUsername(ctx, peerUsername)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -59,6 +57,14 @@ func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername str
 
 	if peer.ID == userID {
 		return Conversation{}, ErrSelfConversation
+	}
+
+	friends, err := s.queries.AreFriends(ctx, database.AreFriendsParams{UserID: userID, FriendID: peer.ID})
+	if err != nil {
+		return Conversation{}, err
+	}
+	if !friends {
+		return Conversation{}, ErrNotFriends
 	}
 
 	var id string
@@ -82,7 +88,7 @@ func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername str
 		return Conversation{}, err
 	}
 
-	return Conversation{ID: id, Peer: peer}, nil
+	return Conversation{ID: id, Peer: peer, IsFriend: true}, nil
 }
 
 func directKey(a, b string) string {

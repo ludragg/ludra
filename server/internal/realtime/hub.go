@@ -11,35 +11,55 @@ import (
 )
 
 type hub struct {
-	mu       sync.RWMutex
-	sessions map[string]map[*session]struct{}
+	mu        sync.RWMutex
+	sessions  map[string]map[*session]struct{}
+	invisible map[string]bool
 }
 
 func newHub() *hub {
-	return &hub{sessions: make(map[string]map[*session]struct{})}
+	return &hub{
+		sessions:  make(map[string]map[*session]struct{}),
+		invisible: make(map[string]bool),
+	}
 }
 
-func (h *hub) register(userID string, s *session) (first bool) {
+func (h *hub) register(userID string, s *session, invisible bool) (appeared bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	before := h.visible(userID)
 	if h.sessions[userID] == nil {
 		h.sessions[userID] = make(map[*session]struct{})
 	}
 	h.sessions[userID][s] = struct{}{}
-	return len(h.sessions[userID]) == 1
+	h.invisible[userID] = invisible
+	return !before && h.visible(userID)
 }
 
-func (h *hub) unregister(userID string, s *session) (last bool) {
+func (h *hub) unregister(userID string, s *session) (vanished bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
+	before := h.visible(userID)
 	delete(h.sessions[userID], s)
-	if len(h.sessions[userID]) > 0 {
-		return false
+	if len(h.sessions[userID]) == 0 {
+		delete(h.sessions, userID)
+		delete(h.invisible, userID)
 	}
-	delete(h.sessions, userID)
-	return true
+	return before && !h.visible(userID)
+}
+
+func (h *hub) setInvisible(userID string, invisible bool) (changed bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	before := h.visible(userID)
+	h.invisible[userID] = invisible
+	return before != h.visible(userID)
+}
+
+func (h *hub) visible(userID string) bool {
+	return len(h.sessions[userID]) > 0 && !h.invisible[userID]
 }
 
 func (h *hub) disconnect(userID string, keep *session) {
@@ -61,7 +81,7 @@ func (h *hub) presence(userID string) protocol.Presence {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if len(h.sessions[userID]) > 0 {
+	if h.visible(userID) {
 		return protocol.Presence_PRESENCE_ONLINE
 	}
 	return protocol.Presence_PRESENCE_OFFLINE

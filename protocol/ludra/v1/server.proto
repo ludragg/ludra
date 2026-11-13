@@ -18,6 +18,9 @@ message ServerFrame {
     LoggedOut logged_out = 9;
     VerificationRequired verification_required = 10;
     CodeSent code_sent = 11;
+    FriendList friend_list = 12;
+    FriendUpdated friend_updated = 13;
+    FriendRemoved friend_removed = 14;
   }
 }
 
@@ -31,6 +34,7 @@ enum ErrorCode {
   ERROR_CODE_ALREADY_EXISTS = 6;
   ERROR_CODE_INVALID_CODE = 7;
   ERROR_CODE_TOO_MANY_REQUESTS = 8;
+  ERROR_CODE_FORBIDDEN = 9;
 }
 
 message Error {
@@ -72,4 +76,16 @@ message MessageCreated {
 message PresenceChanged {
   string user_id = 1;
   Presence presence = 2;
+}
+
+message FriendList {
+  repeated Friend friends = 1;
+}
+
+message FriendUpdated {
+  Friend friend = 1;
+}
+
+message FriendRemoved {
+  string user_id = 1;
 }
