@@ -1,5 +1,6 @@
 <script lang="ts">
   import Avatar from "@/components/avatar/avatar.svelte";
+  import { callPreview, isCall } from "@/helpers/call-summary";
   import { formatRecent, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
@@ -13,9 +14,11 @@
   const preview = $derived(
     !last
       ? t("sidebar.noMessages")
-      : last.senderId === chat.user?.id
-        ? t("sidebar.youSaid", { content: last.content })
-        : last.content,
+      : isCall(last)
+        ? callPreview(last)
+        : last.senderId === chat.user?.id
+          ? t("sidebar.youSaid", { content: last.content })
+          : last.content,
   );
 </script>
 

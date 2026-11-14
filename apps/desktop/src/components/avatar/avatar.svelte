@@ -4,7 +4,8 @@
 
   type Person = Pick<User, "id" | "username" | "avatar">;
 
-  let { user, size = "medium" }: { user: Person; size?: "small" | "medium" | "large" | "huge" } = $props();
+  let { user, size = "medium" }: { user: Person; size?: "small" | "medium" | "large" | "huge" | "call" | "ringing" } =
+    $props();
 
   let failed = $state<string | null>(null);
 
@@ -50,6 +51,18 @@
     width: 72px;
     height: 72px;
     font-size: 26px;
+  }
+
+  .avatar--call {
+    width: 80px;
+    height: 80px;
+    font-size: 28px;
+  }
+
+  .avatar--ringing {
+    width: 88px;
+    height: 88px;
+    font-size: 32px;
   }
 
   .avatar--tone-0 {

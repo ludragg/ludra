@@ -19,6 +19,7 @@ import (
 	"ludra/internal/friends"
 	"ludra/internal/mail"
 	"ludra/internal/realtime"
+	"ludra/internal/voice"
 )
 
 func main() {
@@ -44,7 +45,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	gateway := realtime.NewGateway(chat.NewService(pool), friends.NewService(pool), accounts, cfg.Origins)
+	relay, err := voice.NewRelay(cfg.Turn)
+	if err != nil {
+		return err
+	}
+	defer relay.Close()
+	slog.Info("voice relay listening", "url", relay.URL())
+
+	chats := chat.NewService(pool)
+	if err := chats.CloseStaleCalls(ctx); err != nil {
+		return err
+	}
+
+	gateway := realtime.NewGateway(chats, friends.NewService(pool), accounts, relay, cfg.Origins)
 	go cleanup(ctx, accounts)
 
 	if cfg.Mail.Host == "" {

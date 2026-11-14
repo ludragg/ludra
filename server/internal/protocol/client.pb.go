@@ -97,6 +97,10 @@ type ClientFrame struct {
 	//	*ClientFrame_SetTwoFactor
 	//	*ClientFrame_SetAvatar
 	//	*ClientFrame_RemoveAvatar
+	//	*ClientFrame_StartCall
+	//	*ClientFrame_AnswerCall
+	//	*ClientFrame_EndCall
+	//	*ClientFrame_CallSignal
 	Payload       isClientFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -344,6 +348,42 @@ func (x *ClientFrame) GetRemoveAvatar() *RemoveAvatar {
 	return nil
 }
 
+func (x *ClientFrame) GetStartCall() *StartCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_StartCall); ok {
+			return x.StartCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetAnswerCall() *AnswerCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_AnswerCall); ok {
+			return x.AnswerCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetEndCall() *EndCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_EndCall); ok {
+			return x.EndCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetCallSignal() *CallSignal {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_CallSignal); ok {
+			return x.CallSignal
+		}
+	}
+	return nil
+}
+
 type isClientFrame_Payload interface {
 	isClientFrame_Payload()
 }
@@ -436,6 +476,22 @@ type ClientFrame_RemoveAvatar struct {
 	RemoveAvatar *RemoveAvatar `protobuf:"bytes,23,opt,name=remove_avatar,json=removeAvatar,proto3,oneof"`
 }
 
+type ClientFrame_StartCall struct {
+	StartCall *StartCall `protobuf:"bytes,24,opt,name=start_call,json=startCall,proto3,oneof"`
+}
+
+type ClientFrame_AnswerCall struct {
+	AnswerCall *AnswerCall `protobuf:"bytes,25,opt,name=answer_call,json=answerCall,proto3,oneof"`
+}
+
+type ClientFrame_EndCall struct {
+	EndCall *EndCall `protobuf:"bytes,26,opt,name=end_call,json=endCall,proto3,oneof"`
+}
+
+type ClientFrame_CallSignal struct {
+	CallSignal *CallSignal `protobuf:"bytes,27,opt,name=call_signal,json=callSignal,proto3,oneof"`
+}
+
 func (*ClientFrame_Login) isClientFrame_Payload() {}
 
 func (*ClientFrame_ListConversations) isClientFrame_Payload() {}
@@ -479,6 +535,14 @@ func (*ClientFrame_SetTwoFactor) isClientFrame_Payload() {}
 func (*ClientFrame_SetAvatar) isClientFrame_Payload() {}
 
 func (*ClientFrame_RemoveAvatar) isClientFrame_Payload() {}
+
+func (*ClientFrame_StartCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_AnswerCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_EndCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_CallSignal) isClientFrame_Payload() {}
 
 type Register struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1536,12 +1600,143 @@ func (x *SendMessage) GetContent() string {
 	return ""
 }
 
+type StartCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartCall) Reset() {
+	*x = StartCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartCall) ProtoMessage() {}
+
+func (x *StartCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartCall.ProtoReflect.Descriptor instead.
+func (*StartCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StartCall) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type AnswerCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnswerCall) Reset() {
+	*x = AnswerCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnswerCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnswerCall) ProtoMessage() {}
+
+func (x *AnswerCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnswerCall.ProtoReflect.Descriptor instead.
+func (*AnswerCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *AnswerCall) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
+type EndCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EndCall) Reset() {
+	*x = EndCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EndCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EndCall) ProtoMessage() {}
+
+func (x *EndCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EndCall.ProtoReflect.Descriptor instead.
+func (*EndCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *EndCall) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
 var File_ludra_v1_client_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_client_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xe7\n" +
-	"\n" +
+	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xbf\f\n" +
 	"\vClientFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -1569,7 +1764,14 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"\x0eset_two_factor\x18\x15 \x01(\v2\x16.ludra.v1.SetTwoFactorH\x00R\fsetTwoFactor\x124\n" +
 	"\n" +
 	"set_avatar\x18\x16 \x01(\v2\x13.ludra.v1.SetAvatarH\x00R\tsetAvatar\x12=\n" +
-	"\rremove_avatar\x18\x17 \x01(\v2\x16.ludra.v1.RemoveAvatarH\x00R\fremoveAvatarB\t\n" +
+	"\rremove_avatar\x18\x17 \x01(\v2\x16.ludra.v1.RemoveAvatarH\x00R\fremoveAvatar\x124\n" +
+	"\n" +
+	"start_call\x18\x18 \x01(\v2\x13.ludra.v1.StartCallH\x00R\tstartCall\x127\n" +
+	"\vanswer_call\x18\x19 \x01(\v2\x14.ludra.v1.AnswerCallH\x00R\n" +
+	"answerCall\x12.\n" +
+	"\bend_call\x18\x1a \x01(\v2\x11.ludra.v1.EndCallH\x00R\aendCall\x127\n" +
+	"\vcall_signal\x18\x1b \x01(\v2\x14.ludra.v1.CallSignalH\x00R\n" +
+	"callSignalB\t\n" +
 	"\apayload\"p\n" +
 	"\bRegister\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
@@ -1625,7 +1827,14 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"\x05limit\x18\x03 \x01(\rR\x05limit\"P\n" +
 	"\vSendMessage\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent*k\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"$\n" +
+	"\tStartCall\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"%\n" +
+	"\n" +
+	"AnswerCall\x12\x17\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\"\"\n" +
+	"\aEndCall\x12\x17\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId*k\n" +
 	"\vCodePurpose\x12\x1c\n" +
 	"\x18CODE_PURPOSE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19CODE_PURPOSE_VERIFY_EMAIL\x10\x01\x12\x1f\n" +
@@ -1645,7 +1854,7 @@ func file_ludra_v1_client_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_ludra_v1_client_proto_goTypes = []any{
 	(CodePurpose)(0),          // 0: ludra.v1.CodePurpose
 	(*ClientFrame)(nil),       // 1: ludra.v1.ClientFrame
@@ -1671,7 +1880,11 @@ var file_ludra_v1_client_proto_goTypes = []any{
 	(*OpenConversation)(nil),  // 21: ludra.v1.OpenConversation
 	(*LoadMessages)(nil),      // 22: ludra.v1.LoadMessages
 	(*SendMessage)(nil),       // 23: ludra.v1.SendMessage
-	(Presence)(0),             // 24: ludra.v1.Presence
+	(*StartCall)(nil),         // 24: ludra.v1.StartCall
+	(*AnswerCall)(nil),        // 25: ludra.v1.AnswerCall
+	(*EndCall)(nil),           // 26: ludra.v1.EndCall
+	(*CallSignal)(nil),        // 27: ludra.v1.CallSignal
+	(Presence)(0),             // 28: ludra.v1.Presence
 }
 var file_ludra_v1_client_proto_depIdxs = []int32{
 	3,  // 0: ludra.v1.ClientFrame.login:type_name -> ludra.v1.Login
@@ -1696,13 +1909,17 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	10, // 19: ludra.v1.ClientFrame.set_two_factor:type_name -> ludra.v1.SetTwoFactor
 	11, // 20: ludra.v1.ClientFrame.set_avatar:type_name -> ludra.v1.SetAvatar
 	12, // 21: ludra.v1.ClientFrame.remove_avatar:type_name -> ludra.v1.RemoveAvatar
-	0,  // 22: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
-	24, // 23: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	24, // 22: ludra.v1.ClientFrame.start_call:type_name -> ludra.v1.StartCall
+	25, // 23: ludra.v1.ClientFrame.answer_call:type_name -> ludra.v1.AnswerCall
+	26, // 24: ludra.v1.ClientFrame.end_call:type_name -> ludra.v1.EndCall
+	27, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
+	0,  // 26: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
+	28, // 27: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_client_proto_init() }
@@ -1734,6 +1951,10 @@ func file_ludra_v1_client_proto_init() {
 		(*ClientFrame_SetTwoFactor)(nil),
 		(*ClientFrame_SetAvatar)(nil),
 		(*ClientFrame_RemoveAvatar)(nil),
+		(*ClientFrame_StartCall)(nil),
+		(*ClientFrame_AnswerCall)(nil),
+		(*ClientFrame_EndCall)(nil),
+		(*ClientFrame_CallSignal)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1741,7 +1962,7 @@ func file_ludra_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_client_proto_rawDesc), len(file_ludra_v1_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   23,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

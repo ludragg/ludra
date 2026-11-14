@@ -25,6 +25,13 @@ message ServerFrame {
     PasswordChanged password_changed = 16;
     TwoFactorChanged two_factor_changed = 17;
     UserUpdated user_updated = 18;
+    CallStarted call_started = 19;
+    CallIncoming call_incoming = 20;
+    CallAccepted call_accepted = 21;
+    CallEnded call_ended = 22;
+    CallSignal call_signal = 23;
+    Ack ack = 24;
+    MessageUpdated message_updated = 25;
   }
 }
 
@@ -39,6 +46,7 @@ enum ErrorCode {
   ERROR_CODE_INVALID_CODE = 7;
   ERROR_CODE_TOO_MANY_REQUESTS = 8;
   ERROR_CODE_FORBIDDEN = 9;
+  ERROR_CODE_UNAVAILABLE = 10;
 }
 
 message Error {
@@ -108,4 +116,36 @@ message TwoFactorChanged {
 
 message UserUpdated {
   User user = 1;
+}
+
+message CallStarted {
+  Call call = 1;
+}
+
+message CallIncoming {
+  Call call = 1;
+}
+
+message CallAccepted {
+  string call_id = 1;
+}
+
+enum CallEndReason {
+  CALL_END_REASON_UNSPECIFIED = 0;
+  CALL_END_REASON_HUNG_UP = 1;
+  CALL_END_REASON_DECLINED = 2;
+  CALL_END_REASON_MISSED = 3;
+  CALL_END_REASON_ANSWERED_ELSEWHERE = 4;
+  CALL_END_REASON_DISCONNECTED = 5;
+}
+
+message CallEnded {
+  string call_id = 1;
+  CallEndReason reason = 2;
+}
+
+message Ack {}
+
+message MessageUpdated {
+  Message message = 1;
 }

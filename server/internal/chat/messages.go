@@ -5,6 +5,7 @@ import (
 	"errors"
 	"slices"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -114,4 +115,25 @@ var fillers = map[rune]bool{'\u115f': true, '\u1160': true, '\u2800': true, '\u3
 
 func invisible(r rune) bool {
 	return unicode.IsSpace(r) || unicode.Is(unicode.Cf, r) || fillers[r]
+}
+
+func (s *Service) StartCallMessage(ctx context.Context, callerID, calleeID string) (database.Message, error) {
+	conversationID, err := s.directConversation(ctx, callerID, calleeID)
+	if err != nil {
+		return database.Message{}, err
+	}
+	return s.queries.CreateCallMessage(ctx, database.CreateCallMessageParams{ConversationID: conversationID, SenderID: callerID})
+}
+
+func (s *Service) FinishCallMessage(ctx context.Context, id, outcome string, duration time.Duration) (database.Message, error) {
+	seconds := int32(duration / time.Second)
+	return s.queries.FinishCallMessage(ctx, database.FinishCallMessageParams{
+		ID:           id,
+		CallOutcome:  &outcome,
+		CallDuration: &seconds,
+	})
+}
+
+func (s *Service) CloseStaleCalls(ctx context.Context) error {
+	return s.queries.CloseStaleCalls(ctx)
 }

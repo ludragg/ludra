@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Conversation, Friend, Message as Message$1, Presence, User } from "./models_pb";
+import type { Call, CallSignal, Conversation, Friend, Message as Message$1, Presence, User } from "./models_pb";
 import { file_ludra_v1_models } from "./models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/server.proto.
  */
 export const file_ludra_v1_server: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIpIHCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SAASKwoLZnJpZW5kX2xpc3QYDCABKAsyFC5sdWRyYS52MS5GcmllbmRMaXN0SAASMQoOZnJpZW5kX3VwZGF0ZWQYDSABKAsyFy5sdWRyYS52MS5GcmllbmRVcGRhdGVkSAASMQoOZnJpZW5kX3JlbW92ZWQYDiABKAsyFy5sdWRyYS52MS5GcmllbmRSZW1vdmVkSAASOgoTdHdvX2ZhY3Rvcl9yZXF1aXJlZBgPIAEoCzIbLmx1ZHJhLnYxLlR3b0ZhY3RvclJlcXVpcmVkSAASNQoQcGFzc3dvcmRfY2hhbmdlZBgQIAEoCzIZLmx1ZHJhLnYxLlBhc3N3b3JkQ2hhbmdlZEgAEjgKEnR3b19mYWN0b3JfY2hhbmdlZBgRIAEoCzIaLmx1ZHJhLnYxLlR3b0ZhY3RvckNoYW5nZWRIABItCgx1c2VyX3VwZGF0ZWQYEiABKAsyFS5sdWRyYS52MS5Vc2VyVXBkYXRlZEgAQgkKB3BheWxvYWQiOwoFRXJyb3ISIQoEY29kZRgBIAEoDjITLmx1ZHJhLnYxLkVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJIloKCExvZ2dlZEluEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyEg0KBXRva2VuGAIgASgJEg0KBWVtYWlsGAMgASgJEhIKCnR3b19mYWN0b3IYBCABKAgiCwoJTG9nZ2VkT3V0IiUKFFZlcmlmaWNhdGlvblJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIgoKCENvZGVTZW50IkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSIvCgpGcmllbmRMaXN0EiEKB2ZyaWVuZHMYASADKAsyEC5sdWRyYS52MS5GcmllbmQiMQoNRnJpZW5kVXBkYXRlZBIgCgZmcmllbmQYASABKAsyEC5sdWRyYS52MS5GcmllbmQiIAoNRnJpZW5kUmVtb3ZlZBIPCgd1c2VyX2lkGAEgASgJIiIKEVR3b0ZhY3RvclJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIhEKD1Bhc3N3b3JkQ2hhbmdlZCIjChBUd29GYWN0b3JDaGFuZ2VkEg8KB2VuYWJsZWQYASABKAgiKwoLVXNlclVwZGF0ZWQSHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXIqtgIKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASHgoaRVJST1JfQ09ERV9JTlZBTElEX1JFUVVFU1QQARIeChpFUlJPUl9DT0RFX1VOQVVUSEVOVElDQVRFRBACEhgKFEVSUk9SX0NPREVfTk9UX0ZPVU5EEAMSFwoTRVJST1JfQ09ERV9JTlRFUk5BTBAEEiIKHkVSUk9SX0NPREVfSU5WQUxJRF9DUkVERU5USUFMUxAFEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBhIbChdFUlJPUl9DT0RFX0lOVkFMSURfQ09ERRAHEiAKHEVSUk9SX0NPREVfVE9PX01BTllfUkVRVUVTVFMQCBIYChRFUlJPUl9DT0RFX0ZPUkJJRERFThAJQnUKDGNvbS5sdWRyYS52MUILU2VydmVyUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_ludra_v1_models]);
+  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIs4JCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SAASKwoLZnJpZW5kX2xpc3QYDCABKAsyFC5sdWRyYS52MS5GcmllbmRMaXN0SAASMQoOZnJpZW5kX3VwZGF0ZWQYDSABKAsyFy5sdWRyYS52MS5GcmllbmRVcGRhdGVkSAASMQoOZnJpZW5kX3JlbW92ZWQYDiABKAsyFy5sdWRyYS52MS5GcmllbmRSZW1vdmVkSAASOgoTdHdvX2ZhY3Rvcl9yZXF1aXJlZBgPIAEoCzIbLmx1ZHJhLnYxLlR3b0ZhY3RvclJlcXVpcmVkSAASNQoQcGFzc3dvcmRfY2hhbmdlZBgQIAEoCzIZLmx1ZHJhLnYxLlBhc3N3b3JkQ2hhbmdlZEgAEjgKEnR3b19mYWN0b3JfY2hhbmdlZBgRIAEoCzIaLmx1ZHJhLnYxLlR3b0ZhY3RvckNoYW5nZWRIABItCgx1c2VyX3VwZGF0ZWQYEiABKAsyFS5sdWRyYS52MS5Vc2VyVXBkYXRlZEgAEi0KDGNhbGxfc3RhcnRlZBgTIAEoCzIVLmx1ZHJhLnYxLkNhbGxTdGFydGVkSAASLwoNY2FsbF9pbmNvbWluZxgUIAEoCzIWLmx1ZHJhLnYxLkNhbGxJbmNvbWluZ0gAEi8KDWNhbGxfYWNjZXB0ZWQYFSABKAsyFi5sdWRyYS52MS5DYWxsQWNjZXB0ZWRIABIpCgpjYWxsX2VuZGVkGBYgASgLMhMubHVkcmEudjEuQ2FsbEVuZGVkSAASKwoLY2FsbF9zaWduYWwYFyABKAsyFC5sdWRyYS52MS5DYWxsU2lnbmFsSAASHAoDYWNrGBggASgLMg0ubHVkcmEudjEuQWNrSAASMwoPbWVzc2FnZV91cGRhdGVkGBkgASgLMhgubHVkcmEudjEuTWVzc2FnZVVwZGF0ZWRIAEIJCgdwYXlsb2FkIjsKBUVycm9yEiEKBGNvZGUYASABKA4yEy5sdWRyYS52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCSJaCghMb2dnZWRJbhIcCgR1c2VyGAEgASgLMg4ubHVkcmEudjEuVXNlchINCgV0b2tlbhgCIAEoCRINCgVlbWFpbBgDIAEoCRISCgp0d29fZmFjdG9yGAQgASgIIgsKCUxvZ2dlZE91dCIlChRWZXJpZmljYXRpb25SZXF1aXJlZBINCgVlbWFpbBgBIAEoCSIKCghDb2RlU2VudCJBChBDb252ZXJzYXRpb25MaXN0Ei0KDWNvbnZlcnNhdGlvbnMYASADKAsyFi5sdWRyYS52MS5Db252ZXJzYXRpb24iQgoSQ29udmVyc2F0aW9uT3BlbmVkEiwKDGNvbnZlcnNhdGlvbhgBIAEoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJgCg5NZXNzYWdlSGlzdG9yeRIXCg9jb252ZXJzYXRpb25faWQYASABKAkSIwoIbWVzc2FnZXMYAiADKAsyES5sdWRyYS52MS5NZXNzYWdlEhAKCGhhc19tb3JlGAMgASgIIjQKDk1lc3NhZ2VDcmVhdGVkEiIKB21lc3NhZ2UYASABKAsyES5sdWRyYS52MS5NZXNzYWdlIkgKD1ByZXNlbmNlQ2hhbmdlZBIPCgd1c2VyX2lkGAEgASgJEiQKCHByZXNlbmNlGAIgASgOMhIubHVkcmEudjEuUHJlc2VuY2UiLwoKRnJpZW5kTGlzdBIhCgdmcmllbmRzGAEgAygLMhAubHVkcmEudjEuRnJpZW5kIjEKDUZyaWVuZFVwZGF0ZWQSIAoGZnJpZW5kGAEgASgLMhAubHVkcmEudjEuRnJpZW5kIiAKDUZyaWVuZFJlbW92ZWQSDwoHdXNlcl9pZBgBIAEoCSIiChFUd29GYWN0b3JSZXF1aXJlZBINCgVlbWFpbBgBIAEoCSIRCg9QYXNzd29yZENoYW5nZWQiIwoQVHdvRmFjdG9yQ2hhbmdlZBIPCgdlbmFibGVkGAEgASgIIisKC1VzZXJVcGRhdGVkEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyIisKC0NhbGxTdGFydGVkEhwKBGNhbGwYASABKAsyDi5sdWRyYS52MS5DYWxsIiwKDENhbGxJbmNvbWluZxIcCgRjYWxsGAEgASgLMg4ubHVkcmEudjEuQ2FsbCIfCgxDYWxsQWNjZXB0ZWQSDwoHY2FsbF9pZBgBIAEoCSJFCglDYWxsRW5kZWQSDwoHY2FsbF9pZBgBIAEoCRInCgZyZWFzb24YAiABKA4yFy5sdWRyYS52MS5DYWxsRW5kUmVhc29uIgUKA0FjayI0Cg5NZXNzYWdlVXBkYXRlZBIiCgdtZXNzYWdlGAEgASgLMhEubHVkcmEudjEuTWVzc2FnZSrSAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpFUlJPUl9DT0RFX0lOVkFMSURfUkVRVUVTVBABEh4KGkVSUk9SX0NPREVfVU5BVVRIRU5USUNBVEVEEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEAQSIgoeRVJST1JfQ09ERV9JTlZBTElEX0NSRURFTlRJQUxTEAUSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAGEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9DT0RFEAcSIAocRVJST1JfQ09ERV9UT09fTUFOWV9SRVFVRVNUUxAIEhgKFEVSUk9SX0NPREVfRk9SQklEREVOEAkSGgoWRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAKKtEBCg1DYWxsRW5kUmVhc29uEh8KG0NBTExfRU5EX1JFQVNPTl9VTlNQRUNJRklFRBAAEhsKF0NBTExfRU5EX1JFQVNPTl9IVU5HX1VQEAESHAoYQ0FMTF9FTkRfUkVBU09OX0RFQ0xJTkVEEAISGgoWQ0FMTF9FTkRfUkVBU09OX01JU1NFRBADEiYKIkNBTExfRU5EX1JFQVNPTl9BTlNXRVJFRF9FTFNFV0hFUkUQBBIgChxDQUxMX0VORF9SRUFTT05fRElTQ09OTkVDVEVEEAVCdQoMY29tLmx1ZHJhLnYxQgtTZXJ2ZXJQcm90b1ABWhdsdWRyYS9pbnRlcm5hbC9wcm90b2NvbKICA0xYWKoCCEx1ZHJhLlYxygIITHVkcmFcVjHiAhRMdWRyYVxWMVxHUEJNZXRhZGF0YeoCCUx1ZHJhOjpWMWIGcHJvdG8z", [file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ServerFrame
@@ -128,6 +128,48 @@ export type ServerFrame = Message<"ludra.v1.ServerFrame"> & {
      */
     value: UserUpdated;
     case: "userUpdated";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CallStarted call_started = 19;
+     */
+    value: CallStarted;
+    case: "callStarted";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CallIncoming call_incoming = 20;
+     */
+    value: CallIncoming;
+    case: "callIncoming";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CallAccepted call_accepted = 21;
+     */
+    value: CallAccepted;
+    case: "callAccepted";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CallEnded call_ended = 22;
+     */
+    value: CallEnded;
+    case: "callEnded";
+  } | {
+    /**
+     * @generated from field: ludra.v1.CallSignal call_signal = 23;
+     */
+    value: CallSignal;
+    case: "callSignal";
+  } | {
+    /**
+     * @generated from field: ludra.v1.Ack ack = 24;
+     */
+    value: Ack;
+    case: "ack";
+  } | {
+    /**
+     * @generated from field: ludra.v1.MessageUpdated message_updated = 25;
+     */
+    value: MessageUpdated;
+    case: "messageUpdated";
   } | { case: undefined; value?: undefined };
 };
 
@@ -451,6 +493,109 @@ export const UserUpdatedSchema: GenMessage<UserUpdated> = /*@__PURE__*/
   messageDesc(file_ludra_v1_server, 17);
 
 /**
+ * @generated from message ludra.v1.CallStarted
+ */
+export type CallStarted = Message<"ludra.v1.CallStarted"> & {
+  /**
+   * @generated from field: ludra.v1.Call call = 1;
+   */
+  call?: Call | undefined;
+};
+
+/**
+ * Describes the message ludra.v1.CallStarted.
+ * Use `create(CallStartedSchema)` to create a new message.
+ */
+export const CallStartedSchema: GenMessage<CallStarted> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 18);
+
+/**
+ * @generated from message ludra.v1.CallIncoming
+ */
+export type CallIncoming = Message<"ludra.v1.CallIncoming"> & {
+  /**
+   * @generated from field: ludra.v1.Call call = 1;
+   */
+  call?: Call | undefined;
+};
+
+/**
+ * Describes the message ludra.v1.CallIncoming.
+ * Use `create(CallIncomingSchema)` to create a new message.
+ */
+export const CallIncomingSchema: GenMessage<CallIncoming> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 19);
+
+/**
+ * @generated from message ludra.v1.CallAccepted
+ */
+export type CallAccepted = Message<"ludra.v1.CallAccepted"> & {
+  /**
+   * @generated from field: string call_id = 1;
+   */
+  callId: string;
+};
+
+/**
+ * Describes the message ludra.v1.CallAccepted.
+ * Use `create(CallAcceptedSchema)` to create a new message.
+ */
+export const CallAcceptedSchema: GenMessage<CallAccepted> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 20);
+
+/**
+ * @generated from message ludra.v1.CallEnded
+ */
+export type CallEnded = Message<"ludra.v1.CallEnded"> & {
+  /**
+   * @generated from field: string call_id = 1;
+   */
+  callId: string;
+
+  /**
+   * @generated from field: ludra.v1.CallEndReason reason = 2;
+   */
+  reason: CallEndReason;
+};
+
+/**
+ * Describes the message ludra.v1.CallEnded.
+ * Use `create(CallEndedSchema)` to create a new message.
+ */
+export const CallEndedSchema: GenMessage<CallEnded> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 21);
+
+/**
+ * @generated from message ludra.v1.Ack
+ */
+export type Ack = Message<"ludra.v1.Ack"> & {
+};
+
+/**
+ * Describes the message ludra.v1.Ack.
+ * Use `create(AckSchema)` to create a new message.
+ */
+export const AckSchema: GenMessage<Ack> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 22);
+
+/**
+ * @generated from message ludra.v1.MessageUpdated
+ */
+export type MessageUpdated = Message<"ludra.v1.MessageUpdated"> & {
+  /**
+   * @generated from field: ludra.v1.Message message = 1;
+   */
+  message?: Message$1 | undefined;
+};
+
+/**
+ * Describes the message ludra.v1.MessageUpdated.
+ * Use `create(MessageUpdatedSchema)` to create a new message.
+ */
+export const MessageUpdatedSchema: GenMessage<MessageUpdated> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 23);
+
+/**
  * @generated from enum ludra.v1.ErrorCode
  */
 export enum ErrorCode {
@@ -503,6 +648,11 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_FORBIDDEN = 9;
    */
   FORBIDDEN = 9,
+
+  /**
+   * @generated from enum value: ERROR_CODE_UNAVAILABLE = 10;
+   */
+  UNAVAILABLE = 10,
 }
 
 /**
@@ -510,4 +660,45 @@ export enum ErrorCode {
  */
 export const ErrorCodeSchema: GenEnum<ErrorCode> = /*@__PURE__*/
   enumDesc(file_ludra_v1_server, 0);
+
+/**
+ * @generated from enum ludra.v1.CallEndReason
+ */
+export enum CallEndReason {
+  /**
+   * @generated from enum value: CALL_END_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CALL_END_REASON_HUNG_UP = 1;
+   */
+  HUNG_UP = 1,
+
+  /**
+   * @generated from enum value: CALL_END_REASON_DECLINED = 2;
+   */
+  DECLINED = 2,
+
+  /**
+   * @generated from enum value: CALL_END_REASON_MISSED = 3;
+   */
+  MISSED = 3,
+
+  /**
+   * @generated from enum value: CALL_END_REASON_ANSWERED_ELSEWHERE = 4;
+   */
+  ANSWERED_ELSEWHERE = 4,
+
+  /**
+   * @generated from enum value: CALL_END_REASON_DISCONNECTED = 5;
+   */
+  DISCONNECTED = 5,
+}
+
+/**
+ * Describes the enum ludra.v1.CallEndReason.
+ */
+export const CallEndReasonSchema: GenEnum<CallEndReason> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_server, 1);
 

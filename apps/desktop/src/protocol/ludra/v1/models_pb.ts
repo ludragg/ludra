@@ -12,7 +12,7 @@ import type { Message as Message$1 } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/models.proto.
  */
 export const file_ludra_v1_models: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIloKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZRIOCgZhdmF0YXIYBCABKAkifwoHTWVzc2FnZRIKCgJpZBgBIAEoCRIXCg9jb252ZXJzYXRpb25faWQYAiABKAkSEQoJc2VuZGVyX2lkGAMgASgJEg8KB2NvbnRlbnQYBCABKAkSKwoHc2VudF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiTAoGRnJpZW5kEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyEiQKBXN0YXRlGAIgASgOMhUubHVkcmEudjEuRnJpZW5kU3RhdGUiYQoMQ29udmVyc2F0aW9uEgoKAmlkGAEgASgJEhwKBHBlZXIYAiABKAsyDi5sdWRyYS52MS5Vc2VyEicKDGxhc3RfbWVzc2FnZRgDIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UqZwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABITCg9QUkVTRU5DRV9PTkxJTkUQARIUChBQUkVTRU5DRV9PRkZMSU5FEAISFgoSUFJFU0VOQ0VfSU5WSVNJQkxFEAMqfAoLRnJpZW5kU3RhdGUSHAoYRlJJRU5EX1NUQVRFX1VOU1BFQ0lGSUVEEAASGQoVRlJJRU5EX1NUQVRFX0FDQ0VQVEVEEAESGQoVRlJJRU5EX1NUQVRFX0lOQ09NSU5HEAISGQoVRlJJRU5EX1NUQVRFX09VVEdPSU5HEANCdQoMY29tLmx1ZHJhLnYxQgtNb2RlbHNQcm90b1ABWhdsdWRyYS9pbnRlcm5hbC9wcm90b2NvbKICA0xYWKoCCEx1ZHJhLlYxygIITHVkcmFcVjHiAhRMdWRyYVxWMVxHUEJNZXRhZGF0YeoCCUx1ZHJhOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIloKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZRIOCgZhdmF0YXIYBCABKAki6AEKB01lc3NhZ2USCgoCaWQYASABKAkSFwoPY29udmVyc2F0aW9uX2lkGAIgASgJEhEKCXNlbmRlcl9pZBgDIAEoCRIPCgdjb250ZW50GAQgASgJEisKB3NlbnRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiMKBGtpbmQYBiABKA4yFS5sdWRyYS52MS5NZXNzYWdlS2luZBIrCgxjYWxsX291dGNvbWUYByABKA4yFS5sdWRyYS52MS5DYWxsT3V0Y29tZRIVCg1jYWxsX2R1cmF0aW9uGAggASgNIkwKBkZyaWVuZBIcCgR1c2VyGAEgASgLMg4ubHVkcmEudjEuVXNlchIkCgVzdGF0ZRgCIAEoDjIVLmx1ZHJhLnYxLkZyaWVuZFN0YXRlImEKDENvbnZlcnNhdGlvbhIKCgJpZBgBIAEoCRIcCgRwZWVyGAIgASgLMg4ubHVkcmEudjEuVXNlchInCgxsYXN0X21lc3NhZ2UYAyABKAsyES5sdWRyYS52MS5NZXNzYWdlIj8KCUljZVNlcnZlchIMCgR1cmxzGAEgAygJEhAKCHVzZXJuYW1lGAIgASgJEhIKCmNyZWRlbnRpYWwYAyABKAkiWgoEQ2FsbBIKCgJpZBgBIAEoCRIcCgRwZWVyGAIgASgLMg4ubHVkcmEudjEuVXNlchIoCgtpY2Vfc2VydmVycxgDIAMoCzITLmx1ZHJhLnYxLkljZVNlcnZlciJSCgpDYWxsU2lnbmFsEg8KB2NhbGxfaWQYASABKAkSIgoEa2luZBgCIAEoDjIULmx1ZHJhLnYxLlNpZ25hbEtpbmQSDwoHcGF5bG9hZBgDIAEoCSpnCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhMKD1BSRVNFTkNFX09OTElORRABEhQKEFBSRVNFTkNFX09GRkxJTkUQAhIWChJQUkVTRU5DRV9JTlZJU0lCTEUQAyp8CgtGcmllbmRTdGF0ZRIcChhGUklFTkRfU1RBVEVfVU5TUEVDSUZJRUQQABIZChVGUklFTkRfU1RBVEVfQUNDRVBURUQQARIZChVGUklFTkRfU1RBVEVfSU5DT01JTkcQAhIZChVGUklFTkRfU1RBVEVfT1VUR09JTkcQAypZCgtNZXNzYWdlS2luZBIcChhNRVNTQUdFX0tJTkRfVU5TUEVDSUZJRUQQABIVChFNRVNTQUdFX0tJTkRfVEVYVBABEhUKEU1FU1NBR0VfS0lORF9DQUxMEAIqlQEKC0NhbGxPdXRjb21lEhwKGENBTExfT1VUQ09NRV9VTlNQRUNJRklFRBAAEhoKFkNBTExfT1VUQ09NRV9DT01QTEVURUQQARIZChVDQUxMX09VVENPTUVfREVDTElORUQQAhIXChNDQUxMX09VVENPTUVfTUlTU0VEEAMSGAoUQ0FMTF9PVVRDT01FX09OR09JTkcQBCqKAQoKU2lnbmFsS2luZBIbChdTSUdOQUxfS0lORF9VTlNQRUNJRklFRBAAEhUKEVNJR05BTF9LSU5EX09GRkVSEAESFgoSU0lHTkFMX0tJTkRfQU5TV0VSEAISGQoVU0lHTkFMX0tJTkRfQ0FORElEQVRFEAMSFQoRU0lHTkFMX0tJTkRfU1RBVEUQBEJ1Cgxjb20ubHVkcmEudjFCC01vZGVsc1Byb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message ludra.v1.User
@@ -74,6 +74,21 @@ export type Message = Message$1<"ludra.v1.Message"> & {
    * @generated from field: google.protobuf.Timestamp sent_at = 5;
    */
   sentAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: ludra.v1.MessageKind kind = 6;
+   */
+  kind: MessageKind;
+
+  /**
+   * @generated from field: ludra.v1.CallOutcome call_outcome = 7;
+   */
+  callOutcome: CallOutcome;
+
+  /**
+   * @generated from field: uint32 call_duration = 8;
+   */
+  callDuration: number;
 };
 
 /**
@@ -131,6 +146,87 @@ export type Conversation = Message$1<"ludra.v1.Conversation"> & {
  */
 export const ConversationSchema: GenMessage<Conversation> = /*@__PURE__*/
   messageDesc(file_ludra_v1_models, 3);
+
+/**
+ * @generated from message ludra.v1.IceServer
+ */
+export type IceServer = Message$1<"ludra.v1.IceServer"> & {
+  /**
+   * @generated from field: repeated string urls = 1;
+   */
+  urls: string[];
+
+  /**
+   * @generated from field: string username = 2;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string credential = 3;
+   */
+  credential: string;
+};
+
+/**
+ * Describes the message ludra.v1.IceServer.
+ * Use `create(IceServerSchema)` to create a new message.
+ */
+export const IceServerSchema: GenMessage<IceServer> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 4);
+
+/**
+ * @generated from message ludra.v1.Call
+ */
+export type Call = Message$1<"ludra.v1.Call"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: ludra.v1.User peer = 2;
+   */
+  peer?: User | undefined;
+
+  /**
+   * @generated from field: repeated ludra.v1.IceServer ice_servers = 3;
+   */
+  iceServers: IceServer[];
+};
+
+/**
+ * Describes the message ludra.v1.Call.
+ * Use `create(CallSchema)` to create a new message.
+ */
+export const CallSchema: GenMessage<Call> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 5);
+
+/**
+ * @generated from message ludra.v1.CallSignal
+ */
+export type CallSignal = Message$1<"ludra.v1.CallSignal"> & {
+  /**
+   * @generated from field: string call_id = 1;
+   */
+  callId: string;
+
+  /**
+   * @generated from field: ludra.v1.SignalKind kind = 2;
+   */
+  kind: SignalKind;
+
+  /**
+   * @generated from field: string payload = 3;
+   */
+  payload: string;
+};
+
+/**
+ * Describes the message ludra.v1.CallSignal.
+ * Use `create(CallSignalSchema)` to create a new message.
+ */
+export const CallSignalSchema: GenMessage<CallSignal> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 6);
 
 /**
  * @generated from enum ludra.v1.Presence
@@ -193,4 +289,102 @@ export enum FriendState {
  */
 export const FriendStateSchema: GenEnum<FriendState> = /*@__PURE__*/
   enumDesc(file_ludra_v1_models, 1);
+
+/**
+ * @generated from enum ludra.v1.MessageKind
+ */
+export enum MessageKind {
+  /**
+   * @generated from enum value: MESSAGE_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MESSAGE_KIND_TEXT = 1;
+   */
+  TEXT = 1,
+
+  /**
+   * @generated from enum value: MESSAGE_KIND_CALL = 2;
+   */
+  CALL = 2,
+}
+
+/**
+ * Describes the enum ludra.v1.MessageKind.
+ */
+export const MessageKindSchema: GenEnum<MessageKind> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_models, 2);
+
+/**
+ * @generated from enum ludra.v1.CallOutcome
+ */
+export enum CallOutcome {
+  /**
+   * @generated from enum value: CALL_OUTCOME_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: CALL_OUTCOME_COMPLETED = 1;
+   */
+  COMPLETED = 1,
+
+  /**
+   * @generated from enum value: CALL_OUTCOME_DECLINED = 2;
+   */
+  DECLINED = 2,
+
+  /**
+   * @generated from enum value: CALL_OUTCOME_MISSED = 3;
+   */
+  MISSED = 3,
+
+  /**
+   * @generated from enum value: CALL_OUTCOME_ONGOING = 4;
+   */
+  ONGOING = 4,
+}
+
+/**
+ * Describes the enum ludra.v1.CallOutcome.
+ */
+export const CallOutcomeSchema: GenEnum<CallOutcome> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_models, 3);
+
+/**
+ * @generated from enum ludra.v1.SignalKind
+ */
+export enum SignalKind {
+  /**
+   * @generated from enum value: SIGNAL_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SIGNAL_KIND_OFFER = 1;
+   */
+  OFFER = 1,
+
+  /**
+   * @generated from enum value: SIGNAL_KIND_ANSWER = 2;
+   */
+  ANSWER = 2,
+
+  /**
+   * @generated from enum value: SIGNAL_KIND_CANDIDATE = 3;
+   */
+  CANDIDATE = 3,
+
+  /**
+   * @generated from enum value: SIGNAL_KIND_STATE = 4;
+   */
+  STATE = 4,
+}
+
+/**
+ * Describes the enum ludra.v1.SignalKind.
+ */
+export const SignalKindSchema: GenEnum<SignalKind> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_models, 4);
 

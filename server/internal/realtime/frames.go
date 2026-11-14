@@ -150,6 +150,48 @@ func friendRemovedFrame(userID string) *protocol.ServerFrame {
 	}
 }
 
+func callStartedFrame(call *protocol.Call) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CallStarted{CallStarted: &protocol.CallStarted{Call: call}},
+	}
+}
+
+func callIncomingFrame(call *protocol.Call) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CallIncoming{CallIncoming: &protocol.CallIncoming{Call: call}},
+	}
+}
+
+func callAcceptedFrame(callID string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CallAccepted{CallAccepted: &protocol.CallAccepted{CallId: callID}},
+	}
+}
+
+func callEndedFrame(callID string, reason protocol.CallEndReason) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CallEnded{CallEnded: &protocol.CallEnded{CallId: callID, Reason: reason}},
+	}
+}
+
+func callSignalFrame(signal *protocol.CallSignal) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_CallSignal{CallSignal: signal},
+	}
+}
+
+func messageUpdatedFrame(message *protocol.Message) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_MessageUpdated{MessageUpdated: &protocol.MessageUpdated{Message: message}},
+	}
+}
+
+func ackFrame() *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_Ack{Ack: &protocol.Ack{}},
+	}
+}
+
 func toUser(user database.User) *protocol.User {
 	return &protocol.User{Id: user.ID, Username: user.Username, Avatar: user.Avatar}
 }
@@ -162,12 +204,31 @@ func toConversation(conversation chat.Conversation) *protocol.Conversation {
 	return result
 }
 
+var callOutcomes = map[string]protocol.CallOutcome{
+	"completed": protocol.CallOutcome_CALL_OUTCOME_COMPLETED,
+	"declined":  protocol.CallOutcome_CALL_OUTCOME_DECLINED,
+	"missed":    protocol.CallOutcome_CALL_OUTCOME_MISSED,
+	"ongoing":   protocol.CallOutcome_CALL_OUTCOME_ONGOING,
+}
+
 func toMessage(message database.Message) *protocol.Message {
-	return &protocol.Message{
+	result := &protocol.Message{
 		Id:             message.ID,
 		ConversationId: message.ConversationID,
 		SenderId:       message.SenderID,
 		Content:        message.Content,
 		SentAt:         timestamppb.New(message.CreatedAt),
+		Kind:           protocol.MessageKind_MESSAGE_KIND_TEXT,
 	}
+
+	if message.Kind == "call" {
+		result.Kind = protocol.MessageKind_MESSAGE_KIND_CALL
+		if message.CallOutcome != nil {
+			result.CallOutcome = callOutcomes[*message.CallOutcome]
+		}
+		if message.CallDuration != nil {
+			result.CallDuration = uint32(*message.CallDuration)
+		}
+	}
+	return result
 }

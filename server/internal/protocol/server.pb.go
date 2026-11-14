@@ -34,21 +34,23 @@ const (
 	ErrorCode_ERROR_CODE_INVALID_CODE        ErrorCode = 7
 	ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS   ErrorCode = 8
 	ErrorCode_ERROR_CODE_FORBIDDEN           ErrorCode = 9
+	ErrorCode_ERROR_CODE_UNAVAILABLE         ErrorCode = 10
 )
 
 // Enum value maps for ErrorCode.
 var (
 	ErrorCode_name = map[int32]string{
-		0: "ERROR_CODE_UNSPECIFIED",
-		1: "ERROR_CODE_INVALID_REQUEST",
-		2: "ERROR_CODE_UNAUTHENTICATED",
-		3: "ERROR_CODE_NOT_FOUND",
-		4: "ERROR_CODE_INTERNAL",
-		5: "ERROR_CODE_INVALID_CREDENTIALS",
-		6: "ERROR_CODE_ALREADY_EXISTS",
-		7: "ERROR_CODE_INVALID_CODE",
-		8: "ERROR_CODE_TOO_MANY_REQUESTS",
-		9: "ERROR_CODE_FORBIDDEN",
+		0:  "ERROR_CODE_UNSPECIFIED",
+		1:  "ERROR_CODE_INVALID_REQUEST",
+		2:  "ERROR_CODE_UNAUTHENTICATED",
+		3:  "ERROR_CODE_NOT_FOUND",
+		4:  "ERROR_CODE_INTERNAL",
+		5:  "ERROR_CODE_INVALID_CREDENTIALS",
+		6:  "ERROR_CODE_ALREADY_EXISTS",
+		7:  "ERROR_CODE_INVALID_CODE",
+		8:  "ERROR_CODE_TOO_MANY_REQUESTS",
+		9:  "ERROR_CODE_FORBIDDEN",
+		10: "ERROR_CODE_UNAVAILABLE",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":         0,
@@ -61,6 +63,7 @@ var (
 		"ERROR_CODE_INVALID_CODE":        7,
 		"ERROR_CODE_TOO_MANY_REQUESTS":   8,
 		"ERROR_CODE_FORBIDDEN":           9,
+		"ERROR_CODE_UNAVAILABLE":         10,
 	}
 )
 
@@ -91,6 +94,64 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_ludra_v1_server_proto_rawDescGZIP(), []int{0}
 }
 
+type CallEndReason int32
+
+const (
+	CallEndReason_CALL_END_REASON_UNSPECIFIED        CallEndReason = 0
+	CallEndReason_CALL_END_REASON_HUNG_UP            CallEndReason = 1
+	CallEndReason_CALL_END_REASON_DECLINED           CallEndReason = 2
+	CallEndReason_CALL_END_REASON_MISSED             CallEndReason = 3
+	CallEndReason_CALL_END_REASON_ANSWERED_ELSEWHERE CallEndReason = 4
+	CallEndReason_CALL_END_REASON_DISCONNECTED       CallEndReason = 5
+)
+
+// Enum value maps for CallEndReason.
+var (
+	CallEndReason_name = map[int32]string{
+		0: "CALL_END_REASON_UNSPECIFIED",
+		1: "CALL_END_REASON_HUNG_UP",
+		2: "CALL_END_REASON_DECLINED",
+		3: "CALL_END_REASON_MISSED",
+		4: "CALL_END_REASON_ANSWERED_ELSEWHERE",
+		5: "CALL_END_REASON_DISCONNECTED",
+	}
+	CallEndReason_value = map[string]int32{
+		"CALL_END_REASON_UNSPECIFIED":        0,
+		"CALL_END_REASON_HUNG_UP":            1,
+		"CALL_END_REASON_DECLINED":           2,
+		"CALL_END_REASON_MISSED":             3,
+		"CALL_END_REASON_ANSWERED_ELSEWHERE": 4,
+		"CALL_END_REASON_DISCONNECTED":       5,
+	}
+)
+
+func (x CallEndReason) Enum() *CallEndReason {
+	p := new(CallEndReason)
+	*p = x
+	return p
+}
+
+func (x CallEndReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CallEndReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_ludra_v1_server_proto_enumTypes[1].Descriptor()
+}
+
+func (CallEndReason) Type() protoreflect.EnumType {
+	return &file_ludra_v1_server_proto_enumTypes[1]
+}
+
+func (x CallEndReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CallEndReason.Descriptor instead.
+func (CallEndReason) EnumDescriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{1}
+}
+
 type ServerFrame struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	RequestId uint32                 `protobuf:"varint,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
@@ -113,6 +174,13 @@ type ServerFrame struct {
 	//	*ServerFrame_PasswordChanged
 	//	*ServerFrame_TwoFactorChanged
 	//	*ServerFrame_UserUpdated
+	//	*ServerFrame_CallStarted
+	//	*ServerFrame_CallIncoming
+	//	*ServerFrame_CallAccepted
+	//	*ServerFrame_CallEnded
+	//	*ServerFrame_CallSignal
+	//	*ServerFrame_Ack
+	//	*ServerFrame_MessageUpdated
 	Payload       isServerFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -315,6 +383,69 @@ func (x *ServerFrame) GetUserUpdated() *UserUpdated {
 	return nil
 }
 
+func (x *ServerFrame) GetCallStarted() *CallStarted {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_CallStarted); ok {
+			return x.CallStarted
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetCallIncoming() *CallIncoming {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_CallIncoming); ok {
+			return x.CallIncoming
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetCallAccepted() *CallAccepted {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_CallAccepted); ok {
+			return x.CallAccepted
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetCallEnded() *CallEnded {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_CallEnded); ok {
+			return x.CallEnded
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetCallSignal() *CallSignal {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_CallSignal); ok {
+			return x.CallSignal
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetAck() *Ack {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_Ack); ok {
+			return x.Ack
+		}
+	}
+	return nil
+}
+
+func (x *ServerFrame) GetMessageUpdated() *MessageUpdated {
+	if x != nil {
+		if x, ok := x.Payload.(*ServerFrame_MessageUpdated); ok {
+			return x.MessageUpdated
+		}
+	}
+	return nil
+}
+
 type isServerFrame_Payload interface {
 	isServerFrame_Payload()
 }
@@ -387,6 +518,34 @@ type ServerFrame_UserUpdated struct {
 	UserUpdated *UserUpdated `protobuf:"bytes,18,opt,name=user_updated,json=userUpdated,proto3,oneof"`
 }
 
+type ServerFrame_CallStarted struct {
+	CallStarted *CallStarted `protobuf:"bytes,19,opt,name=call_started,json=callStarted,proto3,oneof"`
+}
+
+type ServerFrame_CallIncoming struct {
+	CallIncoming *CallIncoming `protobuf:"bytes,20,opt,name=call_incoming,json=callIncoming,proto3,oneof"`
+}
+
+type ServerFrame_CallAccepted struct {
+	CallAccepted *CallAccepted `protobuf:"bytes,21,opt,name=call_accepted,json=callAccepted,proto3,oneof"`
+}
+
+type ServerFrame_CallEnded struct {
+	CallEnded *CallEnded `protobuf:"bytes,22,opt,name=call_ended,json=callEnded,proto3,oneof"`
+}
+
+type ServerFrame_CallSignal struct {
+	CallSignal *CallSignal `protobuf:"bytes,23,opt,name=call_signal,json=callSignal,proto3,oneof"`
+}
+
+type ServerFrame_Ack struct {
+	Ack *Ack `protobuf:"bytes,24,opt,name=ack,proto3,oneof"`
+}
+
+type ServerFrame_MessageUpdated struct {
+	MessageUpdated *MessageUpdated `protobuf:"bytes,25,opt,name=message_updated,json=messageUpdated,proto3,oneof"`
+}
+
 func (*ServerFrame_Error) isServerFrame_Payload() {}
 
 func (*ServerFrame_LoggedIn) isServerFrame_Payload() {}
@@ -420,6 +579,20 @@ func (*ServerFrame_PasswordChanged) isServerFrame_Payload() {}
 func (*ServerFrame_TwoFactorChanged) isServerFrame_Payload() {}
 
 func (*ServerFrame_UserUpdated) isServerFrame_Payload() {}
+
+func (*ServerFrame_CallStarted) isServerFrame_Payload() {}
+
+func (*ServerFrame_CallIncoming) isServerFrame_Payload() {}
+
+func (*ServerFrame_CallAccepted) isServerFrame_Payload() {}
+
+func (*ServerFrame_CallEnded) isServerFrame_Payload() {}
+
+func (*ServerFrame_CallSignal) isServerFrame_Payload() {}
+
+func (*ServerFrame_Ack) isServerFrame_Payload() {}
+
+func (*ServerFrame_MessageUpdated) isServerFrame_Payload() {}
 
 type Error struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1201,11 +1374,275 @@ func (x *UserUpdated) GetUser() *User {
 	return nil
 }
 
+type CallStarted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Call          *Call                  `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallStarted) Reset() {
+	*x = CallStarted{}
+	mi := &file_ludra_v1_server_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallStarted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallStarted) ProtoMessage() {}
+
+func (x *CallStarted) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallStarted.ProtoReflect.Descriptor instead.
+func (*CallStarted) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *CallStarted) GetCall() *Call {
+	if x != nil {
+		return x.Call
+	}
+	return nil
+}
+
+type CallIncoming struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Call          *Call                  `protobuf:"bytes,1,opt,name=call,proto3" json:"call,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallIncoming) Reset() {
+	*x = CallIncoming{}
+	mi := &file_ludra_v1_server_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallIncoming) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallIncoming) ProtoMessage() {}
+
+func (x *CallIncoming) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallIncoming.ProtoReflect.Descriptor instead.
+func (*CallIncoming) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *CallIncoming) GetCall() *Call {
+	if x != nil {
+		return x.Call
+	}
+	return nil
+}
+
+type CallAccepted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallAccepted) Reset() {
+	*x = CallAccepted{}
+	mi := &file_ludra_v1_server_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallAccepted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallAccepted) ProtoMessage() {}
+
+func (x *CallAccepted) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallAccepted.ProtoReflect.Descriptor instead.
+func (*CallAccepted) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CallAccepted) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
+type CallEnded struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	Reason        CallEndReason          `protobuf:"varint,2,opt,name=reason,proto3,enum=ludra.v1.CallEndReason" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallEnded) Reset() {
+	*x = CallEnded{}
+	mi := &file_ludra_v1_server_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallEnded) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallEnded) ProtoMessage() {}
+
+func (x *CallEnded) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallEnded.ProtoReflect.Descriptor instead.
+func (*CallEnded) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *CallEnded) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
+func (x *CallEnded) GetReason() CallEndReason {
+	if x != nil {
+		return x.Reason
+	}
+	return CallEndReason_CALL_END_REASON_UNSPECIFIED
+}
+
+type Ack struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Ack) Reset() {
+	*x = Ack{}
+	mi := &file_ludra_v1_server_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Ack) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Ack) ProtoMessage() {}
+
+func (x *Ack) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Ack.ProtoReflect.Descriptor instead.
+func (*Ack) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{22}
+}
+
+type MessageUpdated struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       *Message               `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageUpdated) Reset() {
+	*x = MessageUpdated{}
+	mi := &file_ludra_v1_server_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageUpdated) ProtoMessage() {}
+
+func (x *MessageUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_server_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageUpdated.ProtoReflect.Descriptor instead.
+func (*MessageUpdated) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_server_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *MessageUpdated) GetMessage() *Message {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
 var File_ludra_v1_server_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_server_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\x9d\t\n" +
+	"\x15ludra/v1/server.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xae\f\n" +
 	"\vServerFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -1228,7 +1665,16 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\x13two_factor_required\x18\x0f \x01(\v2\x1b.ludra.v1.TwoFactorRequiredH\x00R\x11twoFactorRequired\x12F\n" +
 	"\x10password_changed\x18\x10 \x01(\v2\x19.ludra.v1.PasswordChangedH\x00R\x0fpasswordChanged\x12J\n" +
 	"\x12two_factor_changed\x18\x11 \x01(\v2\x1a.ludra.v1.TwoFactorChangedH\x00R\x10twoFactorChanged\x12:\n" +
-	"\fuser_updated\x18\x12 \x01(\v2\x15.ludra.v1.UserUpdatedH\x00R\vuserUpdatedB\t\n" +
+	"\fuser_updated\x18\x12 \x01(\v2\x15.ludra.v1.UserUpdatedH\x00R\vuserUpdated\x12:\n" +
+	"\fcall_started\x18\x13 \x01(\v2\x15.ludra.v1.CallStartedH\x00R\vcallStarted\x12=\n" +
+	"\rcall_incoming\x18\x14 \x01(\v2\x16.ludra.v1.CallIncomingH\x00R\fcallIncoming\x12=\n" +
+	"\rcall_accepted\x18\x15 \x01(\v2\x16.ludra.v1.CallAcceptedH\x00R\fcallAccepted\x124\n" +
+	"\n" +
+	"call_ended\x18\x16 \x01(\v2\x13.ludra.v1.CallEndedH\x00R\tcallEnded\x127\n" +
+	"\vcall_signal\x18\x17 \x01(\v2\x14.ludra.v1.CallSignalH\x00R\n" +
+	"callSignal\x12!\n" +
+	"\x03ack\x18\x18 \x01(\v2\r.ludra.v1.AckH\x00R\x03ack\x12C\n" +
+	"\x0fmessage_updated\x18\x19 \x01(\v2\x18.ludra.v1.MessageUpdatedH\x00R\x0emessageUpdatedB\t\n" +
 	"\apayload\"J\n" +
 	"\x05Error\x12'\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x13.ludra.v1.ErrorCodeR\x04code\x12\x18\n" +
@@ -1270,7 +1716,19 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\x10TwoFactorChanged\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\"1\n" +
 	"\vUserUpdated\x12\"\n" +
-	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user*\xb6\x02\n" +
+	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user\"1\n" +
+	"\vCallStarted\x12\"\n" +
+	"\x04call\x18\x01 \x01(\v2\x0e.ludra.v1.CallR\x04call\"2\n" +
+	"\fCallIncoming\x12\"\n" +
+	"\x04call\x18\x01 \x01(\v2\x0e.ludra.v1.CallR\x04call\"'\n" +
+	"\fCallAccepted\x12\x17\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\"U\n" +
+	"\tCallEnded\x12\x17\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\x12/\n" +
+	"\x06reason\x18\x02 \x01(\x0e2\x17.ludra.v1.CallEndReasonR\x06reason\"\x05\n" +
+	"\x03Ack\"=\n" +
+	"\x0eMessageUpdated\x12+\n" +
+	"\amessage\x18\x01 \x01(\v2\x11.ludra.v1.MessageR\amessage*\xd2\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aERROR_CODE_INVALID_REQUEST\x10\x01\x12\x1e\n" +
@@ -1281,7 +1739,16 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\x19ERROR_CODE_ALREADY_EXISTS\x10\x06\x12\x1b\n" +
 	"\x17ERROR_CODE_INVALID_CODE\x10\a\x12 \n" +
 	"\x1cERROR_CODE_TOO_MANY_REQUESTS\x10\b\x12\x18\n" +
-	"\x14ERROR_CODE_FORBIDDEN\x10\tBu\n" +
+	"\x14ERROR_CODE_FORBIDDEN\x10\t\x12\x1a\n" +
+	"\x16ERROR_CODE_UNAVAILABLE\x10\n" +
+	"*\xd1\x01\n" +
+	"\rCallEndReason\x12\x1f\n" +
+	"\x1bCALL_END_REASON_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17CALL_END_REASON_HUNG_UP\x10\x01\x12\x1c\n" +
+	"\x18CALL_END_REASON_DECLINED\x10\x02\x12\x1a\n" +
+	"\x16CALL_END_REASON_MISSED\x10\x03\x12&\n" +
+	"\"CALL_END_REASON_ANSWERED_ELSEWHERE\x10\x04\x12 \n" +
+	"\x1cCALL_END_REASON_DISCONNECTED\x10\x05Bu\n" +
 	"\fcom.ludra.v1B\vServerProtoP\x01Z\x17ludra/internal/protocol\xa2\x02\x03LXX\xaa\x02\bLudra.V1\xca\x02\bLudra\\V1\xe2\x02\x14Ludra\\V1\\GPBMetadata\xea\x02\tLudra::V1b\x06proto3"
 
 var (
@@ -1296,67 +1763,87 @@ func file_ludra_v1_server_proto_rawDescGZIP() []byte {
 	return file_ludra_v1_server_proto_rawDescData
 }
 
-var file_ludra_v1_server_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_ludra_v1_server_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_ludra_v1_server_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_ludra_v1_server_proto_goTypes = []any{
 	(ErrorCode)(0),               // 0: ludra.v1.ErrorCode
-	(*ServerFrame)(nil),          // 1: ludra.v1.ServerFrame
-	(*Error)(nil),                // 2: ludra.v1.Error
-	(*LoggedIn)(nil),             // 3: ludra.v1.LoggedIn
-	(*LoggedOut)(nil),            // 4: ludra.v1.LoggedOut
-	(*VerificationRequired)(nil), // 5: ludra.v1.VerificationRequired
-	(*CodeSent)(nil),             // 6: ludra.v1.CodeSent
-	(*ConversationList)(nil),     // 7: ludra.v1.ConversationList
-	(*ConversationOpened)(nil),   // 8: ludra.v1.ConversationOpened
-	(*MessageHistory)(nil),       // 9: ludra.v1.MessageHistory
-	(*MessageCreated)(nil),       // 10: ludra.v1.MessageCreated
-	(*PresenceChanged)(nil),      // 11: ludra.v1.PresenceChanged
-	(*FriendList)(nil),           // 12: ludra.v1.FriendList
-	(*FriendUpdated)(nil),        // 13: ludra.v1.FriendUpdated
-	(*FriendRemoved)(nil),        // 14: ludra.v1.FriendRemoved
-	(*TwoFactorRequired)(nil),    // 15: ludra.v1.TwoFactorRequired
-	(*PasswordChanged)(nil),      // 16: ludra.v1.PasswordChanged
-	(*TwoFactorChanged)(nil),     // 17: ludra.v1.TwoFactorChanged
-	(*UserUpdated)(nil),          // 18: ludra.v1.UserUpdated
-	(*User)(nil),                 // 19: ludra.v1.User
-	(*Conversation)(nil),         // 20: ludra.v1.Conversation
-	(*Message)(nil),              // 21: ludra.v1.Message
-	(Presence)(0),                // 22: ludra.v1.Presence
-	(*Friend)(nil),               // 23: ludra.v1.Friend
+	(CallEndReason)(0),           // 1: ludra.v1.CallEndReason
+	(*ServerFrame)(nil),          // 2: ludra.v1.ServerFrame
+	(*Error)(nil),                // 3: ludra.v1.Error
+	(*LoggedIn)(nil),             // 4: ludra.v1.LoggedIn
+	(*LoggedOut)(nil),            // 5: ludra.v1.LoggedOut
+	(*VerificationRequired)(nil), // 6: ludra.v1.VerificationRequired
+	(*CodeSent)(nil),             // 7: ludra.v1.CodeSent
+	(*ConversationList)(nil),     // 8: ludra.v1.ConversationList
+	(*ConversationOpened)(nil),   // 9: ludra.v1.ConversationOpened
+	(*MessageHistory)(nil),       // 10: ludra.v1.MessageHistory
+	(*MessageCreated)(nil),       // 11: ludra.v1.MessageCreated
+	(*PresenceChanged)(nil),      // 12: ludra.v1.PresenceChanged
+	(*FriendList)(nil),           // 13: ludra.v1.FriendList
+	(*FriendUpdated)(nil),        // 14: ludra.v1.FriendUpdated
+	(*FriendRemoved)(nil),        // 15: ludra.v1.FriendRemoved
+	(*TwoFactorRequired)(nil),    // 16: ludra.v1.TwoFactorRequired
+	(*PasswordChanged)(nil),      // 17: ludra.v1.PasswordChanged
+	(*TwoFactorChanged)(nil),     // 18: ludra.v1.TwoFactorChanged
+	(*UserUpdated)(nil),          // 19: ludra.v1.UserUpdated
+	(*CallStarted)(nil),          // 20: ludra.v1.CallStarted
+	(*CallIncoming)(nil),         // 21: ludra.v1.CallIncoming
+	(*CallAccepted)(nil),         // 22: ludra.v1.CallAccepted
+	(*CallEnded)(nil),            // 23: ludra.v1.CallEnded
+	(*Ack)(nil),                  // 24: ludra.v1.Ack
+	(*MessageUpdated)(nil),       // 25: ludra.v1.MessageUpdated
+	(*CallSignal)(nil),           // 26: ludra.v1.CallSignal
+	(*User)(nil),                 // 27: ludra.v1.User
+	(*Conversation)(nil),         // 28: ludra.v1.Conversation
+	(*Message)(nil),              // 29: ludra.v1.Message
+	(Presence)(0),                // 30: ludra.v1.Presence
+	(*Friend)(nil),               // 31: ludra.v1.Friend
+	(*Call)(nil),                 // 32: ludra.v1.Call
 }
 var file_ludra_v1_server_proto_depIdxs = []int32{
-	2,  // 0: ludra.v1.ServerFrame.error:type_name -> ludra.v1.Error
-	3,  // 1: ludra.v1.ServerFrame.logged_in:type_name -> ludra.v1.LoggedIn
-	7,  // 2: ludra.v1.ServerFrame.conversation_list:type_name -> ludra.v1.ConversationList
-	8,  // 3: ludra.v1.ServerFrame.conversation_opened:type_name -> ludra.v1.ConversationOpened
-	9,  // 4: ludra.v1.ServerFrame.message_history:type_name -> ludra.v1.MessageHistory
-	10, // 5: ludra.v1.ServerFrame.message_created:type_name -> ludra.v1.MessageCreated
-	11, // 6: ludra.v1.ServerFrame.presence_changed:type_name -> ludra.v1.PresenceChanged
-	4,  // 7: ludra.v1.ServerFrame.logged_out:type_name -> ludra.v1.LoggedOut
-	5,  // 8: ludra.v1.ServerFrame.verification_required:type_name -> ludra.v1.VerificationRequired
-	6,  // 9: ludra.v1.ServerFrame.code_sent:type_name -> ludra.v1.CodeSent
-	12, // 10: ludra.v1.ServerFrame.friend_list:type_name -> ludra.v1.FriendList
-	13, // 11: ludra.v1.ServerFrame.friend_updated:type_name -> ludra.v1.FriendUpdated
-	14, // 12: ludra.v1.ServerFrame.friend_removed:type_name -> ludra.v1.FriendRemoved
-	15, // 13: ludra.v1.ServerFrame.two_factor_required:type_name -> ludra.v1.TwoFactorRequired
-	16, // 14: ludra.v1.ServerFrame.password_changed:type_name -> ludra.v1.PasswordChanged
-	17, // 15: ludra.v1.ServerFrame.two_factor_changed:type_name -> ludra.v1.TwoFactorChanged
-	18, // 16: ludra.v1.ServerFrame.user_updated:type_name -> ludra.v1.UserUpdated
-	0,  // 17: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
-	19, // 18: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
-	20, // 19: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
-	20, // 20: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
-	21, // 21: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
-	21, // 22: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
-	22, // 23: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
-	23, // 24: ludra.v1.FriendList.friends:type_name -> ludra.v1.Friend
-	23, // 25: ludra.v1.FriendUpdated.friend:type_name -> ludra.v1.Friend
-	19, // 26: ludra.v1.UserUpdated.user:type_name -> ludra.v1.User
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	3,  // 0: ludra.v1.ServerFrame.error:type_name -> ludra.v1.Error
+	4,  // 1: ludra.v1.ServerFrame.logged_in:type_name -> ludra.v1.LoggedIn
+	8,  // 2: ludra.v1.ServerFrame.conversation_list:type_name -> ludra.v1.ConversationList
+	9,  // 3: ludra.v1.ServerFrame.conversation_opened:type_name -> ludra.v1.ConversationOpened
+	10, // 4: ludra.v1.ServerFrame.message_history:type_name -> ludra.v1.MessageHistory
+	11, // 5: ludra.v1.ServerFrame.message_created:type_name -> ludra.v1.MessageCreated
+	12, // 6: ludra.v1.ServerFrame.presence_changed:type_name -> ludra.v1.PresenceChanged
+	5,  // 7: ludra.v1.ServerFrame.logged_out:type_name -> ludra.v1.LoggedOut
+	6,  // 8: ludra.v1.ServerFrame.verification_required:type_name -> ludra.v1.VerificationRequired
+	7,  // 9: ludra.v1.ServerFrame.code_sent:type_name -> ludra.v1.CodeSent
+	13, // 10: ludra.v1.ServerFrame.friend_list:type_name -> ludra.v1.FriendList
+	14, // 11: ludra.v1.ServerFrame.friend_updated:type_name -> ludra.v1.FriendUpdated
+	15, // 12: ludra.v1.ServerFrame.friend_removed:type_name -> ludra.v1.FriendRemoved
+	16, // 13: ludra.v1.ServerFrame.two_factor_required:type_name -> ludra.v1.TwoFactorRequired
+	17, // 14: ludra.v1.ServerFrame.password_changed:type_name -> ludra.v1.PasswordChanged
+	18, // 15: ludra.v1.ServerFrame.two_factor_changed:type_name -> ludra.v1.TwoFactorChanged
+	19, // 16: ludra.v1.ServerFrame.user_updated:type_name -> ludra.v1.UserUpdated
+	20, // 17: ludra.v1.ServerFrame.call_started:type_name -> ludra.v1.CallStarted
+	21, // 18: ludra.v1.ServerFrame.call_incoming:type_name -> ludra.v1.CallIncoming
+	22, // 19: ludra.v1.ServerFrame.call_accepted:type_name -> ludra.v1.CallAccepted
+	23, // 20: ludra.v1.ServerFrame.call_ended:type_name -> ludra.v1.CallEnded
+	26, // 21: ludra.v1.ServerFrame.call_signal:type_name -> ludra.v1.CallSignal
+	24, // 22: ludra.v1.ServerFrame.ack:type_name -> ludra.v1.Ack
+	25, // 23: ludra.v1.ServerFrame.message_updated:type_name -> ludra.v1.MessageUpdated
+	0,  // 24: ludra.v1.Error.code:type_name -> ludra.v1.ErrorCode
+	27, // 25: ludra.v1.LoggedIn.user:type_name -> ludra.v1.User
+	28, // 26: ludra.v1.ConversationList.conversations:type_name -> ludra.v1.Conversation
+	28, // 27: ludra.v1.ConversationOpened.conversation:type_name -> ludra.v1.Conversation
+	29, // 28: ludra.v1.MessageHistory.messages:type_name -> ludra.v1.Message
+	29, // 29: ludra.v1.MessageCreated.message:type_name -> ludra.v1.Message
+	30, // 30: ludra.v1.PresenceChanged.presence:type_name -> ludra.v1.Presence
+	31, // 31: ludra.v1.FriendList.friends:type_name -> ludra.v1.Friend
+	31, // 32: ludra.v1.FriendUpdated.friend:type_name -> ludra.v1.Friend
+	27, // 33: ludra.v1.UserUpdated.user:type_name -> ludra.v1.User
+	32, // 34: ludra.v1.CallStarted.call:type_name -> ludra.v1.Call
+	32, // 35: ludra.v1.CallIncoming.call:type_name -> ludra.v1.Call
+	1,  // 36: ludra.v1.CallEnded.reason:type_name -> ludra.v1.CallEndReason
+	29, // 37: ludra.v1.MessageUpdated.message:type_name -> ludra.v1.Message
+	38, // [38:38] is the sub-list for method output_type
+	38, // [38:38] is the sub-list for method input_type
+	38, // [38:38] is the sub-list for extension type_name
+	38, // [38:38] is the sub-list for extension extendee
+	0,  // [0:38] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_server_proto_init() }
@@ -1383,14 +1870,21 @@ func file_ludra_v1_server_proto_init() {
 		(*ServerFrame_PasswordChanged)(nil),
 		(*ServerFrame_TwoFactorChanged)(nil),
 		(*ServerFrame_UserUpdated)(nil),
+		(*ServerFrame_CallStarted)(nil),
+		(*ServerFrame_CallIncoming)(nil),
+		(*ServerFrame_CallAccepted)(nil),
+		(*ServerFrame_CallEnded)(nil),
+		(*ServerFrame_CallSignal)(nil),
+		(*ServerFrame_Ack)(nil),
+		(*ServerFrame_MessageUpdated)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_server_proto_rawDesc), len(file_ludra_v1_server_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   18,
+			NumEnums:      2,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

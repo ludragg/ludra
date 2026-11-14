@@ -6,8 +6,16 @@
     label,
     options,
     value,
+    hideLabel = false,
     onchange,
-  }: { id: string; label: string; options: Option[]; value: T; onchange: (value: T) => void } = $props();
+  }: {
+    id: string;
+    label: string;
+    options: Option[];
+    value: T;
+    hideLabel?: boolean;
+    onchange: (value: T) => void;
+  } = $props();
 
   let open = $state(false);
   let root = $state<HTMLElement>();
@@ -37,7 +45,7 @@
 <svelte:window {onpointerdown} {onkeydown} />
 
 <div class="select" bind:this={root}>
-  <span id="{id}-label" class="select__label">{label}</span>
+  <span id="{id}-label" class={hideLabel ? "sr-only" : "select__label"}>{label}</span>
   <div class="select__control">
     <button
       class="select__button"

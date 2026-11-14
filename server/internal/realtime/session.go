@@ -14,6 +14,7 @@ import (
 	"ludra/internal/failure"
 	"ludra/internal/friends"
 	"ludra/internal/protocol"
+	"ludra/internal/voice"
 )
 
 const (
@@ -29,10 +30,13 @@ type session struct {
 	chat      *chat.Service
 	friends   *friends.Service
 	account   *account.Service
+	relay     *voice.Relay
+	calls     *calls
 	ip        string
 	user      *protocol.User
 	sessionID string
 	challenge *account.Challenge
+	later     []*protocol.ServerFrame
 	send      chan []byte
 }
 
@@ -66,6 +70,10 @@ func (s *session) readLoop(ctx context.Context) {
 		reply := s.handle(ctx, frame)
 		reply.RequestId = frame.RequestId
 		s.reply(reply)
+		for _, pending := range s.later {
+			s.reply(pending)
+		}
+		s.later = nil
 	}
 }
 
@@ -227,6 +235,14 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 		return s.setAvatar(ctx, payload.SetAvatar)
 	case *protocol.ClientFrame_RemoveAvatar:
 		return s.removeAvatar(ctx)
+	case *protocol.ClientFrame_StartCall:
+		return s.startCall(ctx, payload.StartCall)
+	case *protocol.ClientFrame_AnswerCall:
+		return s.answerCall(payload.AnswerCall)
+	case *protocol.ClientFrame_EndCall:
+		return s.endCall(payload.EndCall)
+	case *protocol.ClientFrame_CallSignal:
+		return s.relaySignal(payload.CallSignal)
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "unsupported request")
 	}

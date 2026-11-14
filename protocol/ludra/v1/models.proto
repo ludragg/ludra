@@ -25,12 +25,29 @@ message User {
   string avatar = 4;
 }
 
+enum MessageKind {
+  MESSAGE_KIND_UNSPECIFIED = 0;
+  MESSAGE_KIND_TEXT = 1;
+  MESSAGE_KIND_CALL = 2;
+}
+
+enum CallOutcome {
+  CALL_OUTCOME_UNSPECIFIED = 0;
+  CALL_OUTCOME_COMPLETED = 1;
+  CALL_OUTCOME_DECLINED = 2;
+  CALL_OUTCOME_MISSED = 3;
+  CALL_OUTCOME_ONGOING = 4;
+}
+
 message Message {
   string id = 1;
   string conversation_id = 2;
   string sender_id = 3;
   string content = 4;
   google.protobuf.Timestamp sent_at = 5;
+  MessageKind kind = 6;
+  CallOutcome call_outcome = 7;
+  uint32 call_duration = 8;
 }
 
 message Friend {
@@ -42,4 +59,30 @@ message Conversation {
   string id = 1;
   User peer = 2;
   Message last_message = 3;
+}
+
+message IceServer {
+  repeated string urls = 1;
+  string username = 2;
+  string credential = 3;
+}
+
+message Call {
+  string id = 1;
+  User peer = 2;
+  repeated IceServer ice_servers = 3;
+}
+
+enum SignalKind {
+  SIGNAL_KIND_UNSPECIFIED = 0;
+  SIGNAL_KIND_OFFER = 1;
+  SIGNAL_KIND_ANSWER = 2;
+  SIGNAL_KIND_CANDIDATE = 3;
+  SIGNAL_KIND_STATE = 4;
+}
+
+message CallSignal {
+  string call_id = 1;
+  SignalKind kind = 2;
+  string payload = 3;
 }

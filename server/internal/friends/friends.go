@@ -55,6 +55,21 @@ func (s *Service) List(ctx context.Context, userID string) ([]Friend, error) {
 	return friends, nil
 }
 
+func (s *Service) Get(ctx context.Context, userID, friendID string) (Friend, error) {
+	if !ids.Valid(friendID) {
+		return Friend{}, ErrNotFriends
+	}
+
+	row, err := s.queries.GetFriend(ctx, database.GetFriendParams{UserID: userID, FriendID: friendID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Friend{}, ErrNotFriends
+	}
+	if err != nil {
+		return Friend{}, err
+	}
+	return Friend{ID: row.ID, Username: row.Username, Avatar: row.Avatar, State: Accepted}, nil
+}
+
 func (s *Service) IDs(ctx context.Context, userID string) ([]string, error) {
 	return s.queries.ListFriendIDs(ctx, userID)
 }

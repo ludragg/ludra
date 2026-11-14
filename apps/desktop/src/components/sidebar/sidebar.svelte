@@ -1,6 +1,8 @@
 <script lang="ts">
   import { t } from "@/i18n";
+  import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import SidebarCall from "./sidebar-call.svelte";
   import SidebarConversation from "./sidebar-conversation.svelte";
   import SidebarProfile from "./sidebar-profile.svelte";
 
@@ -70,7 +72,12 @@
     {/if}
   </section>
 
-  <SidebarProfile />
+  <div class="sidebar__footer">
+    {#if calls.current && calls.current.status !== "incoming"}
+      <SidebarCall call={calls.current} />
+    {/if}
+    <SidebarProfile />
+  </div>
 </nav>
 
 <style>
@@ -84,6 +91,13 @@
     background: var(--dark-background-color);
     border-right: 1px solid var(--border-color);
     color: var(--muted-color);
+  }
+
+  .sidebar__footer {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .sidebar__top {

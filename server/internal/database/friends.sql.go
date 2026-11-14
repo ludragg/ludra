@@ -104,6 +104,31 @@ func (q *Queries) DeleteRelationship(ctx context.Context, arg DeleteRelationship
 	return column_1, err
 }
 
+const getFriend = `-- name: GetFriend :one
+SELECT u.id, u.username, u.avatar
+FROM friendships f
+JOIN users u ON u.id = f.friend_id
+WHERE f.user_id = $1 AND f.friend_id = $2
+`
+
+type GetFriendParams struct {
+	UserID   string
+	FriendID string
+}
+
+type GetFriendRow struct {
+	ID       string
+	Username string
+	Avatar   string
+}
+
+func (q *Queries) GetFriend(ctx context.Context, arg GetFriendParams) (GetFriendRow, error) {
+	row := q.db.QueryRow(ctx, getFriend, arg.UserID, arg.FriendID)
+	var i GetFriendRow
+	err := row.Scan(&i.ID, &i.Username, &i.Avatar)
+	return i, err
+}
+
 const hasFriendRequest = `-- name: HasFriendRequest :one
 SELECT EXISTS (
     SELECT 1 FROM friend_requests

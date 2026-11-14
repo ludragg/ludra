@@ -9,9 +9,11 @@ import {
   type User,
 } from "@/protocol/ludra/v1/models_pb";
 import { Client, ServerError, type Account, type SignIn } from "@/services/client";
+import { isCall } from "@/helpers/call-summary";
 import { notify, playMessageSound, windowFocused } from "@/services/desktop";
 import { serverUrl } from "@/services/server";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
+import { calls } from "@/stores/call.svelte";
 import { preferences } from "@/stores/preferences.svelte";
 
 type Thread = {
@@ -153,12 +155,14 @@ class ChatStore {
     saveSessionToken(account.token);
 
     client.onMessage = (message) => this.#receive(message);
+    client.onMessageUpdated = (message) => this.#update(message);
     client.onPresence = (userId, presence) => this.#presence(userId, presence);
     client.onFriend = (friend) => this.#friend(friend, true);
     client.onFriendRemoved = (userId) => this.#unfriend(userId);
     client.onUserUpdated = (user) => this.#userUpdated(user);
     client.onTwoFactorChanged = (enabled) => (this.twoFactor = enabled);
     client.onClose = () => this.#reset(t("common.connectionLost"));
+    calls.attach(client);
 
     this.#client = client;
     this.user = account.user;
@@ -289,7 +293,7 @@ class ChatStore {
     if (message.conversationId !== this.activeId) {
       this.unread[message.conversationId] = (this.unread[message.conversationId] ?? 0) + 1;
     }
-    if (watching) {
+    if (watching || isCall(message)) {
       return;
     }
 
@@ -299,6 +303,18 @@ class ChatStore {
     if (preferences.values.notifyMessages) {
       const sender = this.conversations.find(({ id }) => id === message.conversationId)?.peer;
       notify(sender?.username ?? "Ludra", message.content);
+    }
+  }
+
+  #update(message: Message) {
+    const thread = this.threads[message.conversationId];
+    if (thread) {
+      thread.messages = thread.messages.map((current) => (current.id === message.id ? message : current));
+    }
+
+    const conversation = this.conversations.find(({ id }) => id === message.conversationId);
+    if (conversation?.lastMessage?.id === message.id) {
+      conversation.lastMessage = message;
     }
   }
 
@@ -361,6 +377,7 @@ class ChatStore {
   }
 
   #reset(notice: string) {
+    calls.detach();
     this.#client = null;
     this.user = null;
     this.email = "";

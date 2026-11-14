@@ -29,6 +29,8 @@ type guard struct {
 	presenceChanges *limit.Limiter
 	passwordChecks  *limit.Limiter
 	avatarChanges   *limit.Limiter
+	callStarts      *limit.Limiter
+	signals         *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -47,6 +49,8 @@ func newGuard() *guard {
 		presenceChanges: limit.New(20, time.Minute),
 		passwordChecks:  limit.New(10, 15*time.Minute),
 		avatarChanges:   limit.New(10, 10*time.Minute),
+		callStarts:      limit.New(10, time.Minute),
+		signals:         limit.New(600, time.Minute),
 	}
 }
 

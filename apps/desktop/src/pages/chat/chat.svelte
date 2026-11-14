@@ -3,10 +3,13 @@
   import { t } from "@/i18n";
   import Friends from "@/pages/friends/friends.svelte";
   import Settings from "@/pages/settings/settings.svelte";
+  import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import CallPanel from "./call-panel.svelte";
   import ChatComposer from "./chat-composer.svelte";
   import ChatHeader from "./chat-header.svelte";
   import ChatMessages from "./chat-messages.svelte";
+  import IncomingCall from "./incoming-call.svelte";
 </script>
 
 <div class="chat">
@@ -15,6 +18,9 @@
   <main class="chat__main">
     {#if chat.active?.peer}
       <ChatHeader peer={chat.active.peer} />
+      {#if calls.current && calls.current.status !== "incoming" && calls.current.peer.id === chat.active.peer.id}
+        <CallPanel call={calls.current} />
+      {/if}
       {#key chat.activeId}
         <ChatMessages />
         {#if chat.isFriend(chat.active.peer.id)}
@@ -30,6 +36,10 @@
     {/if}
   </main>
 </div>
+
+{#if calls.current?.status === "incoming"}
+  <IncomingCall call={calls.current} />
+{/if}
 
 <style>
   .chat {

@@ -40,6 +40,9 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 	if s.hub.register(s.user.Id, s, session.Invisible) {
 		s.announce(protocol.Presence_PRESENCE_ONLINE)
 	}
+	if incoming := s.calls.ringing(s.user.Id); incoming != nil {
+		s.later = append(s.later, incoming)
+	}
 	return loggedInFrame(s.user, session)
 }
 
@@ -66,6 +69,7 @@ func (s *session) signOut() {
 	if s.user == nil {
 		return
 	}
+	s.calls.leave(s)
 	if s.hub.unregister(s.user.Id, s) {
 		s.announce(protocol.Presence_PRESENCE_OFFLINE)
 	}

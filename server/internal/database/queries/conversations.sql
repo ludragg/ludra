@@ -43,7 +43,10 @@ SELECT
     last.id AS last_message_id,
     last.sender_id AS last_message_sender_id,
     last.content AS last_message_content,
-    last.created_at AS last_message_created_at
+    last.created_at AS last_message_created_at,
+    last.kind AS last_message_kind,
+    last.call_outcome AS last_message_call_outcome,
+    last.call_duration AS last_message_call_duration
 FROM participants me
 JOIN conversations c ON c.id = me.conversation_id
 JOIN participants other ON other.conversation_id = c.id AND other.user_id <> me.user_id

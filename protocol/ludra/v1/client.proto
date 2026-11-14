@@ -30,6 +30,10 @@ message ClientFrame {
     SetTwoFactor set_two_factor = 21;
     SetAvatar set_avatar = 22;
     RemoveAvatar remove_avatar = 23;
+    StartCall start_call = 24;
+    AnswerCall answer_call = 25;
+    EndCall end_call = 26;
+    CallSignal call_signal = 27;
   }
 }
 
@@ -132,4 +136,16 @@ message LoadMessages {
 message SendMessage {
   string conversation_id = 1;
   string content = 2;
+}
+
+message StartCall {
+  string user_id = 1;
+}
+
+message AnswerCall {
+  string call_id = 1;
+}
+
+message EndCall {
+  string call_id = 1;
 }

@@ -1,17 +1,17 @@
 <script lang="ts">
   import { t, type Key } from "@/i18n";
   import SettingsAccount from "./settings-account.svelte";
-  import SettingsLanguage from "./settings-language.svelte";
   import SettingsNotifications from "./settings-notifications.svelte";
   import SettingsSystem from "./settings-system.svelte";
+  import SettingsVoice from "./settings-voice.svelte";
 
-  type Tab = "account" | "system" | "notifications" | "language";
+  type Tab = "account" | "voice" | "system" | "notifications";
 
   const tabs: { id: Tab; label: Key }[] = [
     { id: "account", label: "settings.account" },
+    { id: "voice", label: "settings.voice" },
     { id: "system", label: "settings.system" },
     { id: "notifications", label: "settings.notifications" },
-    { id: "language", label: "settings.language" },
   ];
 
   let tab = $state<Tab>("account");
@@ -55,12 +55,12 @@
   <div class="settings__panel">
     {#if tab === "account"}
       <SettingsAccount />
+    {:else if tab === "voice"}
+      <SettingsVoice />
     {:else if tab === "system"}
       <SettingsSystem />
-    {:else if tab === "notifications"}
-      <SettingsNotifications />
     {:else}
-      <SettingsLanguage />
+      <SettingsNotifications />
     {/if}
   </div>
 </section>

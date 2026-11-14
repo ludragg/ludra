@@ -87,7 +87,10 @@ SELECT
     last.id AS last_message_id,
     last.sender_id AS last_message_sender_id,
     last.content AS last_message_content,
-    last.created_at AS last_message_created_at
+    last.created_at AS last_message_created_at,
+    last.kind AS last_message_kind,
+    last.call_outcome AS last_message_call_outcome,
+    last.call_duration AS last_message_call_duration
 FROM participants me
 JOIN conversations c ON c.id = me.conversation_id
 JOIN participants other ON other.conversation_id = c.id AND other.user_id <> me.user_id
@@ -103,15 +106,18 @@ ORDER BY COALESCE(last.created_at, c.created_at) DESC
 `
 
 type ListConversationsRow struct {
-	ID                   string
-	PeerID               string
-	PeerUsername         string
-	PeerAvatar           string
-	IsFriend             bool
-	LastMessageID        *string
-	LastMessageSenderID  *string
-	LastMessageContent   *string
-	LastMessageCreatedAt *time.Time
+	ID                      string
+	PeerID                  string
+	PeerUsername            string
+	PeerAvatar              string
+	IsFriend                bool
+	LastMessageID           *string
+	LastMessageSenderID     *string
+	LastMessageContent      *string
+	LastMessageCreatedAt    *time.Time
+	LastMessageKind         *string
+	LastMessageCallOutcome  *string
+	LastMessageCallDuration *int32
 }
 
 func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListConversationsRow, error) {
@@ -133,6 +139,9 @@ func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListC
 			&i.LastMessageSenderID,
 			&i.LastMessageContent,
 			&i.LastMessageCreatedAt,
+			&i.LastMessageKind,
+			&i.LastMessageCallOutcome,
+			&i.LastMessageCallDuration,
 		); err != nil {
 			return nil, err
 		}

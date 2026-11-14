@@ -1,9 +1,11 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { Avatar } from "@/components";
+  import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import { callSummary, isCall } from "@/helpers/call-summary";
   import { formatDay, formatTime, sameDay, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
-  import type { Message } from "@/protocol/ludra/v1/models_pb";
+  import { CallOutcome, type Message } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
   type Group = {
@@ -12,6 +14,7 @@
     senderId: string;
     time: string;
     messages: Message[];
+    call: Message | null;
   };
 
   const groupGap = 5 * 60 * 1000;
@@ -45,6 +48,8 @@
       const continues =
         previous &&
         !newDay &&
+        !isCall(message) &&
+        !isCall(previous.message) &&
         previous.message.senderId === message.senderId &&
         date.getTime() - previous.date.getTime() < groupGap;
 
@@ -57,6 +62,7 @@
           senderId: message.senderId,
           time: formatTime(date),
           messages: [message],
+          call: isCall(message) ? message : null,
         });
       }
       previous = { message, date };
@@ -91,19 +97,32 @@
     {#if group.day}
       <div class="chat-messages__day">{group.day}</div>
     {/if}
-    {@const who = sender(group.senderId)}
-    <article class="chat-messages__group">
-      <Avatar user={who} />
-      <div class="chat-messages__content">
-        <header class="chat-messages__meta">
-          <span class="chat-messages__author">{who.username}</span>
-          <time class="chat-messages__time">{group.time}</time>
-        </header>
-        {#each group.messages as message (message.id)}
-          <p class="chat-messages__text">{message.content}</p>
-        {/each}
-      </div>
-    </article>
+    {#if group.call}
+      {@const missed = group.call.callOutcome === CallOutcome.DECLINED || group.call.callOutcome === CallOutcome.MISSED}
+      <p
+        class="chat-messages__call"
+        class:chat-messages__call--missed={missed}
+        class:chat-messages__call--ongoing={group.call.callOutcome === CallOutcome.ONGOING}
+      >
+        <span class="chat-messages__call-icon"><CallIcon name={missed ? "hangUp" : "phone"} /></span>
+        {callSummary(group.call, chat.user?.id ?? "", chat.active?.peer?.username ?? "")}
+        <time class="chat-messages__time">{group.time}</time>
+      </p>
+    {:else}
+      {@const who = sender(group.senderId)}
+      <article class="chat-messages__group">
+        <Avatar user={who} />
+        <div class="chat-messages__content">
+          <header class="chat-messages__meta">
+            <span class="chat-messages__author">{who.username}</span>
+            <time class="chat-messages__time">{group.time}</time>
+          </header>
+          {#each group.messages as message (message.id)}
+            <p class="chat-messages__text">{message.content}</p>
+          {/each}
+        </div>
+      </article>
+    {/if}
   {/each}
 </section>
 
@@ -141,6 +160,29 @@
 
   .chat-messages__day:first-child {
     margin-top: auto;
+  }
+
+  .chat-messages__call {
+    margin: 0;
+    padding-left: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--body-color);
+  }
+
+  .chat-messages__call--ongoing {
+    color: var(--success-color);
+  }
+
+  .chat-messages__call--missed {
+    color: #f6746b;
+  }
+
+  .chat-messages__call-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
   }
 
   .chat-messages__group {

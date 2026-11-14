@@ -38,6 +38,9 @@ type Message struct {
 	SenderID       string
 	Content        string
 	CreatedAt      time.Time
+	Kind           string
+	CallOutcome    *string
+	CallDuration   *int32
 }
 
 type Participant struct {

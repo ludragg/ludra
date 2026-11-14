@@ -37,6 +37,9 @@ func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conve
 				SenderID:       *row.LastMessageSenderID,
 				Content:        *row.LastMessageContent,
 				CreatedAt:      *row.LastMessageCreatedAt,
+				Kind:           *row.LastMessageKind,
+				CallOutcome:    row.LastMessageCallOutcome,
+				CallDuration:   row.LastMessageCallDuration,
 			}
 		}
 
@@ -67,16 +70,26 @@ func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername str
 		return Conversation{}, ErrNotFriends
 	}
 
+	id, err := s.directConversation(ctx, userID, peer.ID)
+	if err != nil {
+		return Conversation{}, err
+	}
+
+	return Conversation{ID: id, Peer: peer, IsFriend: true}, nil
+}
+
+func (s *Service) directConversation(ctx context.Context, a, b string) (string, error) {
 	var id string
-	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
 
-		id, err = q.UpsertDirectConversation(ctx, directKey(userID, peer.ID))
+		var err error
+		id, err = q.UpsertDirectConversation(ctx, directKey(a, b))
 		if err != nil {
 			return err
 		}
 
-		for _, member := range []string{userID, peer.ID} {
+		for _, member := range []string{a, b} {
 			err := q.AddParticipant(ctx, database.AddParticipantParams{ConversationID: id, UserID: member})
 			if err != nil {
 				return err
@@ -84,11 +97,7 @@ func (s *Service) OpenConversation(ctx context.Context, userID, peerUsername str
 		}
 		return nil
 	})
-	if err != nil {
-		return Conversation{}, err
-	}
-
-	return Conversation{ID: id, Peer: peer, IsFriend: true}, nil
+	return id, err
 }
 
 func directKey(a, b string) string {

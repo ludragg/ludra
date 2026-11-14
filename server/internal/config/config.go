@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"ludra/internal/mail"
+	"ludra/internal/voice"
 )
 
 type Config struct {
@@ -12,6 +13,7 @@ type Config struct {
 	DatabaseURL string
 	Origins     []string
 	Mail        mail.Config
+	Turn        voice.Config
 }
 
 func Load() Config {
@@ -25,6 +27,12 @@ func Load() Config {
 			Username: env("LUDRA_SMTP_USERNAME", ""),
 			Password: env("LUDRA_SMTP_PASSWORD", ""),
 			From:     env("LUDRA_MAIL_FROM", "Ludra <no-reply@ludra.gg>"),
+		},
+		Turn: voice.Config{
+			Listen: env("LUDRA_TURN_LISTEN", "0.0.0.0:3478"),
+			Host:   env("LUDRA_TURN_HOST", ""),
+			Ports:  env("LUDRA_TURN_PORTS", "49160-49999"),
+			Secret: env("LUDRA_TURN_SECRET", ""),
 		},
 	}
 }

@@ -8,6 +8,15 @@ export type Preferences = {
   notifyMessages: boolean;
   notifyRequests: boolean;
   sound: boolean;
+  callSounds: boolean;
+  userVolumes: Record<string, number>;
+  inputDevice: string;
+  outputDevice: string;
+  inputVolume: number;
+  outputVolume: number;
+  suppression: boolean;
+  suppressionLevel: number;
+  sensitivity: number;
 };
 
 const storageKey = "ludra.preferences";
@@ -20,6 +29,15 @@ const defaults: Preferences = {
   notifyMessages: true,
   notifyRequests: true,
   sound: true,
+  callSounds: true,
+  userVolumes: {},
+  inputDevice: "",
+  outputDevice: "",
+  inputVolume: 100,
+  outputVolume: 100,
+  suppression: true,
+  suppressionLevel: 50,
+  sensitivity: 0,
 };
 
 class PreferencesStore {
@@ -38,7 +56,14 @@ class PreferencesStore {
 function load(): Preferences {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) ?? "{}");
-    return { ...defaults, ...saved };
+    const values = { ...defaults };
+    for (const key of Object.keys(defaults) as (keyof Preferences)[]) {
+      if (saved[key] !== null && typeof saved[key] === typeof defaults[key]) {
+        Object.assign(values, { [key]: saved[key] });
+      }
+    }
+    values.outputVolume = Math.min(values.outputVolume, 100);
+    return values;
   } catch {
     return { ...defaults };
   }

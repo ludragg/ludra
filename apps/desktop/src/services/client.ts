@@ -1,8 +1,17 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
 import { t } from "@/i18n";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
-import type { Conversation, Friend, Message, Presence, User } from "@/protocol/ludra/v1/models_pb";
-import { ErrorCode, ServerFrameSchema, type ServerFrame } from "@/protocol/ludra/v1/server_pb";
+import type {
+  Call,
+  CallSignal,
+  Conversation,
+  Friend,
+  Message,
+  Presence,
+  SignalKind,
+  User,
+} from "@/protocol/ludra/v1/models_pb";
+import { ErrorCode, ServerFrameSchema, type CallEndReason, type ServerFrame } from "@/protocol/ludra/v1/server_pb";
 
 type Request = MessageInitShape<typeof ClientFrameSchema>["payload"];
 type Reply = ServerFrame["payload"];
@@ -30,11 +39,17 @@ export class ServerError extends Error {
 
 export class Client {
   onMessage: (message: Message) => void = () => {};
+  onMessageUpdated: (message: Message) => void = () => {};
   onPresence: (userId: string, presence: Presence) => void = () => {};
   onFriend: (friend: Friend) => void = () => {};
   onFriendRemoved: (userId: string) => void = () => {};
   onUserUpdated: (user: User) => void = () => {};
   onTwoFactorChanged: (enabled: boolean) => void = () => {};
+  onCallIncoming: (call: Call) => void = (call) => (this.waitingCall = call);
+  waitingCall: Call | null = null;
+  onCallAccepted: (callId: string) => void = () => {};
+  onCallEnded: (callId: string, reason: CallEndReason) => void = () => {};
+  onCallSignal: (signal: CallSignal) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -163,6 +178,23 @@ export class Client {
     return user!;
   }
 
+  async startCall(userId: string): Promise<Call> {
+    const { call } = await this.#request({ case: "startCall", value: { userId } }, "callStarted");
+    return call!;
+  }
+
+  async answerCall(callId: string) {
+    await this.#request({ case: "answerCall", value: { callId } }, "callAccepted");
+  }
+
+  async endCall(callId: string) {
+    await this.#request({ case: "endCall", value: { callId } }, "callEnded");
+  }
+
+  async sendSignal(callId: string, kind: SignalKind, payload: string) {
+    await this.#request({ case: "callSignal", value: { callId, kind, payload } }, "ack");
+  }
+
   close() {
     this.onClose = () => {};
     this.#socket.close();
@@ -230,6 +262,11 @@ export class Client {
           this.onMessage(payload.value.message);
         }
         break;
+      case "messageUpdated":
+        if (payload.value.message) {
+          this.onMessageUpdated(payload.value.message);
+        }
+        break;
       case "presenceChanged":
         this.onPresence(payload.value.userId, payload.value.presence);
         break;
@@ -248,6 +285,20 @@ export class Client {
         break;
       case "twoFactorChanged":
         this.onTwoFactorChanged(payload.value.enabled);
+        break;
+      case "callIncoming":
+        if (payload.value.call) {
+          this.onCallIncoming(payload.value.call);
+        }
+        break;
+      case "callAccepted":
+        this.onCallAccepted(payload.value.callId);
+        break;
+      case "callEnded":
+        this.onCallEnded(payload.value.callId, payload.value.reason);
+        break;
+      case "callSignal":
+        this.onCallSignal(payload.value);
         break;
     }
   }

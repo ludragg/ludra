@@ -9,6 +9,43 @@ import (
 	"context"
 )
 
+const closeStaleCalls = `-- name: CloseStaleCalls :exec
+UPDATE messages SET call_outcome = 'missed', call_duration = 0
+WHERE call_outcome = 'ongoing'
+`
+
+func (q *Queries) CloseStaleCalls(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, closeStaleCalls)
+	return err
+}
+
+const createCallMessage = `-- name: CreateCallMessage :one
+INSERT INTO messages (conversation_id, sender_id, content, kind, call_outcome, call_duration)
+VALUES ($1, $2, '', 'call', 'ongoing', 0)
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
+`
+
+type CreateCallMessageParams struct {
+	ConversationID string
+	SenderID       string
+}
+
+func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, createCallMessage, arg.ConversationID, arg.SenderID)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.ConversationID,
+		&i.SenderID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.Kind,
+		&i.CallOutcome,
+		&i.CallDuration,
+	)
+	return i, err
+}
+
 const createMessage = `-- name: CreateMessage :one
 INSERT INTO messages (conversation_id, sender_id, content)
 SELECT $1::uuid, $2::uuid, $3::text
@@ -17,7 +54,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
 `
 
 type CreateMessageParams struct {
@@ -35,12 +72,43 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.SenderID,
 		&i.Content,
 		&i.CreatedAt,
+		&i.Kind,
+		&i.CallOutcome,
+		&i.CallDuration,
+	)
+	return i, err
+}
+
+const finishCallMessage = `-- name: FinishCallMessage :one
+UPDATE messages SET call_outcome = $1, call_duration = $2
+WHERE id = $3 AND kind = 'call'
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
+`
+
+type FinishCallMessageParams struct {
+	CallOutcome  *string
+	CallDuration *int32
+	ID           string
+}
+
+func (q *Queries) FinishCallMessage(ctx context.Context, arg FinishCallMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, finishCallMessage, arg.CallOutcome, arg.CallDuration, arg.ID)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.ConversationID,
+		&i.SenderID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.Kind,
+		&i.CallOutcome,
+		&i.CallDuration,
 	)
 	return i, err
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT id, conversation_id, sender_id, content, created_at FROM messages
+SELECT id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration FROM messages
 WHERE conversation_id = $1::uuid
   AND ($2::uuid IS NULL OR id < $2::uuid)
 ORDER BY id DESC
@@ -68,6 +136,9 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]M
 			&i.SenderID,
 			&i.Content,
 			&i.CreatedAt,
+			&i.Kind,
+			&i.CallOutcome,
+			&i.CallDuration,
 		); err != nil {
 			return nil, err
 		}

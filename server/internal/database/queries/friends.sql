@@ -18,6 +18,12 @@ ORDER BY username;
 -- name: LockFriendPair :exec
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(pair_key)::text, 0));
 
+-- name: GetFriend :one
+SELECT u.id, u.username, u.avatar
+FROM friendships f
+JOIN users u ON u.id = f.friend_id
+WHERE f.user_id = $1 AND f.friend_id = $2;
+
 -- name: ListFriendIDs :many
 SELECT friend_id FROM friendships
 WHERE user_id = $1;

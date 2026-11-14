@@ -89,7 +89,6 @@
 <style>
   .sidebar-profile {
     position: relative;
-    margin: 0 16px 16px;
     padding: 8px;
     display: flex;
     align-items: center;

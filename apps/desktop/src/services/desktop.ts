@@ -11,6 +11,8 @@ import { preferences } from "@/stores/preferences.svelte";
 const desktop = isTauri();
 const appWindow = desktop ? getCurrentWindow() : null;
 
+const trayId = "ludra";
+
 let tray: TrayIcon | null = null;
 let audio: AudioContext | null = null;
 
@@ -62,6 +64,7 @@ export async function syncTray() {
   }
 
   await tray?.close();
+  await (await TrayIcon.getById(trayId))?.close();
   tray = null;
   if (!preferences.values.tray) {
     return;
@@ -75,6 +78,7 @@ export async function syncTray() {
   });
 
   tray = await TrayIcon.new({
+    id: trayId,
     icon: (await defaultWindowIcon()) ?? undefined,
     tooltip: "Ludra",
     menu,
