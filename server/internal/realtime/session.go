@@ -128,6 +128,9 @@ func (s *session) offer(frame *protocol.ServerFrame) {
 		slog.Error("marshal frame", "error", err)
 		return
 	}
+	if len(s.send) >= sendBuffer/2 {
+		return
+	}
 	select {
 	case s.send <- data:
 	default:
@@ -224,6 +227,10 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 		return s.listFriends(ctx)
 	case *protocol.ClientFrame_ListBlocked:
 		return s.listBlocked(ctx)
+	case *protocol.ClientFrame_SetIdentityKey:
+		return s.setIdentityKey(ctx, payload.SetIdentityKey)
+	case *protocol.ClientFrame_ListIdentityKeys:
+		return s.listIdentityKeys(ctx, payload.ListIdentityKeys)
 	case *protocol.ClientFrame_SetGroupAvatar:
 		return s.setGroupAvatar(ctx, payload.SetGroupAvatar)
 	case *protocol.ClientFrame_BlockUser:

@@ -47,6 +47,8 @@ message ClientFrame {
     UnblockUser unblock_user = 38;
     ListBlocked list_blocked = 39;
     SetGroupAvatar set_group_avatar = 40;
+    SetIdentityKey set_identity_key = 41;
+    ListIdentityKeys list_identity_keys = 42;
   }
 }
 
@@ -207,6 +209,14 @@ message UnblockUser {
 }
 
 message ListBlocked {}
+
+message SetIdentityKey {
+  string key = 1;
+}
+
+message ListIdentityKeys {
+  repeated string user_ids = 1;
+}
 
 message SetGroupAvatar {
   string conversation_id = 1;

@@ -1,6 +1,7 @@
 import type { IceServer, SignalKind } from "@/protocol/ludra/v1/models_pb";
 import { Microphone } from "@/services/microphone";
 import { PeerLink } from "@/services/peer-link";
+import type { ScreenQuality } from "@/services/screen";
 import { selfSpeaking, speakingHold, speakingThreshold } from "@/services/voice";
 import { preferences } from "@/stores/preferences.svelte";
 
@@ -10,6 +11,7 @@ export class VoiceRoom {
   onLatency: (milliseconds: number) => void = () => {};
   onPeerFailed: (peerId: string) => void = () => {};
   onPeerConnected: (peerId: string) => void = () => {};
+  onScreen: (peerId: string, stream: MediaStream | null) => void = () => {};
 
   #iceServers: IceServer[];
   #selfId: string;
@@ -53,6 +55,14 @@ export class VoiceRoom {
     this.#links.delete(peerId);
     this.#latencies.delete(peerId);
     this.onLatency(this.#latencies.size ? Math.max(...this.#latencies.values()) : 0);
+  }
+
+  screen(peerId: string): MediaStream | null {
+    return this.#links.get(peerId)?.screen ?? null;
+  }
+
+  async setScreen(peerId: string, stream: MediaStream | null, quality: ScreenQuality | null) {
+    await this.#links.get(peerId)?.setScreen(stream, quality);
   }
 
   peers(): string[] {
@@ -104,7 +114,8 @@ export class VoiceRoom {
       return null;
     }
 
-    const link = new PeerLink(this.#iceServers, this.#microphone!.track);
+    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#selfId > peerId);
+    link.onScreen = (stream) => this.onScreen(peerId, stream);
     link.onSignal = (kind, payload) => this.onSignal(peerId, kind, payload);
     link.onFailed = () => this.onPeerFailed(peerId);
     link.onConnected = () => this.onPeerConnected(peerId);

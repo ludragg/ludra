@@ -471,6 +471,7 @@ type GroupCall struct {
 	RingingIds     []string               `protobuf:"bytes,5,rep,name=ringing_ids,json=ringingIds,proto3" json:"ringing_ids,omitempty"`
 	MutedIds       []string               `protobuf:"bytes,6,rep,name=muted_ids,json=mutedIds,proto3" json:"muted_ids,omitempty"`
 	DeafenedIds    []string               `protobuf:"bytes,7,rep,name=deafened_ids,json=deafenedIds,proto3" json:"deafened_ids,omitempty"`
+	SharingIds     []string               `protobuf:"bytes,8,rep,name=sharing_ids,json=sharingIds,proto3" json:"sharing_ids,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -543,6 +544,13 @@ func (x *GroupCall) GetMutedIds() []string {
 func (x *GroupCall) GetDeafenedIds() []string {
 	if x != nil {
 		return x.DeafenedIds
+	}
+	return nil
+}
+
+func (x *GroupCall) GetSharingIds() []string {
+	if x != nil {
+		return x.SharingIds
 	}
 	return nil
 }
@@ -1036,7 +1044,7 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12.\n" +
 	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\x12\x16\n" +
-	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xe6\x01\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\x87\x02\n" +
 	"\tGroupCall\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fparticipant_ids\x18\x02 \x03(\tR\x0eparticipantIds\x129\n" +
@@ -1045,7 +1053,9 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\vringing_ids\x18\x05 \x03(\tR\n" +
 	"ringingIds\x12\x1b\n" +
 	"\tmuted_ids\x18\x06 \x03(\tR\bmutedIds\x12!\n" +
-	"\fdeafened_ids\x18\a \x03(\tR\vdeafenedIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
+	"\fdeafened_ids\x18\a \x03(\tR\vdeafenedIds\x12\x1f\n" +
+	"\vsharing_ids\x18\b \x03(\tR\n" +
+	"sharingIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +

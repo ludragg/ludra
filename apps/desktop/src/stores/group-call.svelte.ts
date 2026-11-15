@@ -5,9 +5,13 @@ import { ServerError, type Client } from "@/services/client";
 import { notify, windowFocused } from "@/services/desktop";
 import { playCue, setRingtone } from "@/services/ringtone";
 import { VoiceRoom } from "@/services/voice-room";
+import { captureScreen, hintScreenTracks, qualityLabel, type ScreenQuality } from "@/services/screen";
+import type { NativeScreen } from "@/services/native-screen";
+import { parseVoiceMessage, previewMessage, stateMessage, watchMessage, type VoiceState } from "@/helpers/voice-state";
 import { calls } from "@/stores/call.svelte";
 import { focus } from "@/stores/focus";
 import { preferences } from "@/stores/preferences.svelte";
+import { trust } from "@/stores/trust.svelte";
 
 export type GroupCurrent = {
   id: string;
@@ -23,8 +27,6 @@ export type Ringing = {
   hidden?: boolean;
 };
 
-type PeerState = { muted: boolean; deafened: boolean };
-
 const ringTimeout = 30_000;
 
 class GroupCallStore {
@@ -34,7 +36,12 @@ class GroupCallStore {
   muted = $state(false);
   deafened = $state(false);
   speaking = $state<Set<string>>(new Set());
-  states = $state<Record<string, PeerState>>({});
+  states = $state<Record<string, VoiceState>>({});
+  sharing = $state(false);
+  watchingId = $state<string | null>(null);
+  previews = $state<Record<string, string>>({});
+  ownPreview = $state<string | null>(null);
+  screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
 
@@ -45,6 +52,14 @@ class GroupCallStore {
   #beforeTest: { muted: boolean; deafened: boolean } | null = null;
   #ringTimer: number | undefined;
   #calling = false;
+  #share: MediaStream | null = null;
+  #capture: NativeScreen | null = null;
+  #shareQuality: ScreenQuality | null = null;
+  #viewers = new Set<string>();
+  #preview: string | null = null;
+  #shareBusy = false;
+  #outgoing = new Map<string, Promise<void>>();
+  #incoming = new Map<string, Promise<void>>();
   #latest = new Map<string, GroupCall>();
   #callingTimer: number | undefined;
   #errorTimer: number | undefined;
@@ -85,6 +100,7 @@ class GroupCallStore {
     let room: VoiceRoom | null = null;
     try {
       const joined = await this.#client.joinGroupCall(conversationId);
+      await trust.prepare(joined.participantIds);
       room = new VoiceRoom(joined.iceServers, selfId);
       this.#room = room;
       this.current = {
@@ -201,7 +217,7 @@ class GroupCallStore {
 
     for (const peerId of left) {
       this.#room?.remove(peerId);
-      delete this.states[peerId];
+      this.#forget(peerId);
     }
     current.participantIds = call.participantIds;
   }
@@ -283,16 +299,34 @@ class GroupCallStore {
   #wire(room: VoiceRoom) {
     room.onSignal = (peerId, kind, payload) => {
       const current = this.current;
-      if (current) {
-        this.#client?.sendSignal(current.id, kind, payload, peerId).catch(() => undefined);
+      if (!current) {
+        return;
       }
+      const previous = this.#outgoing.get(peerId) ?? Promise.resolve();
+      this.#outgoing.set(
+        peerId,
+        previous
+          .then(async () => {
+            const sealed = await trust.seal(current.id, peerId, kind, payload);
+            await this.#client?.sendSignal(current.id, kind, sealed, peerId);
+          })
+          .catch(() => undefined),
+      );
     };
     room.onSpeaking = (speaking) => (this.speaking = speaking);
     room.onLatency = (milliseconds) => (this.latency = room.peers().length ? milliseconds : null);
-    room.onPeerConnected = () => this.#shareState();
+    room.onPeerConnected = () => {
+      this.#shareState();
+      this.#sendPreview();
+    };
     room.onPeerFailed = (peerId) => {
       room.remove(peerId);
-      delete this.states[peerId];
+      this.#forget(peerId);
+    };
+    room.onScreen = (peerId, stream) => {
+      if (this.watchingId === peerId) {
+        this.screen = stream;
+      }
     };
   }
 
@@ -302,13 +336,46 @@ class GroupCallStore {
       return;
     }
     if (signal.kind === SignalKind.STATE) {
-      this.states[signal.peerId] = parseState(signal.payload);
+      const message = parseVoiceMessage(signal.payload);
+      if (message.kind === "watch") {
+        await this.#setViewer(signal.peerId, message.watching);
+        return;
+      }
+      if (message.kind === "preview") {
+        if (this.states[signal.peerId]?.sharing && message.image) {
+          this.previews[signal.peerId] = message.image;
+        }
+        return;
+      }
+      this.states[signal.peerId] = { muted: message.muted, deafened: message.deafened, sharing: message.sharing };
+      if (!message.sharing) {
+        delete this.previews[signal.peerId];
+      }
+      if (!message.sharing && this.watchingId === signal.peerId) {
+        this.watchingId = null;
+        this.screen = null;
+      }
       return;
     }
-    await this.#started.catch(() => undefined);
-    await room.receive(signal.peerId, signal.kind, signal.payload).catch(() => {
-      room.remove(signal.peerId);
+    const peerId = signal.peerId;
+    const previous = this.#incoming.get(peerId) ?? Promise.resolve();
+    const next = previous.then(async () => {
+      await this.#started.catch(() => undefined);
+      let payload: string;
+      try {
+        payload = await trust.open(signal.callId, peerId, signal.kind, signal.payload);
+      } catch {
+        this.#showError(t("call.insecure"));
+        room.remove(peerId);
+        this.#forget(peerId);
+        return;
+      }
+      await room.receive(peerId, signal.kind, payload).catch(() => {
+        room.remove(peerId);
+      });
     });
+    this.#incoming.set(peerId, next);
+    await next;
   }
 
   #apply(muted: boolean, deafened: boolean) {
@@ -324,8 +391,122 @@ class GroupCallStore {
     if (!current) {
       return;
     }
-    const payload = JSON.stringify({ muted: this.muted, deafened: this.deafened });
+    const sharing = this.#shareQuality ? qualityLabel(this.#shareQuality) : null;
+    const payload = stateMessage({ muted: this.muted, deafened: this.deafened, sharing });
     this.#client?.sendSignal(current.id, SignalKind.STATE, payload, "*").catch(() => undefined);
+  }
+
+  async startShare(sourceId: string, quality: ScreenQuality) {
+    const room = this.#room;
+    if (!this.current || !room || this.#shareBusy) {
+      return;
+    }
+    this.#shareBusy = true;
+    try {
+      const capture = await captureScreen(sourceId, quality);
+      if (this.#room !== room) {
+        capture.stop();
+        return;
+      }
+      this.#capture?.stop(false);
+      const stream = capture.stream;
+      hintScreenTracks(stream);
+      this.#capture = capture;
+      this.#share = stream;
+      this.#shareQuality = quality;
+      this.sharing = true;
+      capture.onPreview = (image) => {
+        this.#preview = image;
+        this.ownPreview = image;
+        this.#sendPreview();
+      };
+      capture.onEnded = () => {
+        if (this.#share === stream) {
+          this.stopShare();
+        }
+      };
+      for (const viewer of this.#viewers) {
+        await room.setScreen(viewer, stream, quality).catch(() => undefined);
+      }
+      this.#shareState();
+    } catch {
+      this.#showError(t("screen.failed"));
+    } finally {
+      this.#shareBusy = false;
+    }
+  }
+
+  stopShare(announce = true) {
+    const stream = this.#share;
+    if (!stream) {
+      return;
+    }
+    this.#share = null;
+    this.#shareQuality = null;
+    this.sharing = false;
+    this.#preview = null;
+    this.ownPreview = null;
+    this.#capture?.stop();
+    this.#capture = null;
+    for (const viewer of this.#viewers) {
+      this.#room?.setScreen(viewer, null, null).catch(() => undefined);
+    }
+    this.#viewers.clear();
+    if (announce) {
+      this.#shareState();
+    }
+  }
+
+  watch(peerId: string) {
+    const current = this.current;
+    if (!current || !this.states[peerId]?.sharing || this.watchingId === peerId) {
+      return;
+    }
+    this.unwatch();
+    this.watchingId = peerId;
+    this.screen = this.#room?.screen(peerId) ?? null;
+    this.#client?.sendSignal(current.id, SignalKind.STATE, watchMessage(true), peerId).catch(() => undefined);
+  }
+
+  unwatch() {
+    const current = this.current;
+    const peerId = this.watchingId;
+    if (!peerId) {
+      return;
+    }
+    this.watchingId = null;
+    this.screen = null;
+    if (current) {
+      this.#client?.sendSignal(current.id, SignalKind.STATE, watchMessage(false), peerId).catch(() => undefined);
+    }
+  }
+
+  async #setViewer(peerId: string, watching: boolean) {
+    if (watching && this.#share) {
+      this.#viewers.add(peerId);
+      await this.#room?.setScreen(peerId, this.#share, this.#shareQuality).catch(() => undefined);
+    } else if (this.#viewers.delete(peerId)) {
+      await this.#room?.setScreen(peerId, null, null).catch(() => undefined);
+    }
+  }
+
+  #sendPreview() {
+    const current = this.current;
+    if (current && this.sharing && this.#preview) {
+      this.#client?.sendSignal(current.id, SignalKind.STATE, previewMessage(this.#preview), "*").catch(() => undefined);
+    }
+  }
+
+  #forget(peerId: string) {
+    this.#outgoing.delete(peerId);
+    this.#incoming.delete(peerId);
+    delete this.states[peerId];
+    delete this.previews[peerId];
+    this.#viewers.delete(peerId);
+    if (this.watchingId === peerId) {
+      this.watchingId = null;
+      this.screen = null;
+    }
   }
 
   #dismiss() {
@@ -358,6 +539,10 @@ class GroupCallStore {
   #finish() {
     this.#beforeTest = null;
     this.#stopCalling();
+    this.stopShare(false);
+    this.watchingId = null;
+    this.screen = null;
+    this.previews = {};
     if (this.current) {
       playCue("ended");
     }
@@ -375,15 +560,6 @@ class GroupCallStore {
     this.error = message;
     window.clearTimeout(this.#errorTimer);
     this.#errorTimer = window.setTimeout(() => (this.error = ""), 4000);
-  }
-}
-
-function parseState(payload: string): PeerState {
-  try {
-    const state = JSON.parse(payload);
-    return { muted: state?.muted === true, deafened: state?.deafened === true };
-  } catch {
-    return { muted: false, deafened: false };
   }
 }
 

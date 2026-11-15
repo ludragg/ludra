@@ -22,6 +22,7 @@ import { calls } from "@/stores/call.svelte";
 import { focus } from "@/stores/focus";
 import { groupCall } from "@/stores/group-call.svelte";
 import { preferences } from "@/stores/preferences.svelte";
+import { trust } from "@/stores/trust.svelte";
 
 type Thread = {
   messages: Message[];
@@ -192,6 +193,7 @@ class ChatStore {
       }
     };
     client.onClose = () => this.#reset(t("common.connectionLost"));
+    await trust.attach(client, account.user.id).catch(() => undefined);
     calls.attach(client);
     groupCall.attach(client);
 
@@ -585,6 +587,7 @@ class ChatStore {
     window.clearTimeout(this.#photoTimer);
     calls.detach();
     groupCall.detach();
+    trust.detach();
     this.#client = null;
     this.user = null;
     this.email = "";

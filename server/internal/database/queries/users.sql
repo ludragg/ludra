@@ -38,3 +38,11 @@ WHERE id = $1;
 -- name: SetTwoFactor :exec
 UPDATE users SET two_factor = $2
 WHERE id = $1;
+
+-- name: SetIdentityKey :exec
+UPDATE users SET identity_key = $2
+WHERE id = $1;
+
+-- name: ListIdentityKeys :many
+SELECT id, identity_key FROM users
+WHERE id = ANY(sqlc.arg(user_ids)::uuid[]);

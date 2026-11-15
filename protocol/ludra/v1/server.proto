@@ -38,6 +38,7 @@ message ServerFrame {
     GroupCallUpdated group_call_updated = 29;
     GroupCallRinging group_call_ringing = 30;
     BlockedList blocked_list = 31;
+    IdentityKeys identity_keys = 32;
   }
 }
 
@@ -100,6 +101,10 @@ message PresenceChanged {
 
 message FriendList {
   repeated Friend friends = 1;
+}
+
+message IdentityKeys {
+  map<string, string> keys = 1;
 }
 
 message BlockedList {

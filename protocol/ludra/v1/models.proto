@@ -55,6 +55,7 @@ message GroupCall {
   repeated string ringing_ids = 5;
   repeated string muted_ids = 6;
   repeated string deafened_ids = 7;
+  repeated string sharing_ids = 8;
 }
 
 enum CallOutcome {

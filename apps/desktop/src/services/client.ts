@@ -195,6 +195,15 @@ export class Client {
     await this.#request({ case: "setTwoFactor", value: { enabled, password } }, "twoFactorChanged");
   }
 
+  async setIdentityKey(key: string) {
+    await this.#request({ case: "setIdentityKey", value: { key } }, "ack");
+  }
+
+  async listIdentityKeys(userIds: string[]): Promise<Record<string, string>> {
+    const { keys } = await this.#request({ case: "listIdentityKeys", value: { userIds } }, "identityKeys");
+    return keys;
+  }
+
   async setAvatar(image: Uint8Array): Promise<User> {
     const { user } = await this.#request({ case: "setAvatar", value: { image } }, "userUpdated");
     return user!;

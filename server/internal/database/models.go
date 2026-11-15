@@ -86,6 +86,7 @@ type User struct {
 	Avatar          string
 	TwoFactor       bool
 	Busy            bool
+	IdentityKey     string
 }
 
 type VerificationCode struct {

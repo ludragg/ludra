@@ -2,6 +2,11 @@
   import { onDestroy } from "svelte";
   import { Avatar } from "@/components";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import CallSecurity from "@/components/call-security/call-security.svelte";
+  import ScreenPicker from "@/components/screen-picker/screen-picker.svelte";
+  import ResizeHandle from "@/components/resize-handle/resize-handle.svelte";
+  import ScreenPreview from "@/components/screen-preview/screen-preview.svelte";
+  import ScreenView from "@/components/screen-view/screen-view.svelte";
   import { Elapsed } from "@/helpers/duration.svelte";
   import { toDate } from "@/helpers/time";
   import { t } from "@/i18n";
@@ -14,6 +19,15 @@
   let { call, group }: { call: GroupCurrent | null; group: Conversation } = $props();
 
   let menu = $state<{ user: User; x: number; y: number } | null>(null);
+  let picking = $state(false);
+
+  function toggleShare() {
+    if (groupCall.sharing) {
+      groupCall.stopShare();
+    } else {
+      picking = !picking;
+    }
+  }
 
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
@@ -33,9 +47,19 @@
         deafened: call && self ? groupCall.deafened : (state?.deafened ?? !!group.call?.deafenedIds.includes(id)),
         speaking: !!call && groupCall.speaking.has(id),
         ringing: ringingIds.includes(id),
+        live: call && self ? groupCall.sharing : state ? !!state.sharing : !!group.call?.sharingIds.includes(id),
+        quality: state?.sharing ?? "",
       };
     });
   });
+
+  const watched = $derived(people.find(({ id }) => id === groupCall.watchingId) ?? null);
+  const sharers = $derived(people.filter(({ live, self, id }) => live && !self && id !== groupCall.watchingId));
+  const previewCount = $derived(sharers.length + Number(!!call && groupCall.sharing));
+
+  function previewWidth(count: number): number {
+    return count <= 1 ? 144 : count === 2 ? 112 : 88;
+  }
 
   const ringing = $derived(groupCall.ringing?.conversationId === group.id ? groupCall.ringing : null);
   const startedAt = $derived(group.call?.startedAt ? toDate(group.call.startedAt).getTime() : null);
@@ -58,9 +82,36 @@
       menu = { user, x: box.left, y: box.bottom + 8 };
     }
   }
+
+  const watchMinimum = 320;
+  const watchingNow = $derived(!!(call && watched));
+  const panelHeight = $derived.by(() => {
+    const height = watchingNow ? Math.max(watchMinimum, preferences.values.watchHeight) : preferences.values.callHeight;
+    return height ? `${height}px` : undefined;
+  });
+  const previewSpace = $derived(!watchingNow && previewCount > 0 ? `${previewWidth(previewCount) + 24}px` : "0px");
+  const sideWidth = $derived(`${Math.max(previewCount > 0 ? previewWidth(previewCount) : 0, 76)}px`);
 </script>
 
-<section class="group-call" aria-label={t("group.callPanel")}>
+<section
+  class="group-call"
+  class:group-call--watching={!!(call && watched)}
+  style:height={panelHeight}
+  style:--previews-space={previewSpace}
+  style:--side={sideWidth}
+  aria-label={t("group.callPanel")}
+>
+  {#if call && watched}
+    <div class="group-call__stage">
+      <ScreenView
+        stream={groupCall.screen}
+        userId={watched.id}
+        name={watched.user.username}
+        quality={watched.quality}
+        onclose={() => groupCall.unwatch()}
+      />
+    </div>
+  {/if}
   <div class="group-call__people">
     {#each people as person (person.id)}
       <div class="group-call__person">
@@ -75,7 +126,12 @@
             <button
               class="group-call__adjust"
               aria-haspopup="dialog"
-              aria-label={t("call.userVolume", { name: person.user.username })}
+              aria-label={person.live
+                ? t("screen.watch", { name: person.user.username })
+                : t("call.userVolume", { name: person.user.username })}
+              title={person.live ? t("screen.watch", { name: person.user.username }) : undefined}
+              class:group-call__adjust--live={person.live}
+              onclick={() => person.live && groupCall.watch(person.id)}
               oncontextmenu={(event) => openMenu(event, person.user)}
               onkeydown={(event) => menuKey(event, person.user)}
             >
@@ -93,12 +149,37 @@
               <CallIcon name={person.deafened ? "headphonesOff" : "micOff"} />
             </span>
           {/if}
+          {#if person.live}
+            <span class="group-call__live">{t("screen.live")}</span>
+          {/if}
         </span>
       </div>
     {/each}
   </div>
+  {#if call && previewCount > 0}
+    <div class="group-call__previews">
+      {#if groupCall.sharing && chat.user}
+        <ScreenPreview image={groupCall.ownPreview} name={chat.user.username} width={previewWidth(previewCount)} own />
+      {/if}
+      {#each sharers as sharer (sharer.id)}
+        <ScreenPreview
+          image={groupCall.previews[sharer.id] ?? null}
+          name={sharer.user.username}
+          width={previewWidth(previewCount)}
+          onwatch={() => groupCall.watch(sharer.id)}
+        />
+      {/each}
+    </div>
+  {/if}
   {#if call}
-    <span class="group-call__status" aria-live="polite">{elapsed.format(startedAt ?? call.startedAt)}</span>
+    <span class="group-call__status" aria-live="polite">
+      {elapsed.format(startedAt ?? call.startedAt)}
+      <CallSecurity
+        peers={people
+          .filter(({ self, ringing }) => !self && !ringing)
+          .map(({ id, user }) => ({ id, name: user.username }))}
+      />
+    </span>
   {/if}
   {#if !call}
     <div class="group-call__controls">
@@ -154,6 +235,24 @@
       >
         <CallIcon name={groupCall.deafened ? "headphonesOff" : "headphones"} />
       </button>
+      <span class="group-call__share">
+        <button
+          class="group-call__button"
+          class:group-call__button--off={groupCall.sharing}
+          aria-label={groupCall.sharing ? t("screen.stop") : t("screen.share")}
+          title={groupCall.sharing ? t("screen.stop") : t("screen.share")}
+          aria-pressed={groupCall.sharing}
+          onclick={toggleShare}
+        >
+          <CallIcon name="screen" />
+        </button>
+        {#if picking}
+          <ScreenPicker
+            onshare={(sourceId, quality) => groupCall.startShare(sourceId, quality)}
+            onclose={() => (picking = false)}
+          />
+        {/if}
+      </span>
       <button
         class="group-call__button group-call__button--leave"
         aria-label={t("group.leaveCall")}
@@ -164,6 +263,7 @@
       </button>
     </div>
   {/if}
+  <ResizeHandle setting={watchingNow ? "watchHeight" : "callHeight"} minimum={watchingNow ? watchMinimum : 180} />
 </section>
 
 {#if menu}
@@ -172,6 +272,9 @@
 
 <style>
   .group-call {
+    position: relative;
+    flex: none;
+    justify-content: center;
     padding: 24px var(--page-gutter);
     display: flex;
     flex-direction: column;
@@ -222,8 +325,8 @@
 
   .group-call__badge {
     position: absolute;
+    top: -4px;
     right: -4px;
-    bottom: -4px;
     width: 24px;
     height: 24px;
     padding: 5px;
@@ -236,6 +339,10 @@
   }
 
   .group-call__status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
     font-size: var(--hint-font-size);
     color: var(--subtle-color);
     font-variant-numeric: tabular-nums;
@@ -315,5 +422,86 @@
         0 0 0 3px #090909,
         0 0 0 14px rgba(142, 145, 155, 0);
     }
+  }
+
+  .group-call__live {
+    position: absolute;
+    left: 50%;
+    bottom: -8px;
+    padding: 1px 6px;
+    transform: translateX(-50%);
+    border-radius: 4px;
+    border: 2px solid #090909;
+    background: var(--error-color);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .group-call__adjust--live {
+    cursor: pointer;
+  }
+
+  .group-call__previews {
+    position: absolute;
+    left: var(--page-gutter);
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .group-call__share {
+    position: relative;
+    display: flex;
+  }
+
+  .group-call--watching {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .group-call:not(.group-call--watching) {
+    min-height: max-content;
+  }
+
+  .group-call__stage {
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .group-call--watching .group-call__stage {
+    flex: 1 1 auto;
+    padding: 0 calc(var(--side) + 16px);
+  }
+
+  .group-call--watching .group-call__previews {
+    top: 16px;
+  }
+
+  .group-call--watching .group-call__people {
+    position: absolute;
+    top: 16px;
+    right: var(--page-gutter);
+    bottom: 120px;
+    width: var(--side);
+    padding: 6px 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 18px;
+    overflow-y: auto;
+  }
+
+  .group-call--watching :global(.avatar) {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
   }
 </style>

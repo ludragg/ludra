@@ -1,0 +1,168 @@
+mod audio;
+mod bridge;
+mod capture;
+mod sources;
+
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+
+use tauri::ipc::{Channel, InvokeResponseBody};
+use tauri::{AppHandle, Manager, State, Webview};
+use windows_capture::capture::{CaptureControl, GraphicsCaptureApiHandler};
+use windows_capture::settings::{
+    ColorFormat, CursorCaptureSettings, DirtyRegionSettings, DrawBorderSettings,
+    MinimumUpdateIntervalSettings, SecondaryWindowSettings, Settings,
+};
+
+use audio::SystemAudio;
+use bridge::Bridge;
+use capture::{Capture, Flags};
+use sources::{Source, Target};
+
+struct Session {
+    control: CaptureControl<Capture, String>,
+    bridge: Arc<Bridge>,
+    audio: Option<SystemAudio>,
+}
+
+#[derive(serde::Deserialize)]
+pub struct ShareOptions {
+    source: String,
+    width: u32,
+    height: u32,
+    fps: u32,
+}
+
+#[derive(Default)]
+pub struct ScreenState {
+    session: Mutex<Option<Session>>,
+    generation: AtomicU64,
+}
+
+#[tauri::command]
+pub async fn screen_sources() -> Vec<Source> {
+    tauri::async_runtime::spawn_blocking(sources::list)
+        .await
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+pub async fn screen_start(
+    app: AppHandle,
+    webview: Webview,
+    state: State<'_, ScreenState>,
+    options: ShareOptions,
+    audio: Channel<InvokeResponseBody>,
+) -> Result<u64, String> {
+    stop(&state);
+    let session_id = state.generation.load(Ordering::SeqCst);
+    let source = options.source;
+    let width = options.width.clamp(2, 3840);
+    let height = options.height.clamp(2, 2160);
+    let fps = options.fps.clamp(1, 120);
+
+    let session = tauri::async_runtime::spawn_blocking(move || -> Result<Session, String> {
+        let target = sources::resolve(&source).ok_or("source not found")?;
+        let (buffer_width, buffer_height) = match &target {
+            Target::Monitor(monitor) => capture::fit(
+                monitor.width().unwrap_or(width),
+                monitor.height().unwrap_or(height),
+                width,
+                height,
+            ),
+            Target::Window(_) => (width, height),
+        };
+        let size = (buffer_width * buffer_height * 4) as usize;
+        let bridge = Arc::new(Bridge::new(webview, size, session_id)?);
+        let flags = Flags {
+            bridge: bridge.clone(),
+            app,
+            width,
+            height,
+            fps,
+        };
+        let interval =
+            MinimumUpdateIntervalSettings::Custom(Duration::from_secs_f64(1.0 / f64::from(fps)));
+        let control = match target {
+            Target::Monitor(monitor) => {
+                Capture::start_free_threaded(settings(monitor, interval, flags))
+            }
+            Target::Window(window) => {
+                Capture::start_free_threaded(settings(window, interval, flags))
+            }
+        }
+        .map_err(|error| error.to_string())?;
+        Ok(Session {
+            control,
+            bridge,
+            audio: SystemAudio::start(audio).ok(),
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+
+    let previous = {
+        let mut guard = state.session.lock().map_err(|error| error.to_string())?;
+        if state.generation.load(Ordering::SeqCst) != session_id {
+            drop(guard);
+            halt(session);
+            return Err("cancelled".into());
+        }
+        guard.replace(session)
+    };
+    if let Some(previous) = previous {
+        halt(previous);
+    }
+    Ok(session_id)
+}
+
+#[tauri::command]
+pub fn screen_stop(state: State<'_, ScreenState>) {
+    stop(&state);
+}
+
+#[tauri::command]
+pub fn screen_release(state: State<'_, ScreenState>, session: u64, slot: usize) {
+    if let Ok(guard) = state.session.lock()
+        && let Some(current) = guard.as_ref()
+    {
+        current.bridge.release(session, slot);
+    }
+}
+
+pub fn reset(app: &AppHandle) {
+    if let Some(state) = app.try_state::<ScreenState>() {
+        stop(&state);
+    }
+}
+
+fn stop(state: &State<'_, ScreenState>) {
+    state.generation.fetch_add(1, Ordering::SeqCst);
+    let session = state.session.lock().ok().and_then(|mut guard| guard.take());
+    if let Some(session) = session {
+        halt(session);
+    }
+}
+
+fn halt(session: Session) {
+    drop(session.audio);
+    let _ = session.control.stop();
+}
+
+fn settings<T: TryInto<windows_capture::settings::GraphicsCaptureItemType>>(
+    item: T,
+    interval: MinimumUpdateIntervalSettings,
+    flags: Flags,
+) -> Settings<Flags, T> {
+    Settings::new(
+        item,
+        CursorCaptureSettings::WithCursor,
+        DrawBorderSettings::WithoutBorder,
+        SecondaryWindowSettings::Default,
+        interval,
+        DirtyRegionSettings::Default,
+        ColorFormat::Bgra8,
+        flags,
+    )
+}

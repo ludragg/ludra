@@ -9,7 +9,10 @@ import (
 	"ludra/internal/protocol"
 )
 
-const maxSignalSize = 16 << 10
+const (
+	maxSignalSize  = 16 << 10
+	largeStateSize = 1 << 10
+)
 
 var signalKinds = map[protocol.SignalKind]bool{
 	protocol.SignalKind_SIGNAL_KIND_OFFER:     true,
@@ -104,6 +107,10 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 	if !signalKinds[req.Kind] || len(req.Payload) > maxSignalSize {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "invalid signal")
 	}
+	if req.Kind == protocol.SignalKind_SIGNAL_KIND_STATE && len(req.Payload) > largeStateSize &&
+		!s.guard.largeSignals.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
 
 	forwarded := callSignalFrame(&protocol.CallSignal{CallId: req.CallId, Kind: req.Kind, Payload: req.Payload, PeerId: s.user.Id})
 
@@ -121,11 +128,14 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 			other.offer(forwarded)
 		}
 		var state struct {
-			Muted    bool `json:"muted"`
-			Deafened bool `json:"deafened"`
+			Muted    *bool `json:"muted"`
+			Deafened bool  `json:"deafened"`
+			Sharing  bool  `json:"sharing"`
 		}
-		if json.Unmarshal([]byte(req.Payload), &state) == nil && s.guard.voiceChanges.Allow(s.user.Id) {
-			if conversationID, changed := s.rooms.setVoice(req.CallId, s, voiceState{muted: state.Muted, deafened: state.Deafened}); changed {
+		if json.Unmarshal([]byte(req.Payload), &state) == nil && state.Muted != nil {
+			voice := voiceState{muted: *state.Muted, deafened: state.Deafened, sharing: state.Sharing}
+			conversationID, changed := s.rooms.setVoice(req.CallId, s, voice)
+			if changed && s.guard.voiceChanges.Allow(s.user.Id) {
 				s.announceRoom(conversationID)
 			}
 		}

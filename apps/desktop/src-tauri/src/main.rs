@@ -1,5 +1,9 @@
 #![windows_subsystem = "windows"]
 
+#[cfg(windows)]
+mod screen;
+
+use tauri::Manager;
 use tauri_plugin_autostart::MacosLauncher;
 
 const AUTOSTART_FLAG: &str = "--autostart";
@@ -17,7 +21,19 @@ fn main() {
             MacosLauncher::LaunchAgent,
             Some(vec![AUTOSTART_FLAG]),
         ))
-        .invoke_handler(tauri::generate_handler![launched_by_autostart])
+        .manage(screen::ScreenState::default())
+        .on_page_load(|webview, payload| {
+            if payload.event() == tauri::webview::PageLoadEvent::Started {
+                screen::reset(webview.app_handle());
+            }
+        })
+        .invoke_handler(tauri::generate_handler![
+            launched_by_autostart,
+            screen::screen_sources,
+            screen::screen_start,
+            screen::screen_stop,
+            screen::screen_release
+        ])
         .run(tauri::generate_context!())
         .expect("failed to run Ludra");
 }

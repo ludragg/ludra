@@ -65,6 +65,29 @@ func (s *session) setTwoFactor(ctx context.Context, req *protocol.SetTwoFactor) 
 	return reply
 }
 
+func (s *session) setIdentityKey(ctx context.Context, req *protocol.SetIdentityKey) *protocol.ServerFrame {
+	if !s.guard.identityChanges.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
+	if err := s.account.SetIdentityKey(ctx, s.user.Id, req.Key); err != nil {
+		return failed(err)
+	}
+	return ackFrame()
+}
+
+func (s *session) listIdentityKeys(ctx context.Context, req *protocol.ListIdentityKeys) *protocol.ServerFrame {
+	if !s.guard.identityLookups.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
+	keys, err := s.account.IdentityKeys(ctx, req.UserIds)
+	if err != nil {
+		return failed(err)
+	}
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_IdentityKeys{IdentityKeys: &protocol.IdentityKeys{Keys: keys}},
+	}
+}
+
 func (s *session) setAvatar(ctx context.Context, req *protocol.SetAvatar) *protocol.ServerFrame {
 	if !s.guard.avatarChanges.Allow(s.user.Id) {
 		return tooManyRequests()

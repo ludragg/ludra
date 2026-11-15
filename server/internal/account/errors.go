@@ -15,5 +15,6 @@ var (
 	ErrWrongPassword      = failure.New(failure.Denied, "wrong password")
 	ErrSamePassword       = failure.New(failure.Invalid, "new password must be different")
 	ErrInvalidAvatar      = failure.New(failure.Invalid, "invalid avatar")
+	ErrInvalidIdentityKey = failure.New(failure.Invalid, "invalid identity key")
 	ErrAvatarNotFound     = failure.New(failure.NotFound, "avatar not found")
 )

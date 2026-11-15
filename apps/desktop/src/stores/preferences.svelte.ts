@@ -11,6 +11,7 @@ export type Preferences = {
   sound: boolean;
   callSounds: boolean;
   userVolumes: Record<string, number>;
+  streamVolumes: Record<string, number>;
   inputDevice: string;
   outputDevice: string;
   inputVolume: number;
@@ -18,6 +19,10 @@ export type Preferences = {
   suppression: boolean;
   suppressionLevel: number;
   sensitivity: number;
+  shareResolution: number;
+  shareFps: number;
+  watchHeight: number;
+  callHeight: number;
 };
 
 const storageKey = "ludra.preferences";
@@ -33,6 +38,7 @@ const defaults: Preferences = {
   sound: true,
   callSounds: true,
   userVolumes: {},
+  streamVolumes: {},
   inputDevice: "",
   outputDevice: "",
   inputVolume: 100,
@@ -40,6 +46,10 @@ const defaults: Preferences = {
   suppression: true,
   suppressionLevel: 50,
   sensitivity: 0,
+  shareResolution: 1080,
+  shareFps: 60,
+  watchHeight: 420,
+  callHeight: 0,
 };
 
 class PreferencesStore {

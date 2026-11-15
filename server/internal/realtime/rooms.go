@@ -27,6 +27,7 @@ type room struct {
 type voiceState struct {
 	muted    bool
 	deafened bool
+	sharing  bool
 }
 
 const aloneTimeout = 5 * time.Minute
@@ -317,7 +318,7 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 		ringing = append(ringing, id)
 	}
 	sort.Strings(ringing)
-	var muted, deafened []string
+	var muted, deafened, sharing []string
 	for _, id := range participants {
 		state := current.voice[id]
 		if state.muted {
@@ -326,6 +327,9 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 		if state.deafened {
 			deafened = append(deafened, id)
 		}
+		if state.sharing {
+			sharing = append(sharing, id)
+		}
 	}
-	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened}
+	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened, SharingIds: sharing}
 }

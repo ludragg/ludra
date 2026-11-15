@@ -12,7 +12,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy
+RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key
 `
 
 type CreateUserParams struct {
@@ -35,12 +35,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Avatar,
 		&i.TwoFactor,
 		&i.Busy,
+		&i.IdentityKey,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
 WHERE id = $1
 `
 
@@ -58,12 +59,13 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.Avatar,
 		&i.TwoFactor,
 		&i.Busy,
+		&i.IdentityKey,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
 WHERE lower(email) = lower($1)
 `
 
@@ -81,12 +83,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error
 		&i.Avatar,
 		&i.TwoFactor,
 		&i.Busy,
+		&i.IdentityKey,
 	)
 	return i, err
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
 WHERE lower(username) = lower($1) OR lower(email) = lower($1)
 `
 
@@ -104,12 +107,13 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.Avatar,
 		&i.TwoFactor,
 		&i.Busy,
+		&i.IdentityKey,
 	)
 	return i, err
 }
 
 const getVerifiedUserByUsername = `-- name: GetVerifiedUserByUsername :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
 WHERE lower(username) = lower($1) AND email_verified_at IS NOT NULL
 `
 
@@ -127,8 +131,39 @@ func (q *Queries) GetVerifiedUserByUsername(ctx context.Context, lower string) (
 		&i.Avatar,
 		&i.TwoFactor,
 		&i.Busy,
+		&i.IdentityKey,
 	)
 	return i, err
+}
+
+const listIdentityKeys = `-- name: ListIdentityKeys :many
+SELECT id, identity_key FROM users
+WHERE id = ANY($1::uuid[])
+`
+
+type ListIdentityKeysRow struct {
+	ID          string
+	IdentityKey string
+}
+
+func (q *Queries) ListIdentityKeys(ctx context.Context, userIds []string) ([]ListIdentityKeysRow, error) {
+	rows, err := q.db.Query(ctx, listIdentityKeys, userIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListIdentityKeysRow
+	for rows.Next() {
+		var i ListIdentityKeysRow
+		if err := rows.Scan(&i.ID, &i.IdentityKey); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const markEmailVerified = `-- name: MarkEmailVerified :exec
@@ -153,6 +188,21 @@ type SetAvatarParams struct {
 
 func (q *Queries) SetAvatar(ctx context.Context, arg SetAvatarParams) error {
 	_, err := q.db.Exec(ctx, setAvatar, arg.ID, arg.Avatar)
+	return err
+}
+
+const setIdentityKey = `-- name: SetIdentityKey :exec
+UPDATE users SET identity_key = $2
+WHERE id = $1
+`
+
+type SetIdentityKeyParams struct {
+	ID          string
+	IdentityKey string
+}
+
+func (q *Queries) SetIdentityKey(ctx context.Context, arg SetIdentityKeyParams) error {
+	_, err := q.db.Exec(ctx, setIdentityKey, arg.ID, arg.IdentityKey)
 	return err
 }
 

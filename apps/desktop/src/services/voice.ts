@@ -1,6 +1,7 @@
 import type { IceServer, SignalKind } from "@/protocol/ludra/v1/models_pb";
 import { Microphone } from "@/services/microphone";
 import { PeerLink } from "@/services/peer-link";
+import type { ScreenQuality } from "@/services/screen";
 
 export const speakingThreshold = 0.004;
 export const speakingHold = 400;
@@ -15,16 +16,19 @@ export class VoiceSession {
   onConnected: () => void = () => {};
   onFailed: () => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
+  onScreen: (stream: MediaStream | null) => void = () => {};
 
   #iceServers: IceServer[];
+  #polite: boolean;
   #microphone: Microphone | null = null;
   #link: PeerLink | null = null;
   #meter: number | undefined;
   #muted = false;
   #closed = false;
 
-  constructor(iceServers: IceServer[]) {
+  constructor(iceServers: IceServer[], polite: boolean) {
     this.#iceServers = iceServers;
+    this.#polite = polite;
   }
 
   async start(outputDevice: string, outputVolume: number) {
@@ -34,7 +38,8 @@ export class VoiceSession {
       throw new Error("closed");
     }
     this.#microphone = microphone;
-    const link = new PeerLink(this.#iceServers, this.#microphone.track);
+    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#polite);
+    link.onScreen = (stream) => this.onScreen(stream);
     link.onSignal = (kind, payload) => this.onSignal(kind, payload);
     link.onConnected = () => this.onConnected();
     link.onFailed = () => this.onFailed();
@@ -51,6 +56,14 @@ export class VoiceSession {
 
   async receive(kind: SignalKind, payload: string) {
     await this.#link?.receive(kind, payload);
+  }
+
+  async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
+    await this.#link?.setScreen(stream, quality);
+  }
+
+  get screen(): MediaStream | null {
+    return this.#link?.screen ?? null;
   }
 
   get microphone(): Microphone | null {
