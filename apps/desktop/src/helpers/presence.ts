@@ -6,6 +6,7 @@ const keys: Record<Presence, Key> = {
   [Presence.ONLINE]: "presence.online",
   [Presence.OFFLINE]: "presence.offline",
   [Presence.INVISIBLE]: "presence.invisible",
+  [Presence.BUSY]: "presence.busy",
 };
 
 export function presenceLabel(presence: Presence): string {

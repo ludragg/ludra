@@ -29,6 +29,7 @@ const (
 	Presence_PRESENCE_ONLINE      Presence = 1
 	Presence_PRESENCE_OFFLINE     Presence = 2
 	Presence_PRESENCE_INVISIBLE   Presence = 3
+	Presence_PRESENCE_BUSY        Presence = 4
 )
 
 // Enum value maps for Presence.
@@ -38,12 +39,14 @@ var (
 		1: "PRESENCE_ONLINE",
 		2: "PRESENCE_OFFLINE",
 		3: "PRESENCE_INVISIBLE",
+		4: "PRESENCE_BUSY",
 	}
 	Presence_value = map[string]int32{
 		"PRESENCE_UNSPECIFIED": 0,
 		"PRESENCE_ONLINE":      1,
 		"PRESENCE_OFFLINE":     2,
 		"PRESENCE_INVISIBLE":   3,
+		"PRESENCE_BUSY":        4,
 	}
 )
 
@@ -132,6 +135,7 @@ const (
 	MessageKind_MESSAGE_KIND_UNSPECIFIED MessageKind = 0
 	MessageKind_MESSAGE_KIND_TEXT        MessageKind = 1
 	MessageKind_MESSAGE_KIND_CALL        MessageKind = 2
+	MessageKind_MESSAGE_KIND_EVENT       MessageKind = 3
 )
 
 // Enum value maps for MessageKind.
@@ -140,11 +144,13 @@ var (
 		0: "MESSAGE_KIND_UNSPECIFIED",
 		1: "MESSAGE_KIND_TEXT",
 		2: "MESSAGE_KIND_CALL",
+		3: "MESSAGE_KIND_EVENT",
 	}
 	MessageKind_value = map[string]int32{
 		"MESSAGE_KIND_UNSPECIFIED": 0,
 		"MESSAGE_KIND_TEXT":        1,
 		"MESSAGE_KIND_CALL":        2,
+		"MESSAGE_KIND_EVENT":       3,
 	}
 )
 
@@ -173,6 +179,110 @@ func (x MessageKind) Number() protoreflect.EnumNumber {
 // Deprecated: Use MessageKind.Descriptor instead.
 func (MessageKind) EnumDescriptor() ([]byte, []int) {
 	return file_ludra_v1_models_proto_rawDescGZIP(), []int{2}
+}
+
+type MessageEvent int32
+
+const (
+	MessageEvent_MESSAGE_EVENT_UNSPECIFIED    MessageEvent = 0
+	MessageEvent_MESSAGE_EVENT_MEMBER_ADDED   MessageEvent = 1
+	MessageEvent_MESSAGE_EVENT_MEMBER_REMOVED MessageEvent = 2
+	MessageEvent_MESSAGE_EVENT_MEMBER_LEFT    MessageEvent = 3
+	MessageEvent_MESSAGE_EVENT_OWNER_CHANGED  MessageEvent = 4
+)
+
+// Enum value maps for MessageEvent.
+var (
+	MessageEvent_name = map[int32]string{
+		0: "MESSAGE_EVENT_UNSPECIFIED",
+		1: "MESSAGE_EVENT_MEMBER_ADDED",
+		2: "MESSAGE_EVENT_MEMBER_REMOVED",
+		3: "MESSAGE_EVENT_MEMBER_LEFT",
+		4: "MESSAGE_EVENT_OWNER_CHANGED",
+	}
+	MessageEvent_value = map[string]int32{
+		"MESSAGE_EVENT_UNSPECIFIED":    0,
+		"MESSAGE_EVENT_MEMBER_ADDED":   1,
+		"MESSAGE_EVENT_MEMBER_REMOVED": 2,
+		"MESSAGE_EVENT_MEMBER_LEFT":    3,
+		"MESSAGE_EVENT_OWNER_CHANGED":  4,
+	}
+)
+
+func (x MessageEvent) Enum() *MessageEvent {
+	p := new(MessageEvent)
+	*p = x
+	return p
+}
+
+func (x MessageEvent) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MessageEvent) Descriptor() protoreflect.EnumDescriptor {
+	return file_ludra_v1_models_proto_enumTypes[3].Descriptor()
+}
+
+func (MessageEvent) Type() protoreflect.EnumType {
+	return &file_ludra_v1_models_proto_enumTypes[3]
+}
+
+func (x MessageEvent) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MessageEvent.Descriptor instead.
+func (MessageEvent) EnumDescriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
+}
+
+type ConversationKind int32
+
+const (
+	ConversationKind_CONVERSATION_KIND_UNSPECIFIED ConversationKind = 0
+	ConversationKind_CONVERSATION_KIND_DIRECT      ConversationKind = 1
+	ConversationKind_CONVERSATION_KIND_GROUP       ConversationKind = 2
+)
+
+// Enum value maps for ConversationKind.
+var (
+	ConversationKind_name = map[int32]string{
+		0: "CONVERSATION_KIND_UNSPECIFIED",
+		1: "CONVERSATION_KIND_DIRECT",
+		2: "CONVERSATION_KIND_GROUP",
+	}
+	ConversationKind_value = map[string]int32{
+		"CONVERSATION_KIND_UNSPECIFIED": 0,
+		"CONVERSATION_KIND_DIRECT":      1,
+		"CONVERSATION_KIND_GROUP":       2,
+	}
+)
+
+func (x ConversationKind) Enum() *ConversationKind {
+	p := new(ConversationKind)
+	*p = x
+	return p
+}
+
+func (x ConversationKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ConversationKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_ludra_v1_models_proto_enumTypes[4].Descriptor()
+}
+
+func (ConversationKind) Type() protoreflect.EnumType {
+	return &file_ludra_v1_models_proto_enumTypes[4]
+}
+
+func (x ConversationKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ConversationKind.Descriptor instead.
+func (ConversationKind) EnumDescriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
 }
 
 type CallOutcome int32
@@ -214,11 +324,11 @@ func (x CallOutcome) String() string {
 }
 
 func (CallOutcome) Descriptor() protoreflect.EnumDescriptor {
-	return file_ludra_v1_models_proto_enumTypes[3].Descriptor()
+	return file_ludra_v1_models_proto_enumTypes[5].Descriptor()
 }
 
 func (CallOutcome) Type() protoreflect.EnumType {
-	return &file_ludra_v1_models_proto_enumTypes[3]
+	return &file_ludra_v1_models_proto_enumTypes[5]
 }
 
 func (x CallOutcome) Number() protoreflect.EnumNumber {
@@ -227,7 +337,7 @@ func (x CallOutcome) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CallOutcome.Descriptor instead.
 func (CallOutcome) EnumDescriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{5}
 }
 
 type SignalKind int32
@@ -269,11 +379,11 @@ func (x SignalKind) String() string {
 }
 
 func (SignalKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_ludra_v1_models_proto_enumTypes[4].Descriptor()
+	return file_ludra_v1_models_proto_enumTypes[6].Descriptor()
 }
 
 func (SignalKind) Type() protoreflect.EnumType {
-	return &file_ludra_v1_models_proto_enumTypes[4]
+	return &file_ludra_v1_models_proto_enumTypes[6]
 }
 
 func (x SignalKind) Number() protoreflect.EnumNumber {
@@ -282,7 +392,7 @@ func (x SignalKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SignalKind.Descriptor instead.
 func (SignalKind) EnumDescriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{6}
 }
 
 type User struct {
@@ -353,6 +463,90 @@ func (x *User) GetAvatar() string {
 	return ""
 }
 
+type GroupCall struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ParticipantIds []string               `protobuf:"bytes,2,rep,name=participant_ids,json=participantIds,proto3" json:"participant_ids,omitempty"`
+	StartedAt      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	RingingIds     []string               `protobuf:"bytes,5,rep,name=ringing_ids,json=ringingIds,proto3" json:"ringing_ids,omitempty"`
+	MutedIds       []string               `protobuf:"bytes,6,rep,name=muted_ids,json=mutedIds,proto3" json:"muted_ids,omitempty"`
+	DeafenedIds    []string               `protobuf:"bytes,7,rep,name=deafened_ids,json=deafenedIds,proto3" json:"deafened_ids,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GroupCall) Reset() {
+	*x = GroupCall{}
+	mi := &file_ludra_v1_models_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GroupCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GroupCall) ProtoMessage() {}
+
+func (x *GroupCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_models_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GroupCall.ProtoReflect.Descriptor instead.
+func (*GroupCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GroupCall) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GroupCall) GetParticipantIds() []string {
+	if x != nil {
+		return x.ParticipantIds
+	}
+	return nil
+}
+
+func (x *GroupCall) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *GroupCall) GetRingingIds() []string {
+	if x != nil {
+		return x.RingingIds
+	}
+	return nil
+}
+
+func (x *GroupCall) GetMutedIds() []string {
+	if x != nil {
+		return x.MutedIds
+	}
+	return nil
+}
+
+func (x *GroupCall) GetDeafenedIds() []string {
+	if x != nil {
+		return x.DeafenedIds
+	}
+	return nil
+}
+
 type Message struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -363,13 +557,17 @@ type Message struct {
 	Kind           MessageKind            `protobuf:"varint,6,opt,name=kind,proto3,enum=ludra.v1.MessageKind" json:"kind,omitempty"`
 	CallOutcome    CallOutcome            `protobuf:"varint,7,opt,name=call_outcome,json=callOutcome,proto3,enum=ludra.v1.CallOutcome" json:"call_outcome,omitempty"`
 	CallDuration   uint32                 `protobuf:"varint,8,opt,name=call_duration,json=callDuration,proto3" json:"call_duration,omitempty"`
+	Event          MessageEvent           `protobuf:"varint,9,opt,name=event,proto3,enum=ludra.v1.MessageEvent" json:"event,omitempty"`
+	TargetId       string                 `protobuf:"bytes,10,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	SenderName     string                 `protobuf:"bytes,11,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	TargetName     string                 `protobuf:"bytes,12,opt,name=target_name,json=targetName,proto3" json:"target_name,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_ludra_v1_models_proto_msgTypes[1]
+	mi := &file_ludra_v1_models_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -381,7 +579,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[1]
+	mi := &file_ludra_v1_models_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -394,7 +592,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{1}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Message) GetId() string {
@@ -453,6 +651,34 @@ func (x *Message) GetCallDuration() uint32 {
 	return 0
 }
 
+func (x *Message) GetEvent() MessageEvent {
+	if x != nil {
+		return x.Event
+	}
+	return MessageEvent_MESSAGE_EVENT_UNSPECIFIED
+}
+
+func (x *Message) GetTargetId() string {
+	if x != nil {
+		return x.TargetId
+	}
+	return ""
+}
+
+func (x *Message) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *Message) GetTargetName() string {
+	if x != nil {
+		return x.TargetName
+	}
+	return ""
+}
+
 type Friend struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
@@ -463,7 +689,7 @@ type Friend struct {
 
 func (x *Friend) Reset() {
 	*x = Friend{}
-	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -475,7 +701,7 @@ func (x *Friend) String() string {
 func (*Friend) ProtoMessage() {}
 
 func (x *Friend) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[2]
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -488,7 +714,7 @@ func (x *Friend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Friend.ProtoReflect.Descriptor instead.
 func (*Friend) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{2}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Friend) GetUser() *User {
@@ -510,13 +736,19 @@ type Conversation struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Peer          *User                  `protobuf:"bytes,2,opt,name=peer,proto3" json:"peer,omitempty"`
 	LastMessage   *Message               `protobuf:"bytes,3,opt,name=last_message,json=lastMessage,proto3" json:"last_message,omitempty"`
+	Kind          ConversationKind       `protobuf:"varint,4,opt,name=kind,proto3,enum=ludra.v1.ConversationKind" json:"kind,omitempty"`
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,6,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Members       []*User                `protobuf:"bytes,7,rep,name=members,proto3" json:"members,omitempty"`
+	Call          *GroupCall             `protobuf:"bytes,8,opt,name=call,proto3" json:"call,omitempty"`
+	Avatar        string                 `protobuf:"bytes,9,opt,name=avatar,proto3" json:"avatar,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Conversation) Reset() {
 	*x = Conversation{}
-	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	mi := &file_ludra_v1_models_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +760,7 @@ func (x *Conversation) String() string {
 func (*Conversation) ProtoMessage() {}
 
 func (x *Conversation) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	mi := &file_ludra_v1_models_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +773,7 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
 func (*Conversation) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Conversation) GetId() string {
@@ -565,6 +797,48 @@ func (x *Conversation) GetLastMessage() *Message {
 	return nil
 }
 
+func (x *Conversation) GetKind() ConversationKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ConversationKind_CONVERSATION_KIND_UNSPECIFIED
+}
+
+func (x *Conversation) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Conversation) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
+func (x *Conversation) GetMembers() []*User {
+	if x != nil {
+		return x.Members
+	}
+	return nil
+}
+
+func (x *Conversation) GetCall() *GroupCall {
+	if x != nil {
+		return x.Call
+	}
+	return nil
+}
+
+func (x *Conversation) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
+}
+
 type IceServer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Urls          []string               `protobuf:"bytes,1,rep,name=urls,proto3" json:"urls,omitempty"`
@@ -576,7 +850,7 @@ type IceServer struct {
 
 func (x *IceServer) Reset() {
 	*x = IceServer{}
-	mi := &file_ludra_v1_models_proto_msgTypes[4]
+	mi := &file_ludra_v1_models_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +862,7 @@ func (x *IceServer) String() string {
 func (*IceServer) ProtoMessage() {}
 
 func (x *IceServer) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[4]
+	mi := &file_ludra_v1_models_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,7 +875,7 @@ func (x *IceServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IceServer.ProtoReflect.Descriptor instead.
 func (*IceServer) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *IceServer) GetUrls() []string {
@@ -636,7 +910,7 @@ type Call struct {
 
 func (x *Call) Reset() {
 	*x = Call{}
-	mi := &file_ludra_v1_models_proto_msgTypes[5]
+	mi := &file_ludra_v1_models_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -648,7 +922,7 @@ func (x *Call) String() string {
 func (*Call) ProtoMessage() {}
 
 func (x *Call) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[5]
+	mi := &file_ludra_v1_models_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +935,7 @@ func (x *Call) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Call.ProtoReflect.Descriptor instead.
 func (*Call) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{5}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Call) GetId() string {
@@ -690,13 +964,14 @@ type CallSignal struct {
 	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
 	Kind          SignalKind             `protobuf:"varint,2,opt,name=kind,proto3,enum=ludra.v1.SignalKind" json:"kind,omitempty"`
 	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+	PeerId        string                 `protobuf:"bytes,4,opt,name=peer_id,json=peerId,proto3" json:"peer_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CallSignal) Reset() {
 	*x = CallSignal{}
-	mi := &file_ludra_v1_models_proto_msgTypes[6]
+	mi := &file_ludra_v1_models_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -708,7 +983,7 @@ func (x *CallSignal) String() string {
 func (*CallSignal) ProtoMessage() {}
 
 func (x *CallSignal) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[6]
+	mi := &file_ludra_v1_models_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -721,7 +996,7 @@ func (x *CallSignal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallSignal.ProtoReflect.Descriptor instead.
 func (*CallSignal) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{6}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CallSignal) GetCallId() string {
@@ -745,6 +1020,13 @@ func (x *CallSignal) GetPayload() string {
 	return ""
 }
 
+func (x *CallSignal) GetPeerId() string {
+	if x != nil {
+		return x.PeerId
+	}
+	return ""
+}
+
 var File_ludra_v1_models_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_models_proto_rawDesc = "" +
@@ -754,7 +1036,16 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12.\n" +
 	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\x12\x16\n" +
-	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xb8\x02\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xe6\x01\n" +
+	"\tGroupCall\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
+	"\x0fparticipant_ids\x18\x02 \x03(\tR\x0eparticipantIds\x129\n" +
+	"\n" +
+	"started_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12\x1f\n" +
+	"\vringing_ids\x18\x05 \x03(\tR\n" +
+	"ringingIds\x12\x1b\n" +
+	"\tmuted_ids\x18\x06 \x03(\tR\bmutedIds\x12!\n" +
+	"\fdeafened_ids\x18\a \x03(\tR\vdeafenedIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -763,14 +1054,27 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\asent_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x06sentAt\x12)\n" +
 	"\x04kind\x18\x06 \x01(\x0e2\x15.ludra.v1.MessageKindR\x04kind\x128\n" +
 	"\fcall_outcome\x18\a \x01(\x0e2\x15.ludra.v1.CallOutcomeR\vcallOutcome\x12#\n" +
-	"\rcall_duration\x18\b \x01(\rR\fcallDuration\"Y\n" +
+	"\rcall_duration\x18\b \x01(\rR\fcallDuration\x12,\n" +
+	"\x05event\x18\t \x01(\x0e2\x16.ludra.v1.MessageEventR\x05event\x12\x1b\n" +
+	"\ttarget_id\x18\n" +
+	" \x01(\tR\btargetId\x12\x1f\n" +
+	"\vsender_name\x18\v \x01(\tR\n" +
+	"senderName\x12\x1f\n" +
+	"\vtarget_name\x18\f \x01(\tR\n" +
+	"targetName\"Y\n" +
 	"\x06Friend\x12\"\n" +
 	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user\x12+\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x15.ludra.v1.FriendStateR\x05state\"x\n" +
+	"\x05state\x18\x02 \x01(\x0e2\x15.ludra.v1.FriendStateR\x05state\"\xc2\x02\n" +
 	"\fConversation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\x04peer\x18\x02 \x01(\v2\x0e.ludra.v1.UserR\x04peer\x124\n" +
-	"\flast_message\x18\x03 \x01(\v2\x11.ludra.v1.MessageR\vlastMessage\"[\n" +
+	"\flast_message\x18\x03 \x01(\v2\x11.ludra.v1.MessageR\vlastMessage\x12.\n" +
+	"\x04kind\x18\x04 \x01(\x0e2\x1a.ludra.v1.ConversationKindR\x04kind\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x19\n" +
+	"\bowner_id\x18\x06 \x01(\tR\aownerId\x12(\n" +
+	"\amembers\x18\a \x03(\v2\x0e.ludra.v1.UserR\amembers\x12'\n" +
+	"\x04call\x18\b \x01(\v2\x13.ludra.v1.GroupCallR\x04call\x12\x16\n" +
+	"\x06avatar\x18\t \x01(\tR\x06avatar\"[\n" +
 	"\tIceServer\x12\x12\n" +
 	"\x04urls\x18\x01 \x03(\tR\x04urls\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1e\n" +
@@ -781,26 +1085,39 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\x04peer\x18\x02 \x01(\v2\x0e.ludra.v1.UserR\x04peer\x124\n" +
 	"\vice_servers\x18\x03 \x03(\v2\x13.ludra.v1.IceServerR\n" +
-	"iceServers\"i\n" +
+	"iceServers\"\x82\x01\n" +
 	"\n" +
 	"CallSignal\x12\x17\n" +
 	"\acall_id\x18\x01 \x01(\tR\x06callId\x12(\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x14.ludra.v1.SignalKindR\x04kind\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload*g\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\x12\x17\n" +
+	"\apeer_id\x18\x04 \x01(\tR\x06peerId*z\n" +
 	"\bPresence\x12\x18\n" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fPRESENCE_ONLINE\x10\x01\x12\x14\n" +
 	"\x10PRESENCE_OFFLINE\x10\x02\x12\x16\n" +
-	"\x12PRESENCE_INVISIBLE\x10\x03*|\n" +
+	"\x12PRESENCE_INVISIBLE\x10\x03\x12\x11\n" +
+	"\rPRESENCE_BUSY\x10\x04*|\n" +
 	"\vFriendState\x12\x1c\n" +
 	"\x18FRIEND_STATE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15FRIEND_STATE_ACCEPTED\x10\x01\x12\x19\n" +
 	"\x15FRIEND_STATE_INCOMING\x10\x02\x12\x19\n" +
-	"\x15FRIEND_STATE_OUTGOING\x10\x03*Y\n" +
+	"\x15FRIEND_STATE_OUTGOING\x10\x03*q\n" +
 	"\vMessageKind\x12\x1c\n" +
 	"\x18MESSAGE_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11MESSAGE_KIND_TEXT\x10\x01\x12\x15\n" +
-	"\x11MESSAGE_KIND_CALL\x10\x02*\x95\x01\n" +
+	"\x11MESSAGE_KIND_CALL\x10\x02\x12\x16\n" +
+	"\x12MESSAGE_KIND_EVENT\x10\x03*\xaf\x01\n" +
+	"\fMessageEvent\x12\x1d\n" +
+	"\x19MESSAGE_EVENT_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aMESSAGE_EVENT_MEMBER_ADDED\x10\x01\x12 \n" +
+	"\x1cMESSAGE_EVENT_MEMBER_REMOVED\x10\x02\x12\x1d\n" +
+	"\x19MESSAGE_EVENT_MEMBER_LEFT\x10\x03\x12\x1f\n" +
+	"\x1bMESSAGE_EVENT_OWNER_CHANGED\x10\x04*p\n" +
+	"\x10ConversationKind\x12!\n" +
+	"\x1dCONVERSATION_KIND_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18CONVERSATION_KIND_DIRECT\x10\x01\x12\x1b\n" +
+	"\x17CONVERSATION_KIND_GROUP\x10\x02*\x95\x01\n" +
 	"\vCallOutcome\x12\x1c\n" +
 	"\x18CALL_OUTCOME_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16CALL_OUTCOME_COMPLETED\x10\x01\x12\x19\n" +
@@ -828,40 +1145,48 @@ func file_ludra_v1_models_proto_rawDescGZIP() []byte {
 	return file_ludra_v1_models_proto_rawDescData
 }
 
-var file_ludra_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_ludra_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
+var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_ludra_v1_models_proto_goTypes = []any{
 	(Presence)(0),                 // 0: ludra.v1.Presence
 	(FriendState)(0),              // 1: ludra.v1.FriendState
 	(MessageKind)(0),              // 2: ludra.v1.MessageKind
-	(CallOutcome)(0),              // 3: ludra.v1.CallOutcome
-	(SignalKind)(0),               // 4: ludra.v1.SignalKind
-	(*User)(nil),                  // 5: ludra.v1.User
-	(*Message)(nil),               // 6: ludra.v1.Message
-	(*Friend)(nil),                // 7: ludra.v1.Friend
-	(*Conversation)(nil),          // 8: ludra.v1.Conversation
-	(*IceServer)(nil),             // 9: ludra.v1.IceServer
-	(*Call)(nil),                  // 10: ludra.v1.Call
-	(*CallSignal)(nil),            // 11: ludra.v1.CallSignal
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(MessageEvent)(0),             // 3: ludra.v1.MessageEvent
+	(ConversationKind)(0),         // 4: ludra.v1.ConversationKind
+	(CallOutcome)(0),              // 5: ludra.v1.CallOutcome
+	(SignalKind)(0),               // 6: ludra.v1.SignalKind
+	(*User)(nil),                  // 7: ludra.v1.User
+	(*GroupCall)(nil),             // 8: ludra.v1.GroupCall
+	(*Message)(nil),               // 9: ludra.v1.Message
+	(*Friend)(nil),                // 10: ludra.v1.Friend
+	(*Conversation)(nil),          // 11: ludra.v1.Conversation
+	(*IceServer)(nil),             // 12: ludra.v1.IceServer
+	(*Call)(nil),                  // 13: ludra.v1.Call
+	(*CallSignal)(nil),            // 14: ludra.v1.CallSignal
+	(*timestamppb.Timestamp)(nil), // 15: google.protobuf.Timestamp
 }
 var file_ludra_v1_models_proto_depIdxs = []int32{
 	0,  // 0: ludra.v1.User.presence:type_name -> ludra.v1.Presence
-	12, // 1: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
-	2,  // 2: ludra.v1.Message.kind:type_name -> ludra.v1.MessageKind
-	3,  // 3: ludra.v1.Message.call_outcome:type_name -> ludra.v1.CallOutcome
-	5,  // 4: ludra.v1.Friend.user:type_name -> ludra.v1.User
-	1,  // 5: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
-	5,  // 6: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
-	6,  // 7: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
-	5,  // 8: ludra.v1.Call.peer:type_name -> ludra.v1.User
-	9,  // 9: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
-	4,  // 10: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	15, // 1: ludra.v1.GroupCall.started_at:type_name -> google.protobuf.Timestamp
+	15, // 2: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
+	2,  // 3: ludra.v1.Message.kind:type_name -> ludra.v1.MessageKind
+	5,  // 4: ludra.v1.Message.call_outcome:type_name -> ludra.v1.CallOutcome
+	3,  // 5: ludra.v1.Message.event:type_name -> ludra.v1.MessageEvent
+	7,  // 6: ludra.v1.Friend.user:type_name -> ludra.v1.User
+	1,  // 7: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
+	7,  // 8: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
+	9,  // 9: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
+	4,  // 10: ludra.v1.Conversation.kind:type_name -> ludra.v1.ConversationKind
+	7,  // 11: ludra.v1.Conversation.members:type_name -> ludra.v1.User
+	8,  // 12: ludra.v1.Conversation.call:type_name -> ludra.v1.GroupCall
+	7,  // 13: ludra.v1.Call.peer:type_name -> ludra.v1.User
+	12, // 14: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
+	6,  // 15: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_models_proto_init() }
@@ -874,8 +1199,8 @@ func file_ludra_v1_models_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_models_proto_rawDesc), len(file_ludra_v1_models_proto_rawDesc)),
-			NumEnums:      5,
-			NumMessages:   7,
+			NumEnums:      7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

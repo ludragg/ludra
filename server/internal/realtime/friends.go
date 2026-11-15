@@ -71,6 +71,48 @@ func (s *session) removeFriend(ctx context.Context, req *protocol.RemoveFriend) 
 	return reply
 }
 
+func (s *session) blockUser(ctx context.Context, req *protocol.BlockUser) *protocol.ServerFrame {
+	if !s.guard.friendChanges.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
+	if err := s.friends.Block(ctx, s.user.Id, req.UserId); err != nil {
+		return failed(err)
+	}
+
+	s.calls.endBetween(s, req.UserId)
+	s.hub.publish([]string{s.user.Id}, friendRemovedFrame(req.UserId), nil)
+	s.hub.publish([]string{req.UserId}, friendRemovedFrame(s.user.Id), nil)
+	reply := s.listBlocked(ctx)
+	s.hub.publish([]string{s.user.Id}, reply, s)
+	return reply
+}
+
+func (s *session) unblockUser(ctx context.Context, req *protocol.UnblockUser) *protocol.ServerFrame {
+	if !s.guard.friendChanges.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
+	if err := s.friends.Unblock(ctx, s.user.Id, req.UserId); err != nil {
+		return failed(err)
+	}
+
+	reply := s.listBlocked(ctx)
+	s.hub.publish([]string{s.user.Id}, reply, s)
+	return reply
+}
+
+func (s *session) listBlocked(ctx context.Context) *protocol.ServerFrame {
+	list, err := s.friends.ListBlocked(ctx, s.user.Id)
+	if err != nil {
+		return failed(err)
+	}
+
+	users := make([]*protocol.User, len(list))
+	for i, blocked := range list {
+		users[i] = &protocol.User{Id: blocked.ID, Username: blocked.Username, Avatar: blocked.Avatar}
+	}
+	return blockedListFrame(users)
+}
+
 func (s *session) relate(friend friends.Friend, mirror friends.State) *protocol.ServerFrame {
 	reply := friendUpdatedFrame(s.friend(friend))
 	other := friendUpdatedFrame(s.friend(friends.Friend{ID: s.user.Id, Username: s.user.Username, Avatar: s.user.Avatar, State: mirror}))
@@ -81,19 +123,21 @@ func (s *session) relate(friend friends.Friend, mirror friends.State) *protocol.
 }
 
 func (s *session) setPresence(ctx context.Context, req *protocol.SetPresence) *protocol.ServerFrame {
-	var invisible bool
+	var invisible, busy bool
 	switch req.Presence {
 	case protocol.Presence_PRESENCE_ONLINE:
 	case protocol.Presence_PRESENCE_INVISIBLE:
 		invisible = true
+	case protocol.Presence_PRESENCE_BUSY:
+		busy = true
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "invalid presence")
 	}
 
-	if err := s.account.SetInvisible(ctx, s.user.Id, invisible); err != nil {
+	if err := s.account.SetStatus(ctx, s.user.Id, invisible, busy); err != nil {
 		return failed(err)
 	}
-	if s.hub.setInvisible(s.user.Id, invisible) {
+	if s.hub.setStatus(s.user.Id, invisible, busy) {
 		s.announce(s.hub.presence(s.user.Id))
 	}
 

@@ -28,6 +28,22 @@ func (q *Queries) AreFriends(ctx context.Context, arg AreFriendsParams) (bool, e
 	return exists, err
 }
 
+const createBlock = `-- name: CreateBlock :exec
+INSERT INTO blocks (user_id, blocked_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type CreateBlockParams struct {
+	UserID    string
+	BlockedID string
+}
+
+func (q *Queries) CreateBlock(ctx context.Context, arg CreateBlockParams) error {
+	_, err := q.db.Exec(ctx, createBlock, arg.UserID, arg.BlockedID)
+	return err
+}
+
 const createFriendRequest = `-- name: CreateFriendRequest :exec
 INSERT INTO friend_requests (sender_id, recipient_id)
 VALUES ($1, $2)
@@ -57,6 +73,24 @@ type CreateFriendshipParams struct {
 func (q *Queries) CreateFriendship(ctx context.Context, arg CreateFriendshipParams) error {
 	_, err := q.db.Exec(ctx, createFriendship, arg.UserID, arg.FriendID)
 	return err
+}
+
+const deleteBlock = `-- name: DeleteBlock :execrows
+DELETE FROM blocks
+WHERE user_id = $1 AND blocked_id = $2
+`
+
+type DeleteBlockParams struct {
+	UserID    string
+	BlockedID string
+}
+
+func (q *Queries) DeleteBlock(ctx context.Context, arg DeleteBlockParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBlock, arg.UserID, arg.BlockedID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteFriendRequest = `-- name: DeleteFriendRequest :execrows
@@ -146,6 +180,60 @@ func (q *Queries) HasFriendRequest(ctx context.Context, arg HasFriendRequestPara
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const isBlockedEither = `-- name: IsBlockedEither :one
+SELECT EXISTS (
+    SELECT 1 FROM blocks
+    WHERE (user_id = $1 AND blocked_id = $2)
+       OR (user_id = $2 AND blocked_id = $1)
+)
+`
+
+type IsBlockedEitherParams struct {
+	UserID  string
+	OtherID string
+}
+
+func (q *Queries) IsBlockedEither(ctx context.Context, arg IsBlockedEitherParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isBlockedEither, arg.UserID, arg.OtherID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const listBlocked = `-- name: ListBlocked :many
+SELECT u.id, u.username, u.avatar
+FROM blocks b
+JOIN users u ON u.id = b.blocked_id
+WHERE b.user_id = $1
+ORDER BY u.username
+`
+
+type ListBlockedRow struct {
+	ID       string
+	Username string
+	Avatar   string
+}
+
+func (q *Queries) ListBlocked(ctx context.Context, userID string) ([]ListBlockedRow, error) {
+	rows, err := q.db.Query(ctx, listBlocked, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListBlockedRow
+	for rows.Next() {
+		var i ListBlockedRow
+		if err := rows.Scan(&i.ID, &i.Username, &i.Avatar); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listFriendIDs = `-- name: ListFriendIDs :many

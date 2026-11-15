@@ -32,6 +32,12 @@ message ServerFrame {
     CallSignal call_signal = 23;
     Ack ack = 24;
     MessageUpdated message_updated = 25;
+    ConversationUpdated conversation_updated = 26;
+    ConversationRemoved conversation_removed = 27;
+    GroupCallJoined group_call_joined = 28;
+    GroupCallUpdated group_call_updated = 29;
+    GroupCallRinging group_call_ringing = 30;
+    BlockedList blocked_list = 31;
   }
 }
 
@@ -96,6 +102,10 @@ message FriendList {
   repeated Friend friends = 1;
 }
 
+message BlockedList {
+  repeated User users = 1;
+}
+
 message FriendUpdated {
   Friend friend = 1;
 }
@@ -148,4 +158,29 @@ message Ack {}
 
 message MessageUpdated {
   Message message = 1;
+}
+
+message ConversationUpdated {
+  Conversation conversation = 1;
+}
+
+message ConversationRemoved {
+  string conversation_id = 1;
+}
+
+message GroupCallJoined {
+  string call_id = 1;
+  string conversation_id = 2;
+  repeated IceServer ice_servers = 3;
+  repeated string participant_ids = 4;
+}
+
+message GroupCallUpdated {
+  string conversation_id = 1;
+  GroupCall call = 2;
+}
+
+message GroupCallRinging {
+  string conversation_id = 1;
+  User starter = 2;
 }

@@ -101,6 +101,19 @@ type ClientFrame struct {
 	//	*ClientFrame_AnswerCall
 	//	*ClientFrame_EndCall
 	//	*ClientFrame_CallSignal
+	//	*ClientFrame_CreateGroup
+	//	*ClientFrame_AddGroupMembers
+	//	*ClientFrame_RemoveGroupMember
+	//	*ClientFrame_LeaveGroup
+	//	*ClientFrame_JoinGroupCall
+	//	*ClientFrame_LeaveGroupCall
+	//	*ClientFrame_DeclineGroupCall
+	//	*ClientFrame_DeleteGroup
+	//	*ClientFrame_TransferGroup
+	//	*ClientFrame_BlockUser
+	//	*ClientFrame_UnblockUser
+	//	*ClientFrame_ListBlocked
+	//	*ClientFrame_SetGroupAvatar
 	Payload       isClientFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -384,6 +397,123 @@ func (x *ClientFrame) GetCallSignal() *CallSignal {
 	return nil
 }
 
+func (x *ClientFrame) GetCreateGroup() *CreateGroup {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_CreateGroup); ok {
+			return x.CreateGroup
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetAddGroupMembers() *AddGroupMembers {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_AddGroupMembers); ok {
+			return x.AddGroupMembers
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetRemoveGroupMember() *RemoveGroupMember {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_RemoveGroupMember); ok {
+			return x.RemoveGroupMember
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetLeaveGroup() *LeaveGroup {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_LeaveGroup); ok {
+			return x.LeaveGroup
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetJoinGroupCall() *JoinGroupCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_JoinGroupCall); ok {
+			return x.JoinGroupCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetLeaveGroupCall() *LeaveGroupCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_LeaveGroupCall); ok {
+			return x.LeaveGroupCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetDeclineGroupCall() *DeclineGroupCall {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_DeclineGroupCall); ok {
+			return x.DeclineGroupCall
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetDeleteGroup() *DeleteGroup {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_DeleteGroup); ok {
+			return x.DeleteGroup
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetTransferGroup() *TransferGroup {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_TransferGroup); ok {
+			return x.TransferGroup
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetBlockUser() *BlockUser {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_BlockUser); ok {
+			return x.BlockUser
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetUnblockUser() *UnblockUser {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_UnblockUser); ok {
+			return x.UnblockUser
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetListBlocked() *ListBlocked {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_ListBlocked); ok {
+			return x.ListBlocked
+		}
+	}
+	return nil
+}
+
+func (x *ClientFrame) GetSetGroupAvatar() *SetGroupAvatar {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_SetGroupAvatar); ok {
+			return x.SetGroupAvatar
+		}
+	}
+	return nil
+}
+
 type isClientFrame_Payload interface {
 	isClientFrame_Payload()
 }
@@ -492,6 +622,58 @@ type ClientFrame_CallSignal struct {
 	CallSignal *CallSignal `protobuf:"bytes,27,opt,name=call_signal,json=callSignal,proto3,oneof"`
 }
 
+type ClientFrame_CreateGroup struct {
+	CreateGroup *CreateGroup `protobuf:"bytes,28,opt,name=create_group,json=createGroup,proto3,oneof"`
+}
+
+type ClientFrame_AddGroupMembers struct {
+	AddGroupMembers *AddGroupMembers `protobuf:"bytes,29,opt,name=add_group_members,json=addGroupMembers,proto3,oneof"`
+}
+
+type ClientFrame_RemoveGroupMember struct {
+	RemoveGroupMember *RemoveGroupMember `protobuf:"bytes,30,opt,name=remove_group_member,json=removeGroupMember,proto3,oneof"`
+}
+
+type ClientFrame_LeaveGroup struct {
+	LeaveGroup *LeaveGroup `protobuf:"bytes,31,opt,name=leave_group,json=leaveGroup,proto3,oneof"`
+}
+
+type ClientFrame_JoinGroupCall struct {
+	JoinGroupCall *JoinGroupCall `protobuf:"bytes,32,opt,name=join_group_call,json=joinGroupCall,proto3,oneof"`
+}
+
+type ClientFrame_LeaveGroupCall struct {
+	LeaveGroupCall *LeaveGroupCall `protobuf:"bytes,33,opt,name=leave_group_call,json=leaveGroupCall,proto3,oneof"`
+}
+
+type ClientFrame_DeclineGroupCall struct {
+	DeclineGroupCall *DeclineGroupCall `protobuf:"bytes,34,opt,name=decline_group_call,json=declineGroupCall,proto3,oneof"`
+}
+
+type ClientFrame_DeleteGroup struct {
+	DeleteGroup *DeleteGroup `protobuf:"bytes,35,opt,name=delete_group,json=deleteGroup,proto3,oneof"`
+}
+
+type ClientFrame_TransferGroup struct {
+	TransferGroup *TransferGroup `protobuf:"bytes,36,opt,name=transfer_group,json=transferGroup,proto3,oneof"`
+}
+
+type ClientFrame_BlockUser struct {
+	BlockUser *BlockUser `protobuf:"bytes,37,opt,name=block_user,json=blockUser,proto3,oneof"`
+}
+
+type ClientFrame_UnblockUser struct {
+	UnblockUser *UnblockUser `protobuf:"bytes,38,opt,name=unblock_user,json=unblockUser,proto3,oneof"`
+}
+
+type ClientFrame_ListBlocked struct {
+	ListBlocked *ListBlocked `protobuf:"bytes,39,opt,name=list_blocked,json=listBlocked,proto3,oneof"`
+}
+
+type ClientFrame_SetGroupAvatar struct {
+	SetGroupAvatar *SetGroupAvatar `protobuf:"bytes,40,opt,name=set_group_avatar,json=setGroupAvatar,proto3,oneof"`
+}
+
 func (*ClientFrame_Login) isClientFrame_Payload() {}
 
 func (*ClientFrame_ListConversations) isClientFrame_Payload() {}
@@ -543,6 +725,32 @@ func (*ClientFrame_AnswerCall) isClientFrame_Payload() {}
 func (*ClientFrame_EndCall) isClientFrame_Payload() {}
 
 func (*ClientFrame_CallSignal) isClientFrame_Payload() {}
+
+func (*ClientFrame_CreateGroup) isClientFrame_Payload() {}
+
+func (*ClientFrame_AddGroupMembers) isClientFrame_Payload() {}
+
+func (*ClientFrame_RemoveGroupMember) isClientFrame_Payload() {}
+
+func (*ClientFrame_LeaveGroup) isClientFrame_Payload() {}
+
+func (*ClientFrame_JoinGroupCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_LeaveGroupCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_DeclineGroupCall) isClientFrame_Payload() {}
+
+func (*ClientFrame_DeleteGroup) isClientFrame_Payload() {}
+
+func (*ClientFrame_TransferGroup) isClientFrame_Payload() {}
+
+func (*ClientFrame_BlockUser) isClientFrame_Payload() {}
+
+func (*ClientFrame_UnblockUser) isClientFrame_Payload() {}
+
+func (*ClientFrame_ListBlocked) isClientFrame_Payload() {}
+
+func (*ClientFrame_SetGroupAvatar) isClientFrame_Payload() {}
 
 type Register struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1732,11 +1940,615 @@ func (x *EndCall) GetCallId() string {
 	return ""
 }
 
+type CreateGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MemberIds     []string               `protobuf:"bytes,2,rep,name=member_ids,json=memberIds,proto3" json:"member_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGroup) Reset() {
+	*x = CreateGroup{}
+	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGroup) ProtoMessage() {}
+
+func (x *CreateGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGroup.ProtoReflect.Descriptor instead.
+func (*CreateGroup) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *CreateGroup) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateGroup) GetMemberIds() []string {
+	if x != nil {
+		return x.MemberIds
+	}
+	return nil
+}
+
+type AddGroupMembers struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	UserIds        []string               `protobuf:"bytes,2,rep,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *AddGroupMembers) Reset() {
+	*x = AddGroupMembers{}
+	mi := &file_ludra_v1_client_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddGroupMembers) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddGroupMembers) ProtoMessage() {}
+
+func (x *AddGroupMembers) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddGroupMembers.ProtoReflect.Descriptor instead.
+func (*AddGroupMembers) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *AddGroupMembers) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *AddGroupMembers) GetUserIds() []string {
+	if x != nil {
+		return x.UserIds
+	}
+	return nil
+}
+
+type RemoveGroupMember struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RemoveGroupMember) Reset() {
+	*x = RemoveGroupMember{}
+	mi := &file_ludra_v1_client_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveGroupMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveGroupMember) ProtoMessage() {}
+
+func (x *RemoveGroupMember) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveGroupMember.ProtoReflect.Descriptor instead.
+func (*RemoveGroupMember) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *RemoveGroupMember) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *RemoveGroupMember) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type LeaveGroup struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *LeaveGroup) Reset() {
+	*x = LeaveGroup{}
+	mi := &file_ludra_v1_client_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LeaveGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaveGroup) ProtoMessage() {}
+
+func (x *LeaveGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaveGroup.ProtoReflect.Descriptor instead.
+func (*LeaveGroup) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *LeaveGroup) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+type JoinGroupCall struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *JoinGroupCall) Reset() {
+	*x = JoinGroupCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinGroupCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinGroupCall) ProtoMessage() {}
+
+func (x *JoinGroupCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinGroupCall.ProtoReflect.Descriptor instead.
+func (*JoinGroupCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *JoinGroupCall) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+type LeaveGroupCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LeaveGroupCall) Reset() {
+	*x = LeaveGroupCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LeaveGroupCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LeaveGroupCall) ProtoMessage() {}
+
+func (x *LeaveGroupCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LeaveGroupCall.ProtoReflect.Descriptor instead.
+func (*LeaveGroupCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *LeaveGroupCall) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
+type DeclineGroupCall struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DeclineGroupCall) Reset() {
+	*x = DeclineGroupCall{}
+	mi := &file_ludra_v1_client_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeclineGroupCall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeclineGroupCall) ProtoMessage() {}
+
+func (x *DeclineGroupCall) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeclineGroupCall.ProtoReflect.Descriptor instead.
+func (*DeclineGroupCall) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *DeclineGroupCall) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+type DeleteGroup struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DeleteGroup) Reset() {
+	*x = DeleteGroup{}
+	mi := &file_ludra_v1_client_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteGroup) ProtoMessage() {}
+
+func (x *DeleteGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteGroup.ProtoReflect.Descriptor instead.
+func (*DeleteGroup) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *DeleteGroup) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+type BlockUser struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BlockUser) Reset() {
+	*x = BlockUser{}
+	mi := &file_ludra_v1_client_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BlockUser) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BlockUser) ProtoMessage() {}
+
+func (x *BlockUser) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BlockUser.ProtoReflect.Descriptor instead.
+func (*BlockUser) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *BlockUser) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type UnblockUser struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnblockUser) Reset() {
+	*x = UnblockUser{}
+	mi := &file_ludra_v1_client_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnblockUser) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnblockUser) ProtoMessage() {}
+
+func (x *UnblockUser) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnblockUser.ProtoReflect.Descriptor instead.
+func (*UnblockUser) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *UnblockUser) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type ListBlocked struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBlocked) Reset() {
+	*x = ListBlocked{}
+	mi := &file_ludra_v1_client_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBlocked) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBlocked) ProtoMessage() {}
+
+func (x *ListBlocked) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBlocked.ProtoReflect.Descriptor instead.
+func (*ListBlocked) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{36}
+}
+
+type SetGroupAvatar struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	Image          []byte                 `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *SetGroupAvatar) Reset() {
+	*x = SetGroupAvatar{}
+	mi := &file_ludra_v1_client_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetGroupAvatar) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetGroupAvatar) ProtoMessage() {}
+
+func (x *SetGroupAvatar) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetGroupAvatar.ProtoReflect.Descriptor instead.
+func (*SetGroupAvatar) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *SetGroupAvatar) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *SetGroupAvatar) GetImage() []byte {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type TransferGroup struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TransferGroup) Reset() {
+	*x = TransferGroup{}
+	mi := &file_ludra_v1_client_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransferGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransferGroup) ProtoMessage() {}
+
+func (x *TransferGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransferGroup.ProtoReflect.Descriptor instead.
+func (*TransferGroup) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *TransferGroup) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *TransferGroup) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_ludra_v1_client_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_client_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xbf\f\n" +
+	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\x93\x13\n" +
 	"\vClientFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -1771,7 +2583,22 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"answerCall\x12.\n" +
 	"\bend_call\x18\x1a \x01(\v2\x11.ludra.v1.EndCallH\x00R\aendCall\x127\n" +
 	"\vcall_signal\x18\x1b \x01(\v2\x14.ludra.v1.CallSignalH\x00R\n" +
-	"callSignalB\t\n" +
+	"callSignal\x12:\n" +
+	"\fcreate_group\x18\x1c \x01(\v2\x15.ludra.v1.CreateGroupH\x00R\vcreateGroup\x12G\n" +
+	"\x11add_group_members\x18\x1d \x01(\v2\x19.ludra.v1.AddGroupMembersH\x00R\x0faddGroupMembers\x12M\n" +
+	"\x13remove_group_member\x18\x1e \x01(\v2\x1b.ludra.v1.RemoveGroupMemberH\x00R\x11removeGroupMember\x127\n" +
+	"\vleave_group\x18\x1f \x01(\v2\x14.ludra.v1.LeaveGroupH\x00R\n" +
+	"leaveGroup\x12A\n" +
+	"\x0fjoin_group_call\x18  \x01(\v2\x17.ludra.v1.JoinGroupCallH\x00R\rjoinGroupCall\x12D\n" +
+	"\x10leave_group_call\x18! \x01(\v2\x18.ludra.v1.LeaveGroupCallH\x00R\x0eleaveGroupCall\x12J\n" +
+	"\x12decline_group_call\x18\" \x01(\v2\x1a.ludra.v1.DeclineGroupCallH\x00R\x10declineGroupCall\x12:\n" +
+	"\fdelete_group\x18# \x01(\v2\x15.ludra.v1.DeleteGroupH\x00R\vdeleteGroup\x12@\n" +
+	"\x0etransfer_group\x18$ \x01(\v2\x17.ludra.v1.TransferGroupH\x00R\rtransferGroup\x124\n" +
+	"\n" +
+	"block_user\x18% \x01(\v2\x13.ludra.v1.BlockUserH\x00R\tblockUser\x12:\n" +
+	"\funblock_user\x18& \x01(\v2\x15.ludra.v1.UnblockUserH\x00R\vunblockUser\x12:\n" +
+	"\flist_blocked\x18' \x01(\v2\x15.ludra.v1.ListBlockedH\x00R\vlistBlocked\x12D\n" +
+	"\x10set_group_avatar\x18( \x01(\v2\x18.ludra.v1.SetGroupAvatarH\x00R\x0esetGroupAvatarB\t\n" +
 	"\apayload\"p\n" +
 	"\bRegister\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
@@ -1834,7 +2661,39 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"AnswerCall\x12\x17\n" +
 	"\acall_id\x18\x01 \x01(\tR\x06callId\"\"\n" +
 	"\aEndCall\x12\x17\n" +
-	"\acall_id\x18\x01 \x01(\tR\x06callId*k\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\"@\n" +
+	"\vCreateGroup\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"member_ids\x18\x02 \x03(\tR\tmemberIds\"U\n" +
+	"\x0fAddGroupMembers\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x19\n" +
+	"\buser_ids\x18\x02 \x03(\tR\auserIds\"U\n" +
+	"\x11RemoveGroupMember\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"5\n" +
+	"\n" +
+	"LeaveGroup\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\"8\n" +
+	"\rJoinGroupCall\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\")\n" +
+	"\x0eLeaveGroupCall\x12\x17\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\";\n" +
+	"\x10DeclineGroupCall\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\"6\n" +
+	"\vDeleteGroup\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\"$\n" +
+	"\tBlockUser\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"&\n" +
+	"\vUnblockUser\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\r\n" +
+	"\vListBlocked\"O\n" +
+	"\x0eSetGroupAvatar\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x14\n" +
+	"\x05image\x18\x02 \x01(\fR\x05image\"Q\n" +
+	"\rTransferGroup\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId*k\n" +
 	"\vCodePurpose\x12\x1c\n" +
 	"\x18CODE_PURPOSE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19CODE_PURPOSE_VERIFY_EMAIL\x10\x01\x12\x1f\n" +
@@ -1854,7 +2713,7 @@ func file_ludra_v1_client_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_ludra_v1_client_proto_goTypes = []any{
 	(CodePurpose)(0),          // 0: ludra.v1.CodePurpose
 	(*ClientFrame)(nil),       // 1: ludra.v1.ClientFrame
@@ -1883,8 +2742,21 @@ var file_ludra_v1_client_proto_goTypes = []any{
 	(*StartCall)(nil),         // 24: ludra.v1.StartCall
 	(*AnswerCall)(nil),        // 25: ludra.v1.AnswerCall
 	(*EndCall)(nil),           // 26: ludra.v1.EndCall
-	(*CallSignal)(nil),        // 27: ludra.v1.CallSignal
-	(Presence)(0),             // 28: ludra.v1.Presence
+	(*CreateGroup)(nil),       // 27: ludra.v1.CreateGroup
+	(*AddGroupMembers)(nil),   // 28: ludra.v1.AddGroupMembers
+	(*RemoveGroupMember)(nil), // 29: ludra.v1.RemoveGroupMember
+	(*LeaveGroup)(nil),        // 30: ludra.v1.LeaveGroup
+	(*JoinGroupCall)(nil),     // 31: ludra.v1.JoinGroupCall
+	(*LeaveGroupCall)(nil),    // 32: ludra.v1.LeaveGroupCall
+	(*DeclineGroupCall)(nil),  // 33: ludra.v1.DeclineGroupCall
+	(*DeleteGroup)(nil),       // 34: ludra.v1.DeleteGroup
+	(*BlockUser)(nil),         // 35: ludra.v1.BlockUser
+	(*UnblockUser)(nil),       // 36: ludra.v1.UnblockUser
+	(*ListBlocked)(nil),       // 37: ludra.v1.ListBlocked
+	(*SetGroupAvatar)(nil),    // 38: ludra.v1.SetGroupAvatar
+	(*TransferGroup)(nil),     // 39: ludra.v1.TransferGroup
+	(*CallSignal)(nil),        // 40: ludra.v1.CallSignal
+	(Presence)(0),             // 41: ludra.v1.Presence
 }
 var file_ludra_v1_client_proto_depIdxs = []int32{
 	3,  // 0: ludra.v1.ClientFrame.login:type_name -> ludra.v1.Login
@@ -1912,14 +2784,27 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	24, // 22: ludra.v1.ClientFrame.start_call:type_name -> ludra.v1.StartCall
 	25, // 23: ludra.v1.ClientFrame.answer_call:type_name -> ludra.v1.AnswerCall
 	26, // 24: ludra.v1.ClientFrame.end_call:type_name -> ludra.v1.EndCall
-	27, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
-	0,  // 26: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
-	28, // 27: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
-	28, // [28:28] is the sub-list for method output_type
-	28, // [28:28] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	40, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
+	27, // 26: ludra.v1.ClientFrame.create_group:type_name -> ludra.v1.CreateGroup
+	28, // 27: ludra.v1.ClientFrame.add_group_members:type_name -> ludra.v1.AddGroupMembers
+	29, // 28: ludra.v1.ClientFrame.remove_group_member:type_name -> ludra.v1.RemoveGroupMember
+	30, // 29: ludra.v1.ClientFrame.leave_group:type_name -> ludra.v1.LeaveGroup
+	31, // 30: ludra.v1.ClientFrame.join_group_call:type_name -> ludra.v1.JoinGroupCall
+	32, // 31: ludra.v1.ClientFrame.leave_group_call:type_name -> ludra.v1.LeaveGroupCall
+	33, // 32: ludra.v1.ClientFrame.decline_group_call:type_name -> ludra.v1.DeclineGroupCall
+	34, // 33: ludra.v1.ClientFrame.delete_group:type_name -> ludra.v1.DeleteGroup
+	39, // 34: ludra.v1.ClientFrame.transfer_group:type_name -> ludra.v1.TransferGroup
+	35, // 35: ludra.v1.ClientFrame.block_user:type_name -> ludra.v1.BlockUser
+	36, // 36: ludra.v1.ClientFrame.unblock_user:type_name -> ludra.v1.UnblockUser
+	37, // 37: ludra.v1.ClientFrame.list_blocked:type_name -> ludra.v1.ListBlocked
+	38, // 38: ludra.v1.ClientFrame.set_group_avatar:type_name -> ludra.v1.SetGroupAvatar
+	0,  // 39: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
+	41, // 40: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
+	41, // [41:41] is the sub-list for method output_type
+	41, // [41:41] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_client_proto_init() }
@@ -1955,6 +2840,19 @@ func file_ludra_v1_client_proto_init() {
 		(*ClientFrame_AnswerCall)(nil),
 		(*ClientFrame_EndCall)(nil),
 		(*ClientFrame_CallSignal)(nil),
+		(*ClientFrame_CreateGroup)(nil),
+		(*ClientFrame_AddGroupMembers)(nil),
+		(*ClientFrame_RemoveGroupMember)(nil),
+		(*ClientFrame_LeaveGroup)(nil),
+		(*ClientFrame_JoinGroupCall)(nil),
+		(*ClientFrame_LeaveGroupCall)(nil),
+		(*ClientFrame_DeclineGroupCall)(nil),
+		(*ClientFrame_DeleteGroup)(nil),
+		(*ClientFrame_TransferGroup)(nil),
+		(*ClientFrame_BlockUser)(nil),
+		(*ClientFrame_UnblockUser)(nil),
+		(*ClientFrame_ListBlocked)(nil),
+		(*ClientFrame_SetGroupAvatar)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1962,7 +2860,7 @@ func file_ludra_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_client_proto_rawDesc), len(file_ludra_v1_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   26,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

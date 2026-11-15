@@ -7,6 +7,7 @@
 
   const options: { presence: Presence; label: Key }[] = [
     { presence: Presence.ONLINE, label: "presence.online" },
+    { presence: Presence.BUSY, label: "presence.busy" },
     { presence: Presence.INVISIBLE, label: "presence.invisible" },
   ];
 
@@ -30,6 +31,7 @@
       <span
         class="sidebar-status-menu__dot"
         class:sidebar-status-menu__dot--online={option.presence === Presence.ONLINE}
+        class:sidebar-status-menu__dot--busy={option.presence === Presence.BUSY}
       ></span>
       <span class="sidebar-status-menu__label">{t(option.label)}</span>
       {#if checked}
@@ -95,6 +97,11 @@
   .sidebar-status-menu__dot--online {
     border: 0;
     background: var(--success-color);
+  }
+
+  .sidebar-status-menu__dot--busy {
+    border: 0;
+    background: #f6746b;
   }
 
   .sidebar-status-menu__label {

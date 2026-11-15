@@ -5,10 +5,16 @@
   import type { User } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { groupCall } from "@/stores/group-call.svelte";
 
   let { peer }: { peer: User } = $props();
 
-  const canCall = $derived(!calls.current && chat.isFriend(peer.id));
+  async function call() {
+    await groupCall.leave();
+    await calls.start(peer);
+  }
+
+  const canCall = $derived(calls.current?.peer.id !== peer.id && !groupCall.joining && chat.isFriend(peer.id));
 </script>
 
 <header class="chat-header">
@@ -21,12 +27,7 @@
     <span class="chat-header__error" role="alert">{calls.error}</span>
   {/if}
   {#if canCall}
-    <button
-      class="chat-header__call"
-      aria-label={t("call.start")}
-      title={t("call.start")}
-      onclick={() => calls.start(peer)}
-    >
+    <button class="chat-header__call" aria-label={t("call.start")} title={t("call.start")} onclick={call}>
       <CallIcon name="phone" />
     </button>
   {/if}

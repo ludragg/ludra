@@ -9,6 +9,7 @@ enum Presence {
   PRESENCE_ONLINE = 1;
   PRESENCE_OFFLINE = 2;
   PRESENCE_INVISIBLE = 3;
+  PRESENCE_BUSY = 4;
 }
 
 enum FriendState {
@@ -29,6 +30,31 @@ enum MessageKind {
   MESSAGE_KIND_UNSPECIFIED = 0;
   MESSAGE_KIND_TEXT = 1;
   MESSAGE_KIND_CALL = 2;
+  MESSAGE_KIND_EVENT = 3;
+}
+
+enum MessageEvent {
+  MESSAGE_EVENT_UNSPECIFIED = 0;
+  MESSAGE_EVENT_MEMBER_ADDED = 1;
+  MESSAGE_EVENT_MEMBER_REMOVED = 2;
+  MESSAGE_EVENT_MEMBER_LEFT = 3;
+  MESSAGE_EVENT_OWNER_CHANGED = 4;
+}
+
+enum ConversationKind {
+  CONVERSATION_KIND_UNSPECIFIED = 0;
+  CONVERSATION_KIND_DIRECT = 1;
+  CONVERSATION_KIND_GROUP = 2;
+}
+
+message GroupCall {
+  string id = 1;
+  repeated string participant_ids = 2;
+  google.protobuf.Timestamp started_at = 3;
+  reserved 4;
+  repeated string ringing_ids = 5;
+  repeated string muted_ids = 6;
+  repeated string deafened_ids = 7;
 }
 
 enum CallOutcome {
@@ -48,6 +74,10 @@ message Message {
   MessageKind kind = 6;
   CallOutcome call_outcome = 7;
   uint32 call_duration = 8;
+  MessageEvent event = 9;
+  string target_id = 10;
+  string sender_name = 11;
+  string target_name = 12;
 }
 
 message Friend {
@@ -59,6 +89,12 @@ message Conversation {
   string id = 1;
   User peer = 2;
   Message last_message = 3;
+  ConversationKind kind = 4;
+  string name = 5;
+  string owner_id = 6;
+  repeated User members = 7;
+  GroupCall call = 8;
+  string avatar = 9;
 }
 
 message IceServer {
@@ -85,4 +121,5 @@ message CallSignal {
   string call_id = 1;
   SignalKind kind = 2;
   string payload = 3;
+  string peer_id = 4;
 }

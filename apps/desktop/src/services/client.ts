@@ -6,12 +6,19 @@ import type {
   CallSignal,
   Conversation,
   Friend,
+  GroupCall,
   Message,
   Presence,
   SignalKind,
   User,
 } from "@/protocol/ludra/v1/models_pb";
-import { ErrorCode, ServerFrameSchema, type CallEndReason, type ServerFrame } from "@/protocol/ludra/v1/server_pb";
+import {
+  ErrorCode,
+  ServerFrameSchema,
+  type CallEndReason,
+  type GroupCallJoined,
+  type ServerFrame,
+} from "@/protocol/ludra/v1/server_pb";
 
 type Request = MessageInitShape<typeof ClientFrameSchema>["payload"];
 type Reply = ServerFrame["payload"];
@@ -50,6 +57,11 @@ export class Client {
   onCallAccepted: (callId: string) => void = () => {};
   onCallEnded: (callId: string, reason: CallEndReason) => void = () => {};
   onCallSignal: (signal: CallSignal) => void = () => {};
+  onConversationUpdated: (conversation: Conversation) => void = () => {};
+  onBlocked: (users: User[]) => void = () => {};
+  onConversationRemoved: (conversationId: string) => void = () => {};
+  onGroupCallUpdated: (conversationId: string, call: GroupCall | undefined) => void = () => {};
+  onGroupCallRinging: (conversationId: string, starter: User) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -142,6 +154,21 @@ export class Client {
     return friends;
   }
 
+  async listBlocked(): Promise<User[]> {
+    const { users } = await this.#request({ case: "listBlocked", value: {} }, "blockedList");
+    return users;
+  }
+
+  async blockUser(userId: string): Promise<User[]> {
+    const { users } = await this.#request({ case: "blockUser", value: { userId } }, "blockedList");
+    return users;
+  }
+
+  async unblockUser(userId: string): Promise<User[]> {
+    const { users } = await this.#request({ case: "unblockUser", value: { userId } }, "blockedList");
+    return users;
+  }
+
   async addFriend(username: string): Promise<Friend> {
     const { friend } = await this.#request({ case: "addFriend", value: { username } }, "friendUpdated");
     return friend!;
@@ -191,8 +218,68 @@ export class Client {
     await this.#request({ case: "endCall", value: { callId } }, "callEnded");
   }
 
-  async sendSignal(callId: string, kind: SignalKind, payload: string) {
-    await this.#request({ case: "callSignal", value: { callId, kind, payload } }, "ack");
+  async sendSignal(callId: string, kind: SignalKind, payload: string, peerId = "") {
+    await this.#request({ case: "callSignal", value: { callId, kind, payload, peerId } }, "ack");
+  }
+
+  async createGroup(name: string, memberIds: string[]): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "createGroup", value: { name, memberIds } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
+  async addGroupMembers(conversationId: string, userIds: string[]): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "addGroupMembers", value: { conversationId, userIds } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
+  async removeGroupMember(conversationId: string, userId: string): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "removeGroupMember", value: { conversationId, userId } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
+  async leaveGroup(conversationId: string) {
+    await this.#request({ case: "leaveGroup", value: { conversationId } }, "conversationRemoved");
+  }
+
+  joinGroupCall(conversationId: string): Promise<GroupCallJoined> {
+    return this.#request({ case: "joinGroupCall", value: { conversationId } }, "groupCallJoined");
+  }
+
+  async transferGroup(conversationId: string, userId: string): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "transferGroup", value: { conversationId, userId } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
+  async setGroupAvatar(conversationId: string, image: Uint8Array): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "setGroupAvatar", value: { conversationId, image } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
+  async deleteGroup(conversationId: string) {
+    await this.#request({ case: "deleteGroup", value: { conversationId } }, "conversationRemoved");
+  }
+
+  async declineGroupCall(conversationId: string) {
+    await this.#request({ case: "declineGroupCall", value: { conversationId } }, "ack");
+  }
+
+  async leaveGroupCall(callId: string) {
+    await this.#request({ case: "leaveGroupCall", value: { callId } }, "ack");
   }
 
   close() {
@@ -299,6 +386,25 @@ export class Client {
         break;
       case "callSignal":
         this.onCallSignal(payload.value);
+        break;
+      case "conversationUpdated":
+        if (payload.value.conversation) {
+          this.onConversationUpdated(payload.value.conversation);
+        }
+        break;
+      case "blockedList":
+        this.onBlocked(payload.value.users);
+        break;
+      case "conversationRemoved":
+        this.onConversationRemoved(payload.value.conversationId);
+        break;
+      case "groupCallUpdated":
+        this.onGroupCallUpdated(payload.value.conversationId, payload.value.call);
+        break;
+      case "groupCallRinging":
+        if (payload.value.starter) {
+          this.onGroupCallRinging(payload.value.conversationId, payload.value.starter);
+        }
         break;
     }
   }

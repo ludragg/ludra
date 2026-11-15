@@ -85,13 +85,19 @@ func (s *Service) Add(ctx context.Context, userID, username string) (Friend, err
 	if target.ID == userID {
 		return Friend{}, ErrSelfRequest
 	}
-
 	state := Outgoing
 	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
 
 		if err := q.LockFriendPair(ctx, pairKey(userID, target.ID)); err != nil {
 			return err
+		}
+		blocked, err := q.IsBlockedEither(ctx, database.IsBlockedEitherParams{UserID: userID, OtherID: target.ID})
+		if err != nil {
+			return err
+		}
+		if blocked {
+			return ErrUserNotFound
 		}
 
 		friends, err := q.AreFriends(ctx, database.AreFriendsParams{UserID: userID, FriendID: target.ID})
@@ -144,6 +150,17 @@ func (s *Service) Accept(ctx context.Context, userID, requesterID string) (Frien
 	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
 
+		if err := q.LockFriendPair(ctx, pairKey(userID, requesterID)); err != nil {
+			return err
+		}
+		blocked, err := q.IsBlockedEither(ctx, database.IsBlockedEitherParams{UserID: userID, OtherID: requesterID})
+		if err != nil {
+			return err
+		}
+		if blocked {
+			return ErrRequestNotFound
+		}
+
 		removed, err := q.DeleteFriendRequest(ctx, database.DeleteFriendRequestParams{SenderID: requesterID, RecipientID: userID})
 		if err != nil {
 			return err
@@ -164,6 +181,59 @@ func (s *Service) Accept(ctx context.Context, userID, requesterID string) (Frien
 	}
 
 	return Friend{ID: requester.ID, Username: requester.Username, Avatar: requester.Avatar, State: Accepted}, nil
+}
+
+type Blocked struct {
+	ID       string
+	Username string
+	Avatar   string
+}
+
+func (s *Service) Block(ctx context.Context, userID, otherID string) error {
+	if !ids.Valid(otherID) || otherID == userID {
+		return ErrUserNotFound
+	}
+	return pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		if err := q.LockFriendPair(ctx, pairKey(userID, otherID)); err != nil {
+			return err
+		}
+		if _, err := q.GetUser(ctx, otherID); errors.Is(err, pgx.ErrNoRows) {
+			return ErrUserNotFound
+		} else if err != nil {
+			return err
+		}
+		if _, err := q.DeleteRelationship(ctx, database.DeleteRelationshipParams{UserID: userID, OtherID: otherID}); err != nil {
+			return err
+		}
+		return q.CreateBlock(ctx, database.CreateBlockParams{UserID: userID, BlockedID: otherID})
+	})
+}
+
+func (s *Service) Unblock(ctx context.Context, userID, otherID string) error {
+	if !ids.Valid(otherID) {
+		return ErrUserNotFound
+	}
+	removed, err := s.queries.DeleteBlock(ctx, database.DeleteBlockParams{UserID: userID, BlockedID: otherID})
+	if err != nil {
+		return err
+	}
+	if removed == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+func (s *Service) ListBlocked(ctx context.Context, userID string) ([]Blocked, error) {
+	rows, err := s.queries.ListBlocked(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]Blocked, len(rows))
+	for i, row := range rows {
+		result[i] = Blocked{ID: row.ID, Username: row.Username, Avatar: row.Avatar}
+	}
+	return result, nil
 }
 
 func (s *Service) Remove(ctx context.Context, userID, otherID string) error {

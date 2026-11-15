@@ -3,8 +3,9 @@ import { SignalKind, type Call, type CallSignal, type IceServer, type User } fro
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
 import { notify, windowFocused } from "@/services/desktop";
-import { playCue, startRingtone, stopRingtone } from "@/services/ringtone";
+import { playCue, setRingtone } from "@/services/ringtone";
 import { VoiceSession } from "@/services/voice";
+import { focus } from "@/stores/focus";
 import { preferences } from "@/stores/preferences.svelte";
 
 export type CallStatus = "outgoing" | "incoming" | "connecting" | "active";
@@ -14,10 +15,13 @@ export type Current = {
   peer: User;
   status: CallStatus;
   startedAt: number | null;
+  quiet?: boolean;
+  hidden?: boolean;
 };
 
 class CallStore {
   current = $state<Current | null>(null);
+  waiting = $state<Current | null>(null);
   muted = $state(false);
   deafened = $state(false);
   selfSpeaking = $state(false);
@@ -26,14 +30,17 @@ class CallStore {
   peerDeafened = $state(false);
   latency = $state<number | null>(null);
   error = $state("");
+  onBeforeAnswer: () => Promise<void> = async () => {};
 
   #client: Client | null = null;
   #voice: VoiceSession | null = null;
   #ready: Promise<void> = Promise.resolve();
   #iceServers: IceServer[] = [];
+  #waitingIce: IceServer[] = [];
   #mutedBeforeDeafen = false;
   #beforeTest: { muted: boolean; deafened: boolean } | null = null;
   #errorTimer: number | undefined;
+  #starting = false;
 
   attach(client: Client) {
     this.#client = client;
@@ -48,47 +55,93 @@ class CallStore {
   }
 
   detach() {
+    this.waiting = null;
     this.#finish();
     this.#client = null;
   }
 
   async start(peer: User) {
-    if (!this.#client || this.current) {
+    const calledBack =
+      this.waiting?.peer.id === peer.id || (this.current?.status === "incoming" && this.current.peer.id === peer.id);
+    if (calledBack) {
+      await this.answer();
       return;
     }
-
+    if (!this.#client || this.#starting || this.current?.peer.id === peer.id) {
+      return;
+    }
+    this.#starting = true;
+    let mine: string | null = null;
     try {
-      const call = await this.#client.startCall(peer.id);
-      this.#iceServers = call.iceServers;
-      this.current = { id: call.id, peer: call.peer ?? peer, status: "outgoing", startedAt: null };
-      startRingtone("outgoing");
-      this.#ready = this.#prepare();
-      await this.#ready;
-    } catch (cause) {
-      this.#showError(describe(cause, peer.username));
+      if (this.waiting) {
+        await this.decline();
+      }
       if (this.current) {
         await this.hangUp();
       }
+      const call = await this.#client.startCall(peer.id);
+      mine = call.id;
+      this.#iceServers = call.iceServers;
+      this.current = { id: call.id, peer: call.peer ?? peer, status: "outgoing", startedAt: null };
+      this.#syncRing();
+      this.#ready = this.#prepare();
+      await this.#ready;
+    } catch (cause) {
+      if (mine && this.current?.id !== mine) {
+        return;
+      }
+      this.#showError(describe(cause, peer.username));
+      if (mine) {
+        await this.hangUp();
+      }
+    } finally {
+      this.#starting = false;
     }
   }
 
   async answer() {
+    if (this.waiting) {
+      await this.hangUp();
+    }
+    await this.onBeforeAnswer();
     const current = this.current;
     if (!current || current.status !== "incoming" || !this.#client) {
       return;
     }
 
-    stopRingtone();
     playCue("connected");
     current.status = "connecting";
+    this.#syncRing();
     try {
       this.#ready = this.#prepare();
       await this.#ready;
       await this.#client.answerCall(current.id);
     } catch (cause) {
+      if (this.current?.id !== current.id) {
+        return;
+      }
       this.#showError(describe(cause, current.peer.username));
       await this.hangUp();
     }
+  }
+
+  hide() {
+    const target = this.waiting ?? this.current;
+    if (target?.status === "incoming") {
+      target.hidden = true;
+      this.#syncRing();
+    }
+  }
+
+  async decline() {
+    const waiting = this.waiting;
+    if (!waiting) {
+      await this.hangUp();
+      return;
+    }
+    this.waiting = null;
+    this.#syncRing();
+    await this.#client?.endCall(waiting.id).catch(() => undefined);
   }
 
   async hangUp() {
@@ -216,14 +269,20 @@ class CallStore {
   }
 
   #incoming(call: Call) {
-    if (this.current || !call.peer) {
+    if (!call.peer || this.waiting) {
       return;
     }
-
-    this.#iceServers = call.iceServers;
-    this.current = { id: call.id, peer: call.peer, status: "incoming", startedAt: null };
-    startRingtone("incoming");
-    if (!windowFocused()) {
+    const quiet = focus.busy;
+    const incoming: Current = { id: call.id, peer: call.peer, status: "incoming", startedAt: null, quiet };
+    if (this.current) {
+      this.#waitingIce = call.iceServers;
+      this.waiting = incoming;
+    } else {
+      this.#iceServers = call.iceServers;
+      this.current = incoming;
+    }
+    this.#syncRing();
+    if (!quiet && !windowFocused()) {
       notify("Ludra", t("call.notification", { name: call.peer.username }));
     }
   }
@@ -232,9 +291,9 @@ class CallStore {
     if (this.current?.id !== callId || !this.#voice) {
       return;
     }
-    stopRingtone();
     playCue("connected");
     this.current.status = "connecting";
+    this.#syncRing();
     try {
       await this.#ready;
       await this.#voice.offer();
@@ -244,6 +303,11 @@ class CallStore {
   }
 
   #ended(callId: string) {
+    if (this.waiting?.id === callId) {
+      this.waiting = null;
+      this.#syncRing();
+      return;
+    }
     if (this.current?.id === callId) {
       this.#finish();
     }
@@ -264,7 +328,6 @@ class CallStore {
 
   #finish() {
     this.#beforeTest = null;
-    stopRingtone();
     if (this.current) {
       playCue("ended");
     }
@@ -278,6 +341,26 @@ class CallStore {
     this.peerMuted = false;
     this.peerDeafened = false;
     this.latency = null;
+
+    const waiting = this.waiting;
+    if (waiting) {
+      this.waiting = null;
+      this.#iceServers = this.#waitingIce;
+      this.current = waiting;
+    }
+    this.#syncRing();
+  }
+
+  #syncRing() {
+    const current = this.current;
+    const ringing = (call: Current | null) => call?.status === "incoming" && !call.quiet && !call.hidden;
+    if (current?.status === "outgoing") {
+      setRingtone("direct", "outgoing");
+    } else if (ringing(current) || ringing(this.waiting)) {
+      setRingtone("direct", "incoming");
+    } else {
+      setRingtone("direct", null);
+    }
   }
 
   #showError(message: string) {

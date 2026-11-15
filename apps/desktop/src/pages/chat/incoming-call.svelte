@@ -21,9 +21,17 @@
         class="incoming-call__button incoming-call__button--decline"
         aria-label={t("call.decline")}
         title={t("call.decline")}
-        onclick={() => calls.hangUp()}
+        onclick={() => calls.decline()}
       >
         <CallIcon name="hangUp" />
+      </button>
+      <button
+        class="incoming-call__button incoming-call__button--hide"
+        aria-label={t("call.hide")}
+        title={t("call.hide")}
+        onclick={() => calls.hide()}
+      >
+        <CallIcon name="dash" />
       </button>
       <button
         class="incoming-call__button incoming-call__button--answer"
@@ -89,7 +97,8 @@
   .incoming-call__actions {
     margin-top: 8px;
     display: flex;
-    gap: 40px;
+    align-items: center;
+    gap: 24px;
   }
 
   .incoming-call__button {
@@ -102,6 +111,15 @@
     border-radius: 50%;
     color: #ffffff;
     transition: background ease 0.1s;
+  }
+
+  .incoming-call__button--hide {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--muted-color);
+  }
+
+  .incoming-call__button--hide:hover {
+    background: rgba(255, 255, 255, 0.14);
   }
 
   .incoming-call__button--decline {

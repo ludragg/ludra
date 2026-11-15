@@ -66,3 +66,26 @@ WITH removed_friendships AS (
     RETURNING 1
 )
 SELECT (SELECT count(*) FROM removed_friendships) + (SELECT count(*) FROM removed_requests);
+
+-- name: CreateBlock :exec
+INSERT INTO blocks (user_id, blocked_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING;
+
+-- name: DeleteBlock :execrows
+DELETE FROM blocks
+WHERE user_id = $1 AND blocked_id = $2;
+
+-- name: ListBlocked :many
+SELECT u.id, u.username, u.avatar
+FROM blocks b
+JOIN users u ON u.id = b.blocked_id
+WHERE b.user_id = $1
+ORDER BY u.username;
+
+-- name: IsBlockedEither :one
+SELECT EXISTS (
+    SELECT 1 FROM blocks
+    WHERE (user_id = sqlc.arg(user_id) AND blocked_id = sqlc.arg(other_id))
+       OR (user_id = sqlc.arg(other_id) AND blocked_id = sqlc.arg(user_id))
+);

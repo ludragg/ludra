@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 
 	"ludra/internal/friends"
@@ -35,23 +36,42 @@ func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *proto
 		return failed(err)
 	}
 
-	ringing, ok := s.calls.start(s, friend.ID)
+	s.voice.Lock()
+	if s.rooms.busy(s.user.Id) {
+		s.voice.Unlock()
+		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
+	}
+	ringing, ok := s.calls.start(s, friend.ID, s.rooms.busy(friend.ID))
+	s.voice.Unlock()
 	if !ok {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
 	}
 
-	me := &protocol.User{Id: s.user.Id, Username: s.user.Username, Avatar: s.user.Avatar}
-	incoming := callIncomingFrame(&protocol.Call{Id: ringing.id, Peer: me, IceServers: calleeIce})
-	s.calls.setIncoming(ringing.id, incoming)
-	s.hub.publish([]string{friend.ID}, incoming, nil)
+	if _, err := s.friends.Get(ctx, s.user.Id, friend.ID); err != nil {
+		s.calls.end(ringing.id, s, protocol.CallEndReason_CALL_END_REASON_HUNG_UP)
+		return failed(err)
+	}
+
 	s.logCall(ctx, ringing.id, friend.ID)
+	if !ringing.silent {
+		me := &protocol.User{Id: s.user.Id, Username: s.user.Username, Avatar: s.user.Avatar}
+		incoming := callIncomingFrame(&protocol.Call{Id: ringing.id, Peer: me, IceServers: calleeIce})
+		s.calls.setIncoming(ringing.id, incoming)
+		s.hub.publish([]string{friend.ID}, incoming, nil)
+	}
 
 	peer := s.friend(friends.Friend{ID: friend.ID, Username: friend.Username, Avatar: friend.Avatar, State: friends.Accepted}).User
 	return callStartedFrame(&protocol.Call{Id: ringing.id, Peer: peer, IceServers: callerIce})
 }
 
 func (s *session) answerCall(req *protocol.AnswerCall) *protocol.ServerFrame {
+	s.voice.Lock()
+	if s.rooms.busy(s.user.Id) {
+		s.voice.Unlock()
+		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
+	}
 	answered, ok := s.calls.answer(req.CallId, s)
+	s.voice.Unlock()
 	if !ok {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, "call not found")
 	}
@@ -85,12 +105,38 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "invalid signal")
 	}
 
-	other := s.calls.peer(req.CallId, s)
+	forwarded := callSignalFrame(&protocol.CallSignal{CallId: req.CallId, Kind: req.Kind, Payload: req.Payload, PeerId: s.user.Id})
+
+	if req.PeerId == "" {
+		other := s.calls.peer(req.CallId, s)
+		if other == nil {
+			return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, "call not found")
+		}
+		other.offer(forwarded)
+		return ackFrame()
+	}
+
+	if req.PeerId == "*" && req.Kind == protocol.SignalKind_SIGNAL_KIND_STATE {
+		for _, other := range s.rooms.others(req.CallId, s) {
+			other.offer(forwarded)
+		}
+		var state struct {
+			Muted    bool `json:"muted"`
+			Deafened bool `json:"deafened"`
+		}
+		if json.Unmarshal([]byte(req.Payload), &state) == nil && s.guard.voiceChanges.Allow(s.user.Id) {
+			if conversationID, changed := s.rooms.setVoice(req.CallId, s, voiceState{muted: state.Muted, deafened: state.Deafened}); changed {
+				s.announceRoom(conversationID)
+			}
+		}
+		return ackFrame()
+	}
+
+	other := s.rooms.peer(req.CallId, s, req.PeerId)
 	if other == nil {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, "call not found")
 	}
-
-	other.reply(callSignalFrame(&protocol.CallSignal{CallId: req.CallId, Kind: req.Kind, Payload: req.Payload}))
+	other.offer(forwarded)
 	return ackFrame()
 }
 
@@ -101,7 +147,7 @@ func (s *session) logCall(ctx context.Context, callID, calleeID string) {
 		return
 	}
 
-	s.hub.publish([]string{s.user.Id, calleeID}, messageCreatedFrame(toMessage(message)), nil)
+	s.hub.publish([]string{s.user.Id, calleeID}, messageCreatedFrame(named(toMessage(message), s.user.Username, nil)), nil)
 	if !s.calls.attachMessage(callID, message.ID) {
 		go s.calls.finish(s.user.Id, calleeID, message.ID, "missed", 0)
 	}

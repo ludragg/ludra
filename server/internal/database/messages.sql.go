@@ -22,7 +22,7 @@ func (q *Queries) CloseStaleCalls(ctx context.Context) error {
 const createCallMessage = `-- name: CreateCallMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, call_outcome, call_duration)
 VALUES ($1, $2, '', 'call', 'ongoing', 0)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
 `
 
 type CreateCallMessageParams struct {
@@ -42,6 +42,44 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 		&i.Kind,
 		&i.CallOutcome,
 		&i.CallDuration,
+		&i.Event,
+		&i.TargetID,
+	)
+	return i, err
+}
+
+const createEventMessage = `-- name: CreateEventMessage :one
+INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
+VALUES ($1, $2, '', 'event', $3, $4)
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
+`
+
+type CreateEventMessageParams struct {
+	ConversationID string
+	SenderID       string
+	Event          *string
+	TargetID       *string
+}
+
+func (q *Queries) CreateEventMessage(ctx context.Context, arg CreateEventMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, createEventMessage,
+		arg.ConversationID,
+		arg.SenderID,
+		arg.Event,
+		arg.TargetID,
+	)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.ConversationID,
+		&i.SenderID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.Kind,
+		&i.CallOutcome,
+		&i.CallDuration,
+		&i.Event,
+		&i.TargetID,
 	)
 	return i, err
 }
@@ -54,7 +92,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
 `
 
 type CreateMessageParams struct {
@@ -75,6 +113,8 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.Kind,
 		&i.CallOutcome,
 		&i.CallDuration,
+		&i.Event,
+		&i.TargetID,
 	)
 	return i, err
 }
@@ -82,7 +122,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 const finishCallMessage = `-- name: FinishCallMessage :one
 UPDATE messages SET call_outcome = $1, call_duration = $2
 WHERE id = $3 AND kind = 'call'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
 `
 
 type FinishCallMessageParams struct {
@@ -103,15 +143,20 @@ func (q *Queries) FinishCallMessage(ctx context.Context, arg FinishCallMessagePa
 		&i.Kind,
 		&i.CallOutcome,
 		&i.CallDuration,
+		&i.Event,
+		&i.TargetID,
 	)
 	return i, err
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration FROM messages
-WHERE conversation_id = $1::uuid
-  AND ($2::uuid IS NULL OR id < $2::uuid)
-ORDER BY id DESC
+SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, sender.username AS sender_name, target.username AS target_name
+FROM messages m
+JOIN users sender ON sender.id = m.sender_id
+LEFT JOIN users target ON target.id = m.target_id
+WHERE m.conversation_id = $1::uuid
+  AND ($2::uuid IS NULL OR m.id < $2::uuid)
+ORDER BY m.id DESC
 LIMIT $3::int
 `
 
@@ -121,24 +166,34 @@ type ListMessagesParams struct {
 	RowLimit       int32
 }
 
-func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]Message, error) {
+type ListMessagesRow struct {
+	Message    Message
+	SenderName string
+	TargetName *string
+}
+
+func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]ListMessagesRow, error) {
 	rows, err := q.db.Query(ctx, listMessages, arg.ConversationID, arg.BeforeID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Message
+	var items []ListMessagesRow
 	for rows.Next() {
-		var i Message
+		var i ListMessagesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.ConversationID,
-			&i.SenderID,
-			&i.Content,
-			&i.CreatedAt,
-			&i.Kind,
-			&i.CallOutcome,
-			&i.CallDuration,
+			&i.Message.ID,
+			&i.Message.ConversationID,
+			&i.Message.SenderID,
+			&i.Message.Content,
+			&i.Message.CreatedAt,
+			&i.Message.Kind,
+			&i.Message.CallOutcome,
+			&i.Message.CallDuration,
+			&i.Message.Event,
+			&i.Message.TargetID,
+			&i.SenderName,
+			&i.TargetName,
 		); err != nil {
 			return nil, err
 		}

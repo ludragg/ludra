@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "@/components";
+  import { applyMask } from "@/helpers/mask";
   import { t, type Key } from "@/i18n";
   import { FriendState } from "@/protocol/ludra/v1/models_pb";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
@@ -69,7 +70,10 @@
       maxlength="32"
       autocomplete="off"
       bind:value={username}
-      oninput={() => (feedback = null)}
+      oninput={() => {
+        username = applyMask(username, "username");
+        feedback = null;
+      }}
       {@attach (input) => input.focus()}
     />
     <Button type="submit" size="small" disabled={!username.trim() || submitting}>{t("friends.sendRequest")}</Button>

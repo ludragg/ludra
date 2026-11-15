@@ -14,16 +14,18 @@ type hub struct {
 	mu        sync.RWMutex
 	sessions  map[string]map[*session]struct{}
 	invisible map[string]bool
+	busy      map[string]bool
 }
 
 func newHub() *hub {
 	return &hub{
 		sessions:  make(map[string]map[*session]struct{}),
 		invisible: make(map[string]bool),
+		busy:      make(map[string]bool),
 	}
 }
 
-func (h *hub) register(userID string, s *session, invisible bool) (appeared bool) {
+func (h *hub) register(userID string, s *session, invisible, busy bool) (appeared bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -33,6 +35,7 @@ func (h *hub) register(userID string, s *session, invisible bool) (appeared bool
 	}
 	h.sessions[userID][s] = struct{}{}
 	h.invisible[userID] = invisible
+	h.busy[userID] = busy
 	return !before && h.visible(userID)
 }
 
@@ -45,17 +48,30 @@ func (h *hub) unregister(userID string, s *session) (vanished bool) {
 	if len(h.sessions[userID]) == 0 {
 		delete(h.sessions, userID)
 		delete(h.invisible, userID)
+		delete(h.busy, userID)
 	}
 	return before && !h.visible(userID)
 }
 
-func (h *hub) setInvisible(userID string, invisible bool) (changed bool) {
+func (h *hub) setStatus(userID string, invisible, busy bool) (changed bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	before := h.visible(userID)
+	before := h.status(userID)
 	h.invisible[userID] = invisible
-	return before != h.visible(userID)
+	h.busy[userID] = busy
+	return before != h.status(userID)
+}
+
+func (h *hub) status(userID string) protocol.Presence {
+	switch {
+	case !h.visible(userID):
+		return protocol.Presence_PRESENCE_OFFLINE
+	case h.busy[userID]:
+		return protocol.Presence_PRESENCE_BUSY
+	default:
+		return protocol.Presence_PRESENCE_ONLINE
+	}
 }
 
 func (h *hub) visible(userID string) bool {
@@ -81,10 +97,7 @@ func (h *hub) presence(userID string) protocol.Presence {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if h.visible(userID) {
-		return protocol.Presence_PRESENCE_ONLINE
-	}
-	return protocol.Presence_PRESENCE_OFFLINE
+	return h.status(userID)
 }
 
 func (h *hub) publish(userIDs []string, frame *protocol.ServerFrame, skip *session) {

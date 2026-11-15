@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -32,6 +33,8 @@ type session struct {
 	account   *account.Service
 	relay     *voice.Relay
 	calls     *calls
+	rooms     *rooms
+	voice     *sync.Mutex
 	ip        string
 	user      *protocol.User
 	sessionID string
@@ -117,6 +120,18 @@ func (s *session) reply(frame *protocol.ServerFrame) {
 		return
 	}
 	s.push(data)
+}
+
+func (s *session) offer(frame *protocol.ServerFrame) {
+	data, err := proto.Marshal(frame)
+	if err != nil {
+		slog.Error("marshal frame", "error", err)
+		return
+	}
+	select {
+	case s.send <- data:
+	default:
+	}
 }
 
 func (s *session) push(data []byte) {
@@ -207,6 +222,14 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 		return s.sendMessage(ctx, payload.SendMessage)
 	case *protocol.ClientFrame_ListFriends:
 		return s.listFriends(ctx)
+	case *protocol.ClientFrame_ListBlocked:
+		return s.listBlocked(ctx)
+	case *protocol.ClientFrame_SetGroupAvatar:
+		return s.setGroupAvatar(ctx, payload.SetGroupAvatar)
+	case *protocol.ClientFrame_BlockUser:
+		return s.blockUser(ctx, payload.BlockUser)
+	case *protocol.ClientFrame_UnblockUser:
+		return s.unblockUser(ctx, payload.UnblockUser)
 	case *protocol.ClientFrame_AddFriend:
 		if !s.guard.friendRequests.Allow(s.user.Id) {
 			return tooManyRequests()
@@ -243,6 +266,24 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 		return s.endCall(payload.EndCall)
 	case *protocol.ClientFrame_CallSignal:
 		return s.relaySignal(payload.CallSignal)
+	case *protocol.ClientFrame_CreateGroup:
+		return s.createGroup(ctx, payload.CreateGroup)
+	case *protocol.ClientFrame_AddGroupMembers:
+		return s.addGroupMembers(ctx, payload.AddGroupMembers)
+	case *protocol.ClientFrame_RemoveGroupMember:
+		return s.removeGroupMember(ctx, payload.RemoveGroupMember)
+	case *protocol.ClientFrame_LeaveGroup:
+		return s.leaveGroup(ctx, payload.LeaveGroup)
+	case *protocol.ClientFrame_JoinGroupCall:
+		return s.joinGroupCall(ctx, payload.JoinGroupCall)
+	case *protocol.ClientFrame_LeaveGroupCall:
+		return s.leaveGroupCall()
+	case *protocol.ClientFrame_DeclineGroupCall:
+		return s.declineGroupCall(payload.DeclineGroupCall)
+	case *protocol.ClientFrame_DeleteGroup:
+		return s.deleteGroup(ctx, payload.DeleteGroup)
+	case *protocol.ClientFrame_TransferGroup:
+		return s.transferGroup(ctx, payload.TransferGroup)
 	default:
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "unsupported request")
 	}
@@ -274,10 +315,17 @@ func (s *session) listConversations(ctx context.Context) *protocol.ServerFrame {
 	if err != nil {
 		return failed(err)
 	}
+	groups, err := s.chat.ListGroups(ctx, s.user.Id)
+	if err != nil {
+		return failed(err)
+	}
 
-	list := make([]*protocol.Conversation, len(conversations))
-	for i, conversation := range conversations {
-		list[i] = s.conversation(conversation)
+	list := make([]*protocol.Conversation, 0, len(conversations)+len(groups))
+	for _, conversation := range conversations {
+		list = append(list, s.conversation(conversation))
+	}
+	for _, group := range groups {
+		list = append(list, s.groupConversation(group))
 	}
 	return conversationListFrame(list)
 }
@@ -304,8 +352,9 @@ func (s *session) sendMessage(ctx context.Context, req *protocol.SendMessage) *p
 		return failed(err)
 	}
 
-	s.hub.publish(recipients, messageCreatedFrame(toMessage(message)), s)
-	return messageCreatedFrame(toMessage(message))
+	frame := messageCreatedFrame(named(toMessage(message), s.user.Username, nil))
+	s.hub.publish(recipients, frame, s)
+	return frame
 }
 
 var errorCodes = map[failure.Kind]protocol.ErrorCode{

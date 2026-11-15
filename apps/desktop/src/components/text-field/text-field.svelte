@@ -2,6 +2,7 @@
   import type { HTMLInputAttributes } from "svelte/elements";
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import PasswordStrength from "@/components/password-strength/password-strength.svelte";
+  import { applyMask, type Mask } from "@/helpers/mask";
 
   type Props = Omit<HTMLInputAttributes, "size"> & {
     id: string;
@@ -13,6 +14,7 @@
     focus?: boolean;
     strength?: boolean;
     size?: "medium" | "small";
+    mask?: Mask | "none";
   };
 
   let {
@@ -26,8 +28,30 @@
     focus = false,
     strength = false,
     size = "medium",
+    mask = type === "password" ? "password" : undefined,
+    oninput,
     ...rest
   }: Props = $props();
+
+  function enforce(field: HTMLInputElement) {
+    if (!mask || mask === "none") {
+      return;
+    }
+    const masked = applyMask(field.value, mask);
+    if (masked !== field.value) {
+      const cursor = Math.max(0, (field.selectionStart ?? masked.length) - (field.value.length - masked.length));
+      field.value = masked;
+      field.setSelectionRange(cursor, cursor);
+    }
+    value = masked;
+  }
+
+  function input(event: Event & { currentTarget: EventTarget & HTMLInputElement }) {
+    if (!("isComposing" in event && event.isComposing)) {
+      enforce(event.currentTarget);
+    }
+    oninput?.(event);
+  }
 
   let revealed = $state(false);
 
@@ -47,6 +71,8 @@
       autocomplete="off"
       spellcheck="false"
       {...rest}
+      oninput={input}
+      oncompositionend={(event) => enforce(event.currentTarget)}
       {@attach focus && ((input) => input.focus())}
     />
     {#if secret}

@@ -7,6 +7,7 @@
   import { calls, type Current } from "@/stores/call.svelte";
   import type { User } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
+  import { preferences } from "@/stores/preferences.svelte";
   import CallVolumeMenu from "./call-volume-menu.svelte";
 
   let { call }: { call: Current } = $props();
@@ -38,8 +39,19 @@
   );
 </script>
 
-{#snippet person(user: User, speaking: boolean, muted: boolean, deafened: boolean, adjustable: boolean)}
-  <span class="call-panel__person" class:call-panel__person--speaking={speaking && !muted}>
+{#snippet person(
+  user: User,
+  speaking: boolean,
+  muted: boolean,
+  deafened: boolean,
+  adjustable: boolean,
+  ringing = false,
+)}
+  <span
+    class="call-panel__person"
+    class:call-panel__person--speaking={speaking && !muted}
+    class:call-panel__person--ringing={ringing}
+  >
     {#if adjustable}
       <button
         class="call-panel__adjust"
@@ -69,41 +81,82 @@
 
 {#if chat.user}
   <section class="call-panel" aria-label={t("call.panel")}>
-    <div class="call-panel__people">
-      {@render person(chat.user, calls.selfSpeaking, calls.muted, calls.deafened, false)}
-      {@render person(call.peer, calls.peerSpeaking, calls.peerMuted, calls.peerDeafened, true)}
-    </div>
-    <span class="call-panel__status" aria-live="polite">{status}</span>
-    <div class="call-panel__controls">
-      <button
-        class="call-panel__button"
-        class:call-panel__button--off={calls.muted}
-        aria-label={calls.muted ? t("call.unmute") : t("call.mute")}
-        title={calls.muted ? t("call.unmute") : t("call.mute")}
-        aria-pressed={calls.muted}
-        onclick={() => calls.toggleMute()}
-      >
-        <CallIcon name={calls.muted ? "micOff" : "mic"} />
-      </button>
-      <button
-        class="call-panel__button"
-        class:call-panel__button--off={calls.deafened}
-        aria-label={calls.deafened ? t("call.undeafen") : t("call.deafen")}
-        title={calls.deafened ? t("call.undeafen") : t("call.deafen")}
-        aria-pressed={calls.deafened}
-        onclick={() => calls.toggleDeafen()}
-      >
-        <CallIcon name={calls.deafened ? "headphonesOff" : "headphones"} />
-      </button>
-      <button
-        class="call-panel__button call-panel__button--hang-up"
-        aria-label={t("call.hangUp")}
-        title={t("call.hangUp")}
-        onclick={() => calls.hangUp()}
-      >
-        <CallIcon name="hangUp" />
-      </button>
-    </div>
+    {#if call.status === "incoming"}
+      <div class="call-panel__people">
+        {@render person(call.peer, false, false, false, false)}
+      </div>
+      <div class="call-panel__controls">
+        <button
+          class="call-panel__button call-panel__button--hang-up"
+          aria-label={t("call.decline")}
+          title={t("call.decline")}
+          onclick={() => calls.decline()}
+        >
+          <CallIcon name="hangUp" />
+        </button>
+        {#if !call.quiet && !call.hidden && preferences.values.callSounds}
+          <button
+            class="call-panel__button"
+            aria-label={t("call.hide")}
+            title={t("call.hide")}
+            onclick={() => calls.hide()}
+          >
+            <CallIcon name="dash" />
+          </button>
+        {/if}
+        <button
+          class="call-panel__button call-panel__button--join"
+          aria-label={t("call.answer")}
+          title={t("call.answer")}
+          onclick={() => calls.answer()}
+        >
+          <CallIcon name="phone" />
+        </button>
+      </div>
+    {:else}
+      <div class="call-panel__people">
+        {@render person(chat.user, calls.selfSpeaking, calls.muted, calls.deafened, false)}
+        {@render person(
+          call.peer,
+          calls.peerSpeaking,
+          calls.peerMuted,
+          calls.peerDeafened,
+          call.status !== "outgoing",
+          call.status === "outgoing",
+        )}
+      </div>
+      <span class="call-panel__status" aria-live="polite">{status}</span>
+      <div class="call-panel__controls">
+        <button
+          class="call-panel__button"
+          class:call-panel__button--off={calls.muted}
+          aria-label={calls.muted ? t("call.unmute") : t("call.mute")}
+          title={calls.muted ? t("call.unmute") : t("call.mute")}
+          aria-pressed={calls.muted}
+          onclick={() => calls.toggleMute()}
+        >
+          <CallIcon name={calls.muted ? "micOff" : "mic"} />
+        </button>
+        <button
+          class="call-panel__button"
+          class:call-panel__button--off={calls.deafened}
+          aria-label={calls.deafened ? t("call.undeafen") : t("call.deafen")}
+          title={calls.deafened ? t("call.undeafen") : t("call.deafen")}
+          aria-pressed={calls.deafened}
+          onclick={() => calls.toggleDeafen()}
+        >
+          <CallIcon name={calls.deafened ? "headphonesOff" : "headphones"} />
+        </button>
+        <button
+          class="call-panel__button call-panel__button--hang-up"
+          aria-label={t("call.hangUp")}
+          title={t("call.hangUp")}
+          onclick={() => calls.hangUp()}
+        >
+          <CallIcon name="hangUp" />
+        </button>
+      </div>
+    {/if}
   </section>
 {/if}
 
@@ -213,5 +266,36 @@
 
   .call-panel__button--hang-up:hover {
     background: #c8173f;
+  }
+
+  .call-panel__button--join,
+  .call-panel__button--join:hover {
+    background: var(--success-color);
+    color: #ffffff;
+  }
+
+  .call-panel__button--join:hover {
+    background: #178540;
+  }
+
+  .call-panel__person--ringing {
+    animation: call-panel__person-ringing 1.4s ease-out infinite;
+  }
+
+  .call-panel__person--ringing :global(.avatar) {
+    filter: saturate(0.2) brightness(0.75);
+  }
+
+  @keyframes call-panel__person-ringing {
+    from {
+      box-shadow:
+        0 0 0 3px #090909,
+        0 0 0 3px rgba(142, 145, 155, 0.7);
+    }
+    to {
+      box-shadow:
+        0 0 0 3px #090909,
+        0 0 0 14px rgba(142, 145, 155, 0);
+    }
   }
 </style>

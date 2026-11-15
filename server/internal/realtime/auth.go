@@ -31,14 +31,17 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 
 	session := outcome.Session
 	presence := protocol.Presence_PRESENCE_ONLINE
-	if session.Invisible {
+	switch {
+	case session.Invisible:
 		presence = protocol.Presence_PRESENCE_INVISIBLE
+	case session.Busy:
+		presence = protocol.Presence_PRESENCE_BUSY
 	}
 
 	s.sessionID = session.ID
 	s.user = &protocol.User{Id: session.UserID, Username: session.Username, Avatar: session.Avatar, Presence: presence}
-	if s.hub.register(s.user.Id, s, session.Invisible) {
-		s.announce(protocol.Presence_PRESENCE_ONLINE)
+	if s.hub.register(s.user.Id, s, session.Invisible, session.Busy) {
+		s.announce(s.hub.presence(s.user.Id))
 	}
 	if incoming := s.calls.ringing(s.user.Id); incoming != nil {
 		s.later = append(s.later, incoming)
@@ -70,6 +73,7 @@ func (s *session) signOut() {
 		return
 	}
 	s.calls.leave(s)
+	s.leaveRoom()
 	if s.hub.unregister(s.user.Id, s) {
 		s.announce(protocol.Presence_PRESENCE_OFFLINE)
 	}

@@ -3,6 +3,7 @@
   import { t } from "@/i18n";
   import type { User } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
+  import { groupCall } from "@/stores/group-call.svelte";
 
   let { user, x, y, onclose }: { user: User; x: number; y: number; onclose: () => void } = $props();
 
@@ -15,6 +16,7 @@
 
   function change(percent: number) {
     calls.setPeerVolume(user.id, percent);
+    groupCall.setPeerVolume(user.id, percent);
   }
 
   function onpointerdown(event: PointerEvent) {

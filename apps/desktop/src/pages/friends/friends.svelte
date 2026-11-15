@@ -6,20 +6,37 @@
   import FriendRow from "./friend-row.svelte";
   import FriendsAdd from "./friends-add.svelte";
 
-  type Tab = "online" | "all" | "pending" | "add";
+  type Tab = "online" | "all" | "pending" | "blocked" | "add";
 
   const tabs: { id: Exclude<Tab, "add">; label: Key }[] = [
     { id: "online", label: "friends.online" },
     { id: "all", label: "friends.all" },
     { id: "pending", label: "friends.pending" },
+    { id: "blocked", label: "friends.blocked" },
   ];
 
   let tab = $state<Tab>("online");
 
   const accepted = $derived(chat.friends.filter(({ state }) => state === FriendState.ACCEPTED));
-  const online = $derived(accepted.filter(({ user }) => user?.presence === Presence.ONLINE));
+  const online = $derived(
+    accepted.filter(({ user }) => user?.presence === Presence.ONLINE || user?.presence === Presence.BUSY),
+  );
   const incoming = $derived(chat.friends.filter(({ state }) => state === FriendState.INCOMING));
   const outgoing = $derived(chat.friends.filter(({ state }) => state === FriendState.OUTGOING));
+
+  let arming = $state<string | null>(null);
+  let disarm: number | undefined;
+
+  function block(userId: string) {
+    window.clearTimeout(disarm);
+    if (arming !== userId) {
+      arming = userId;
+      disarm = window.setTimeout(() => (arming = null), 3000);
+      return;
+    }
+    arming = null;
+    run(chat.block(userId));
+  }
 
   function run(action: Promise<unknown>) {
     action.catch(() => undefined);
@@ -42,6 +59,14 @@
               icon="remove"
               label={t("friends.remove", { name: friend.user!.username })}
               onclick={() => run(chat.removeFriend(friend.user!.id))}
+            />
+            <FriendAction
+              icon="block"
+              armed={arming === friend.user!.id}
+              label={arming === friend.user!.id
+                ? t("friends.confirmBlock", { name: friend.user!.username })
+                : t("friends.block", { name: friend.user!.username })}
+              onclick={() => block(friend.user!.id)}
             />
           </FriendRow>
         {/each}
@@ -123,6 +148,14 @@
                 label={t("friends.decline", { name: friend.user!.username })}
                 onclick={() => run(chat.removeFriend(friend.user!.id))}
               />
+              <FriendAction
+                icon="block"
+                armed={arming === friend.user!.id}
+                label={arming === friend.user!.id
+                  ? t("friends.confirmBlock", { name: friend.user!.username })
+                  : t("friends.block", { name: friend.user!.username })}
+                onclick={() => block(friend.user!.id)}
+              />
             </FriendRow>
           {/each}
         </ul>
@@ -143,6 +176,25 @@
           {/each}
         </ul>
       </div>
+    {/if}
+  {:else if tab === "blocked"}
+    {#if chat.blocked.length > 0}
+      <div class="friends__group">
+        <span class="friends__label">{t("friends.blocked")} — {chat.blocked.length}</span>
+        <ul class="friends__list">
+          {#each chat.blocked as user (user.id)}
+            <FriendRow friend={{ user, state: FriendState.UNSPECIFIED } as Friend}>
+              <FriendAction
+                icon="unblock"
+                label={t("friends.unblockUser", { name: user.username })}
+                onclick={() => run(chat.unblock(user.id))}
+              />
+            </FriendRow>
+          {/each}
+        </ul>
+      </div>
+    {:else}
+      <p class="friends__empty">{t("friends.noBlocked")}</p>
     {/if}
   {:else}
     <FriendsAdd />

@@ -27,8 +27,8 @@ WHERE id = $1;
 SELECT * FROM users
 WHERE id = $1;
 
--- name: SetInvisible :exec
-UPDATE users SET invisible = $2
+-- name: SetStatus :exec
+UPDATE users SET invisible = $2, busy = $3
 WHERE id = $1;
 
 -- name: SetAvatar :exec

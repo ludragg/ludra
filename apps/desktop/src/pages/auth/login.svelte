@@ -91,6 +91,7 @@
     />
     <TextField
       id="password"
+      mask="none"
       type="password"
       label={t("common.password")}
       placeholder={t("common.password")}

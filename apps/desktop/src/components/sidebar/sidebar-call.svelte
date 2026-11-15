@@ -1,28 +1,27 @@
 <script lang="ts">
   import CallIcon from "@/components/call-icon/call-icon.svelte";
   import { t } from "@/i18n";
-  import { calls, type Current } from "@/stores/call.svelte";
-  import { chat } from "@/stores/chat.svelte";
 
   type Quality = "unknown" | "good" | "fair" | "poor";
 
-  let { call }: { call: Current } = $props();
+  let {
+    label,
+    ringing,
+    latency,
+    onopen,
+    onhangup,
+  }: { label: string; ringing: boolean; latency: number | null; onopen: () => void; onhangup: () => void } = $props();
 
   const bars = ["M5 20v-4", "M12 20v-9", "M19 20V6"];
   const filled: Record<Quality, number> = { unknown: 3, good: 3, fair: 2, poor: 1 };
 
-  const ringing = $derived(call.status === "outgoing");
   const quality = $derived<Quality>(
-    calls.latency === null ? "unknown" : calls.latency < 100 ? "good" : calls.latency <= 250 ? "fair" : "poor",
+    latency === null ? "unknown" : latency < 100 ? "good" : latency <= 250 ? "fair" : "poor",
   );
-
-  function open() {
-    chat.start(call.peer.username).catch(() => undefined);
-  }
 </script>
 
 <div class="sidebar-call">
-  <button class="sidebar-call__info" class:sidebar-call__info--ringing={ringing} onclick={open}>
+  <button class="sidebar-call__info" class:sidebar-call__info--ringing={ringing} onclick={onopen}>
     <span class="sidebar-call__signal sidebar-call__signal--{ringing ? 'unknown' : quality}">
       <svg
         viewBox="0 0 24 24"
@@ -37,18 +36,13 @@
           <path d={bar} class:sidebar-call__bar--empty={index >= filled[quality]} />
         {/each}
       </svg>
-      {#if calls.latency !== null && !ringing}
-        <span class="sidebar-call__latency" role="tooltip">{calls.latency} ms</span>
+      {#if latency !== null && !ringing}
+        <span class="sidebar-call__latency" role="tooltip">{latency} ms</span>
       {/if}
     </span>
-    {ringing ? t("call.calling") : t("call.inCall")}
+    {label}
   </button>
-  <button
-    class="sidebar-call__hang-up"
-    aria-label={t("call.hangUp")}
-    title={t("call.hangUp")}
-    onclick={() => calls.hangUp()}
-  >
+  <button class="sidebar-call__hang-up" aria-label={t("call.hangUp")} title={t("call.hangUp")} onclick={onhangup}>
     <CallIcon name="hangUp" />
   </button>
 </div>

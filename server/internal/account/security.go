@@ -53,6 +53,9 @@ func (s *Service) ChangePassword(ctx context.Context, userID, sessionID, current
 	if err := s.confirmPassword(ctx, userID, current); err != nil {
 		return err
 	}
+	if next == current {
+		return ErrSamePassword
+	}
 
 	passwordHash, err := hashPassword(next)
 	if err != nil {

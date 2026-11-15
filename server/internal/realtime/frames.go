@@ -97,10 +97,10 @@ func conversationListFrame(list []*protocol.Conversation) *protocol.ServerFrame 
 	}
 }
 
-func messageHistoryFrame(conversationID string, messages []database.Message, hasMore bool) *protocol.ServerFrame {
+func messageHistoryFrame(conversationID string, messages []database.ListMessagesRow, hasMore bool) *protocol.ServerFrame {
 	list := make([]*protocol.Message, len(messages))
-	for i, message := range messages {
-		list[i] = toMessage(message)
+	for i, row := range messages {
+		list[i] = named(toMessage(row.Message), row.SenderName, row.TargetName)
 	}
 
 	return &protocol.ServerFrame{
@@ -138,6 +138,14 @@ func friendUpdatedFrame(friend *protocol.Friend) *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_FriendUpdated{
 			FriendUpdated: &protocol.FriendUpdated{Friend: friend},
+		},
+	}
+}
+
+func blockedListFrame(users []*protocol.User) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_BlockedList{
+			BlockedList: &protocol.BlockedList{Users: users},
 		},
 	}
 }
@@ -186,6 +194,49 @@ func messageUpdatedFrame(message *protocol.Message) *protocol.ServerFrame {
 	}
 }
 
+func conversationUpdatedFrame(conversation *protocol.Conversation) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_ConversationUpdated{
+			ConversationUpdated: &protocol.ConversationUpdated{Conversation: conversation},
+		},
+	}
+}
+
+func conversationRemovedFrame(conversationID string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_ConversationRemoved{
+			ConversationRemoved: &protocol.ConversationRemoved{ConversationId: conversationID},
+		},
+	}
+}
+
+func groupCallJoinedFrame(callID, conversationID string, ice []*protocol.IceServer, participants []string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_GroupCallJoined{GroupCallJoined: &protocol.GroupCallJoined{
+			CallId:         callID,
+			ConversationId: conversationID,
+			IceServers:     ice,
+			ParticipantIds: participants,
+		}},
+	}
+}
+
+func groupCallUpdatedFrame(conversationID string, call *protocol.GroupCall) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_GroupCallUpdated{
+			GroupCallUpdated: &protocol.GroupCallUpdated{ConversationId: conversationID, Call: call},
+		},
+	}
+}
+
+func groupCallRingingFrame(conversationID string, starter *protocol.User) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_GroupCallRinging{
+			GroupCallRinging: &protocol.GroupCallRinging{ConversationId: conversationID, Starter: starter},
+		},
+	}
+}
+
 func ackFrame() *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_Ack{Ack: &protocol.Ack{}},
@@ -197,7 +248,11 @@ func toUser(user database.User) *protocol.User {
 }
 
 func toConversation(conversation chat.Conversation) *protocol.Conversation {
-	result := &protocol.Conversation{Id: conversation.ID, Peer: toUser(conversation.Peer)}
+	result := &protocol.Conversation{
+		Id:   conversation.ID,
+		Peer: toUser(conversation.Peer),
+		Kind: protocol.ConversationKind_CONVERSATION_KIND_DIRECT,
+	}
 	if conversation.LastMessage != nil {
 		result.LastMessage = toMessage(*conversation.LastMessage)
 	}
@@ -211,6 +266,42 @@ var callOutcomes = map[string]protocol.CallOutcome{
 	"ongoing":   protocol.CallOutcome_CALL_OUTCOME_ONGOING,
 }
 
+func named(message *protocol.Message, sender string, target *string) *protocol.Message {
+	message.SenderName = sender
+	if target != nil {
+		message.TargetName = *target
+	}
+	return message
+}
+
+func toGroupConversation(group chat.Group, call *protocol.GroupCall) *protocol.Conversation {
+	members := make([]*protocol.User, len(group.Members))
+	for i, member := range group.Members {
+		members[i] = toUser(member)
+	}
+
+	result := &protocol.Conversation{
+		Id:      group.ID,
+		Kind:    protocol.ConversationKind_CONVERSATION_KIND_GROUP,
+		Name:    group.Name,
+		OwnerId: group.OwnerID,
+		Avatar:  group.Avatar,
+		Members: members,
+		Call:    call,
+	}
+	if group.LastMessage != nil {
+		result.LastMessage = named(toMessage(*group.LastMessage), group.LastSenderName, group.LastTargetName)
+	}
+	return result
+}
+
+var messageEvents = map[string]protocol.MessageEvent{
+	"member_added":   protocol.MessageEvent_MESSAGE_EVENT_MEMBER_ADDED,
+	"member_removed": protocol.MessageEvent_MESSAGE_EVENT_MEMBER_REMOVED,
+	"member_left":    protocol.MessageEvent_MESSAGE_EVENT_MEMBER_LEFT,
+	"owner_changed":  protocol.MessageEvent_MESSAGE_EVENT_OWNER_CHANGED,
+}
+
 func toMessage(message database.Message) *protocol.Message {
 	result := &protocol.Message{
 		Id:             message.ID,
@@ -219,6 +310,16 @@ func toMessage(message database.Message) *protocol.Message {
 		Content:        message.Content,
 		SentAt:         timestamppb.New(message.CreatedAt),
 		Kind:           protocol.MessageKind_MESSAGE_KIND_TEXT,
+	}
+
+	if message.Kind == "event" {
+		result.Kind = protocol.MessageKind_MESSAGE_KIND_EVENT
+		if message.Event != nil {
+			result.Event = messageEvents[*message.Event]
+		}
+		if message.TargetID != nil {
+			result.TargetId = *message.TargetID
+		}
 	}
 
 	if message.Kind == "call" {

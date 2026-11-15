@@ -110,6 +110,7 @@
       placeholder={t("common.username")}
       hideLabel
       maxlength={32}
+      mask="username"
       error={errors.username}
       bind:value={username}
       oninput={() => clear("username")}

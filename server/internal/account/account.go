@@ -36,6 +36,7 @@ type Session struct {
 	Email     string
 	Avatar    string
 	Invisible bool
+	Busy      bool
 	TwoFactor bool
 }
 
@@ -230,6 +231,7 @@ func (s *Service) Resume(ctx context.Context, token string) (Outcome, error) {
 		Email:     row.Email,
 		Avatar:    row.Avatar,
 		Invisible: row.Invisible,
+		Busy:      row.Busy,
 		TwoFactor: row.TwoFactor,
 	}}, nil
 }
@@ -238,8 +240,8 @@ func (s *Service) Logout(ctx context.Context, sessionID string) error {
 	return s.queries.DeleteSession(ctx, sessionID)
 }
 
-func (s *Service) SetInvisible(ctx context.Context, userID string, invisible bool) error {
-	return s.queries.SetInvisible(ctx, database.SetInvisibleParams{ID: userID, Invisible: invisible})
+func (s *Service) SetStatus(ctx context.Context, userID string, invisible, busy bool) error {
+	return s.queries.SetStatus(ctx, database.SetStatusParams{ID: userID, Invisible: invisible, Busy: busy})
 }
 
 func (s *Service) userByEmail(ctx context.Context, email string) (database.User, error) {
@@ -273,6 +275,7 @@ func (s *Service) startSession(ctx context.Context, user database.User) (Outcome
 		Email:     user.Email,
 		Avatar:    user.Avatar,
 		Invisible: user.Invisible,
+		Busy:      user.Busy,
 		TwoFactor: user.TwoFactor,
 	}}, nil
 }
@@ -290,7 +293,16 @@ func validPassword(password string) bool {
 	if length < minPasswordLength || length > maxPasswordLength {
 		return false
 	}
-	return strings.ContainsFunc(password, unicode.IsLetter) && strings.ContainsFunc(password, unicode.IsDigit)
+	for _, r := range password {
+		if r < '!' || r > '~' {
+			return false
+		}
+	}
+	return strings.ContainsFunc(password, isLetter) && strings.ContainsFunc(password, unicode.IsDigit)
+}
+
+func isLetter(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
 
 func uniqueViolation(err error) error {

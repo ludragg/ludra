@@ -1,37 +1,23 @@
 package account
 
 import (
-	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/image/webp"
 
 	"ludra/internal/database"
-)
-
-const (
-	avatarSize     = 256
-	maxAvatarBytes = 48 << 10
+	"ludra/internal/imaging"
 )
 
 func (s *Service) SetAvatar(ctx context.Context, userID string, image []byte) (string, error) {
-	if len(image) == 0 || len(image) > maxAvatarBytes {
+	if !imaging.ValidAvatar(image) {
 		return "", ErrInvalidAvatar
 	}
-	config, err := webp.DecodeConfig(bytes.NewReader(image))
-	if err != nil || config.Width != avatarSize || config.Height != avatarSize {
-		return "", ErrInvalidAvatar
-	}
-
-	version := make([]byte, 8)
-	if _, err := rand.Read(version); err != nil {
+	avatar, err := imaging.Version()
+	if err != nil {
 		return "", err
 	}
-	avatar := hex.EncodeToString(version)
 
 	if err := s.queries.SaveAvatar(ctx, database.SaveAvatarParams{UserID: userID, Image: image}); err != nil {
 		return "", err

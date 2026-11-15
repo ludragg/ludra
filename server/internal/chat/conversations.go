@@ -40,6 +40,8 @@ func (s *Service) ListConversations(ctx context.Context, userID string) ([]Conve
 				Kind:           *row.LastMessageKind,
 				CallOutcome:    row.LastMessageCallOutcome,
 				CallDuration:   row.LastMessageCallDuration,
+				Event:          row.LastMessageEvent,
+				TargetID:       row.LastMessageTargetID,
 			}
 		}
 
@@ -105,4 +107,12 @@ func directKey(a, b string) string {
 		a, b = b, a
 	}
 	return a + ":" + b
+}
+
+func (s *Service) IsMember(ctx context.Context, conversationID, userID string) (bool, error) {
+	return s.queries.IsParticipant(ctx, database.IsParticipantParams{ConversationID: conversationID, UserID: userID})
+}
+
+func (s *Service) ParticipantIDs(ctx context.Context, conversationID string) ([]string, error) {
+	return s.queries.ListParticipantIDs(ctx, conversationID)
 }

@@ -17,6 +17,11 @@
       checked={preferences.values.notifyRequests}
       onchange={(checked) => preferences.set("notifyRequests", checked)}
     />
+    <Checkbox
+      label={t("settings.callPopup")}
+      checked={preferences.values.callPopup}
+      onchange={(checked) => preferences.set("callPopup", checked)}
+    />
   </SettingsGroup>
 
   <SettingsGroup title={t("settings.soundsGroup")}>

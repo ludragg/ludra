@@ -7,6 +7,7 @@ export type Preferences = {
   tray: boolean;
   notifyMessages: boolean;
   notifyRequests: boolean;
+  callPopup: boolean;
   sound: boolean;
   callSounds: boolean;
   userVolumes: Record<string, number>;
@@ -28,6 +29,7 @@ const defaults: Preferences = {
   tray: true,
   notifyMessages: true,
   notifyRequests: true,
+  callPopup: true,
   sound: true,
   callSounds: true,
   userVolumes: {},

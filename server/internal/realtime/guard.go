@@ -31,6 +31,9 @@ type guard struct {
 	avatarChanges   *limit.Limiter
 	callStarts      *limit.Limiter
 	signals         *limit.Limiter
+	groupChanges    *limit.Limiter
+	roomStarts      *limit.Limiter
+	voiceChanges    *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -50,7 +53,10 @@ func newGuard() *guard {
 		passwordChecks:  limit.New(10, 15*time.Minute),
 		avatarChanges:   limit.New(10, 10*time.Minute),
 		callStarts:      limit.New(10, time.Minute),
-		signals:         limit.New(600, time.Minute),
+		signals:         limit.New(100, 10*time.Second),
+		groupChanges:    limit.New(30, 10*time.Minute),
+		roomStarts:      limit.New(3, 5*time.Minute),
+		voiceChanges:    limit.New(10, 10*time.Second),
 	}
 }
 

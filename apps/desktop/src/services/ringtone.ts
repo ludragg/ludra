@@ -18,17 +18,38 @@ const patterns: Record<"incoming" | "outgoing", Pattern> = {
   },
 };
 
+type Tone = "incoming" | "outgoing";
+
+const wanted = new Map<"direct" | "group", Tone>();
+let playing: Tone | null = null;
 let context: AudioContext | null = null;
 let timer: number | undefined;
 
-export function startRingtone(kind: "incoming" | "outgoing") {
-  stopRingtone();
+export function setRingtone(source: "direct" | "group", tone: Tone | null) {
+  if (tone) {
+    wanted.set(source, tone);
+  } else {
+    wanted.delete(source);
+  }
+  const tones = [...wanted.values()];
+  const next = tones.includes("incoming") ? "incoming" : tones.length ? "outgoing" : null;
+  if (next === playing) {
+    return;
+  }
+  stop();
+  playing = next;
+  if (next) {
+    play(next);
+  }
+}
+
+function play(kind: Tone) {
   if (!preferences.values.callSounds) {
     return;
   }
   context = new AudioContext();
   const pattern = patterns[kind];
-  const play = () => {
+  const ring = () => {
     if (!context) {
       return;
     }
@@ -46,11 +67,11 @@ export function startRingtone(kind: "incoming" | "outgoing") {
     }
   };
 
-  play();
-  timer = window.setInterval(play, pattern.every);
+  ring();
+  timer = window.setInterval(ring, pattern.every);
 }
 
-export function stopRingtone() {
+function stop() {
   window.clearInterval(timer);
   timer = undefined;
   context?.close();

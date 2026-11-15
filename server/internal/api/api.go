@@ -8,12 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ludra/internal/account"
+	"ludra/internal/chat"
 )
 
-func NewHandler(pool *pgxpool.Pool, accounts *account.Service, realtime http.Handler) http.Handler {
+func NewHandler(pool *pgxpool.Pool, accounts *account.Service, chats *chat.Service, realtime http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health(pool))
 	mux.HandleFunc("GET /avatars/{id}", avatars(accounts))
+	mux.HandleFunc("GET /group-avatars/{id}", groupAvatars(chats))
 	mux.Handle("GET /ws", realtime)
 	return mux
 }

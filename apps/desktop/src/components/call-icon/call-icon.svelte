@@ -1,5 +1,5 @@
 <script lang="ts">
-  type CallIconName = "phone" | "hangUp" | "mic" | "micOff" | "headphones" | "headphonesOff" | "signal";
+  type CallIconName = "phone" | "hangUp" | "mic" | "micOff" | "headphones" | "headphonesOff" | "signal" | "dash";
 
   let { name }: { name: CallIconName } = $props();
 
@@ -23,6 +23,7 @@
     headphones,
     headphonesOff: [...headphones, "M1 1l22 22"],
     signal: ["M2 20h.01", "M7 20v-4", "M12 20v-8", "M17 20V8"],
+    dash: ["M5 12h14"],
   };
 </script>
 

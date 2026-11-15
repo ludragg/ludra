@@ -1,9 +1,10 @@
 export class Elapsed {
   now = $state(Date.now());
 
-  #timer = window.setInterval(() => (this.now = Date.now()), 1000);
+  #timer: number | undefined;
 
   format(since: number): string {
+    this.#timer ??= window.setInterval(() => (this.now = Date.now()), 1000);
     const total = Math.max(0, Math.floor((this.now - since) / 1000));
     const hours = Math.floor(total / 3600);
     const minutes = Math.floor((total % 3600) / 60);

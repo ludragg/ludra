@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -21,6 +22,8 @@ type Gateway struct {
 	account *account.Service
 	relay   *voice.Relay
 	calls   *calls
+	rooms   *rooms
+	voice   *sync.Mutex
 	origins []string
 	hub     *hub
 	guard   *guard
@@ -46,12 +49,31 @@ func NewGateway(
 		hub.publish([]string{callerID, calleeID}, messageUpdatedFrame(toMessage(message)), nil)
 	}
 
+	finishRoom := func(conversationID, messageID string, duration time.Duration) {
+		ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+		defer cancel()
+
+		message, err := chat.FinishCallMessage(ctx, messageID, "completed", duration)
+		if err != nil {
+			slog.Error("finish group call message", "error", err)
+			return
+		}
+		members, err := chat.ParticipantIDs(ctx, conversationID)
+		if err != nil {
+			slog.Error("load group members", "error", err)
+			return
+		}
+		hub.publish(members, messageUpdatedFrame(toMessage(message)), nil)
+	}
+
 	return &Gateway{
 		chat:    chat,
 		friends: friends,
 		account: account,
 		relay:   relay,
 		calls:   newCalls(hub, finish),
+		rooms:   newRooms(finishRoom),
+		voice:   &sync.Mutex{},
 		origins: origins,
 		hub:     hub,
 		guard:   newGuard(),
@@ -83,6 +105,8 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		account: g.account,
 		relay:   g.relay,
 		calls:   g.calls,
+		rooms:   g.rooms,
+		voice:   g.voice,
 		ip:      ip,
 		send:    make(chan []byte, sendBuffer),
 	}

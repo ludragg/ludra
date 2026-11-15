@@ -14,10 +14,20 @@ type Avatar struct {
 	UpdatedAt time.Time
 }
 
+type Block struct {
+	UserID    string
+	BlockedID string
+	CreatedAt time.Time
+}
+
 type Conversation struct {
 	ID        string
 	CreatedAt time.Time
 	DirectKey *string
+	Kind      string
+	Name      *string
+	OwnerID   *string
+	Avatar    string
 }
 
 type FriendRequest struct {
@@ -32,6 +42,12 @@ type Friendship struct {
 	CreatedAt time.Time
 }
 
+type GroupAvatar struct {
+	ConversationID string
+	Image          []byte
+	UpdatedAt      time.Time
+}
+
 type Message struct {
 	ID             string
 	ConversationID string
@@ -41,11 +57,14 @@ type Message struct {
 	Kind           string
 	CallOutcome    *string
 	CallDuration   *int32
+	Event          *string
+	TargetID       *string
 }
 
 type Participant struct {
 	ConversationID string
 	UserID         string
+	JoinedAt       time.Time
 }
 
 type Session struct {
@@ -66,6 +85,7 @@ type User struct {
 	Invisible       bool
 	Avatar          string
 	TwoFactor       bool
+	Busy            bool
 }
 
 type VerificationCode struct {

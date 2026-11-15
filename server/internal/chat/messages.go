@@ -33,15 +33,8 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 		return database.Message{}, nil, ErrConversationNotFound
 	}
 
-	peer, err := s.queries.GetDirectPeer(ctx, database.GetDirectPeerParams{ConversationID: conversationID, UserID: senderID})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return database.Message{}, nil, ErrConversationNotFound
-	}
-	if err != nil {
+	if err := s.canSend(ctx, senderID, conversationID); err != nil {
 		return database.Message{}, nil, err
-	}
-	if !peer.IsFriend {
-		return database.Message{}, nil, ErrNotFriends
 	}
 
 	message, err := s.queries.CreateMessage(ctx, database.CreateMessageParams{
@@ -64,7 +57,40 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 	return message, recipients, nil
 }
 
-func (s *Service) LoadMessages(ctx context.Context, userID, conversationID, beforeID string, limit uint32) ([]database.Message, bool, error) {
+func (s *Service) canSend(ctx context.Context, senderID, conversationID string) error {
+	conversation, err := s.queries.GetConversation(ctx, conversationID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrConversationNotFound
+	}
+	if err != nil {
+		return err
+	}
+
+	if conversation.Kind == "group" {
+		member, err := s.queries.IsParticipant(ctx, database.IsParticipantParams{ConversationID: conversationID, UserID: senderID})
+		if err != nil {
+			return err
+		}
+		if !member {
+			return ErrConversationNotFound
+		}
+		return nil
+	}
+
+	peer, err := s.queries.GetDirectPeer(ctx, database.GetDirectPeerParams{ConversationID: conversationID, UserID: senderID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrConversationNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if !peer.IsFriend {
+		return ErrNotFriends
+	}
+	return nil
+}
+
+func (s *Service) LoadMessages(ctx context.Context, userID, conversationID, beforeID string, limit uint32) ([]database.ListMessagesRow, bool, error) {
 	if !ids.Valid(conversationID) {
 		return nil, false, ErrConversationNotFound
 	}

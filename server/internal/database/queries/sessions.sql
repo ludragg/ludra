@@ -11,6 +11,7 @@ SELECT
     u.email,
     u.avatar,
     u.invisible,
+    u.busy,
     u.two_factor
 FROM sessions s
 JOIN users u ON u.id = s.user_id

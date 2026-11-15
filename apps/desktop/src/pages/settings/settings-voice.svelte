@@ -5,7 +5,9 @@
   import { t } from "@/i18n";
   import { Microphone, levelPercent, suppressionStrength } from "@/services/microphone";
   import { calls } from "@/stores/call.svelte";
+  import { groupCall } from "@/stores/group-call.svelte";
   import { preferences } from "@/stores/preferences.svelte";
+  import SettingsGroup from "./settings-group.svelte";
 
   type Option = { value: string; label: string };
 
@@ -32,6 +34,7 @@
     stopTest();
     if (playing) {
       calls.endVoiceTest();
+      groupCall.endVoiceTest();
     }
   });
 
@@ -91,11 +94,13 @@
     playing = !playing;
     if (playing) {
       calls.beginVoiceTest();
+      groupCall.beginVoiceTest();
       play();
     } else {
       player.pause();
       player.srcObject = null;
       calls.endVoiceTest();
+      groupCall.endVoiceTest();
     }
   }
 
@@ -117,12 +122,14 @@
     preferences.set("outputDevice", deviceId);
     player.setSinkId?.(deviceId).catch(() => undefined);
     calls.setOutputDevice(deviceId);
+    groupCall.setOutputDevice(deviceId);
   }
 
   function setInputVolume(percent: number) {
     preferences.set("inputVolume", percent);
     microphone?.setVolume(percent);
     calls.setInputVolume(percent);
+    groupCall.setInputVolume(percent);
   }
 
   function setSensitivity(event: Event) {
@@ -130,11 +137,13 @@
     preferences.set("sensitivity", percent);
     microphone?.setSensitivity(percent);
     calls.setSensitivity(percent);
+    groupCall.setSensitivity(percent);
   }
 
   function applySuppression() {
     microphone?.setSuppression(suppressionStrength()).catch(() => undefined);
     calls.setNoiseSuppression(suppressionStrength());
+    groupCall.setNoiseSuppression(suppressionStrength());
   }
 
   function setSuppressionLevel(percent: number) {
@@ -151,85 +160,102 @@
     preferences.set("outputVolume", percent);
     player.volume = Math.min(1, percent / 100);
     calls.setOutputVolume(percent);
+    groupCall.setOutputVolume(percent);
   }
 </script>
 
 <div class="settings-voice">
-  <Select
-    id="microphone"
-    label={t("settings.microphone")}
-    options={inputs}
-    value={preferences.values.inputDevice}
-    onchange={chooseInput}
-  />
-  <Select
-    id="output"
-    label={t("settings.output")}
-    options={outputs}
-    value={preferences.values.outputDevice}
-    onchange={chooseOutput}
-  />
-  <div class="settings-voice__group">
-    <Slider
-      id="input-volume"
-      label={t("settings.inputVolume")}
-      value={preferences.values.inputVolume}
-      onchange={setInputVolume}
-    />
-    <div class="settings-voice__meter">
-      <div class="settings-voice__track" aria-hidden="true">
-        <div
-          class="settings-voice__level"
-          class:settings-voice__level--open={transmitting}
-          style:width="{meter}%"
-        ></div>
+  <SettingsGroup title={t("settings.devices")}>
+    <div class="settings-voice__fields">
+      <Select
+        id="microphone"
+        label={t("settings.microphone")}
+        options={inputs}
+        value={preferences.values.inputDevice}
+        onchange={chooseInput}
+      />
+      <Select
+        id="output"
+        label={t("settings.output")}
+        options={outputs}
+        value={preferences.values.outputDevice}
+        onchange={chooseOutput}
+      />
+    </div>
+  </SettingsGroup>
+
+  <SettingsGroup title={t("settings.processing")}>
+    <div class="settings-voice__fields">
+      <div class="settings-voice__group">
+        <Slider
+          id="input-volume"
+          label={t("settings.inputVolume")}
+          value={preferences.values.inputVolume}
+          onchange={setInputVolume}
+        />
+        <div class="settings-voice__meter">
+          <div class="settings-voice__track" aria-hidden="true">
+            <div
+              class="settings-voice__level"
+              class:settings-voice__level--open={transmitting}
+              style:width="{meter}%"
+            ></div>
+          </div>
+          <input
+            class="settings-voice__sensitivity"
+            type="range"
+            min="0"
+            max="100"
+            aria-label={t("settings.sensitivity")}
+            value={preferences.values.sensitivity}
+            oninput={setSensitivity}
+          />
+        </div>
+        <span class="settings-voice__hint" class:settings-voice__hint--error={unavailable}>
+          {unavailable ? t("settings.micUnavailable") : t("settings.micTest")}
+        </span>
+        <div class="settings-voice__test">
+          <Button size="small" theme={playing ? "outline" : "primary"} disabled={unavailable} onclick={togglePlayback}>
+            {playing ? t("settings.stopVoiceTest") : t("settings.voiceTest")}
+          </Button>
+        </div>
       </div>
-      <input
-        class="settings-voice__sensitivity"
-        type="range"
-        min="0"
-        max="100"
-        aria-label={t("settings.sensitivity")}
-        value={preferences.values.sensitivity}
-        oninput={setSensitivity}
-      />
-    </div>
-    <span class="settings-voice__hint" class:settings-voice__hint--error={unavailable}>
-      {unavailable ? t("settings.micUnavailable") : t("settings.micTest")}
-    </span>
-    <div class="settings-voice__test">
-      <Button size="small" theme={playing ? "outline" : "primary"} disabled={unavailable} onclick={togglePlayback}>
-        {playing ? t("settings.stopVoiceTest") : t("settings.voiceTest")}
-      </Button>
-    </div>
-  </div>
-  <div class="settings-voice__group">
-    <Checkbox
-      label={t("settings.noiseSuppression")}
-      checked={preferences.values.suppression}
-      onchange={toggleSuppression}
-    />
-    {#if preferences.values.suppression}
+      <div class="settings-voice__group">
+        <Checkbox
+          label={t("settings.noiseSuppression")}
+          checked={preferences.values.suppression}
+          onchange={toggleSuppression}
+        />
+        {#if preferences.values.suppression}
+          <Slider
+            id="noise-suppression"
+            label={t("settings.suppressionLevel")}
+            max={100}
+            value={preferences.values.suppressionLevel}
+            onchange={setSuppressionLevel}
+          />
+        {/if}
+      </div>
       <Slider
-        id="noise-suppression"
-        label={t("settings.suppressionLevel")}
+        id="output-volume"
+        label={t("settings.outputVolume")}
         max={100}
-        value={preferences.values.suppressionLevel}
-        onchange={setSuppressionLevel}
+        value={preferences.values.outputVolume}
+        onchange={setOutputVolume}
       />
-    {/if}
-  </div>
-  <Slider
-    id="output-volume"
-    label={t("settings.outputVolume")}
-    max={100}
-    value={preferences.values.outputVolume}
-    onchange={setOutputVolume}
-  />
+    </div>
+  </SettingsGroup>
 </div>
 
 <style>
   .settings-voice {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .settings-voice__fields {
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
     gap: 20px;

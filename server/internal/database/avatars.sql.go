@@ -19,6 +19,16 @@ func (q *Queries) DeleteAvatar(ctx context.Context, userID string) error {
 	return err
 }
 
+const deleteGroupAvatar = `-- name: DeleteGroupAvatar :exec
+DELETE FROM group_avatars
+WHERE conversation_id = $1
+`
+
+func (q *Queries) DeleteGroupAvatar(ctx context.Context, conversationID string) error {
+	_, err := q.db.Exec(ctx, deleteGroupAvatar, conversationID)
+	return err
+}
+
 const getAvatar = `-- name: GetAvatar :one
 SELECT image FROM avatars
 WHERE user_id = $1
@@ -26,6 +36,18 @@ WHERE user_id = $1
 
 func (q *Queries) GetAvatar(ctx context.Context, userID string) ([]byte, error) {
 	row := q.db.QueryRow(ctx, getAvatar, userID)
+	var image []byte
+	err := row.Scan(&image)
+	return image, err
+}
+
+const getGroupAvatar = `-- name: GetGroupAvatar :one
+SELECT image FROM group_avatars
+WHERE conversation_id = $1
+`
+
+func (q *Queries) GetGroupAvatar(ctx context.Context, conversationID string) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getGroupAvatar, conversationID)
 	var image []byte
 	err := row.Scan(&image)
 	return image, err
@@ -46,5 +68,38 @@ type SaveAvatarParams struct {
 
 func (q *Queries) SaveAvatar(ctx context.Context, arg SaveAvatarParams) error {
 	_, err := q.db.Exec(ctx, saveAvatar, arg.UserID, arg.Image)
+	return err
+}
+
+const saveGroupAvatar = `-- name: SaveGroupAvatar :exec
+INSERT INTO group_avatars (conversation_id, image)
+VALUES ($1, $2)
+ON CONFLICT (conversation_id) DO UPDATE SET
+    image = EXCLUDED.image,
+    updated_at = now()
+`
+
+type SaveGroupAvatarParams struct {
+	ConversationID string
+	Image          []byte
+}
+
+func (q *Queries) SaveGroupAvatar(ctx context.Context, arg SaveGroupAvatarParams) error {
+	_, err := q.db.Exec(ctx, saveGroupAvatar, arg.ConversationID, arg.Image)
+	return err
+}
+
+const setGroupAvatar = `-- name: SetGroupAvatar :exec
+UPDATE conversations SET avatar = $2
+WHERE id = $1
+`
+
+type SetGroupAvatarParams struct {
+	ID     string
+	Avatar string
+}
+
+func (q *Queries) SetGroupAvatar(ctx context.Context, arg SetGroupAvatarParams) error {
+	_, err := q.db.Exec(ctx, setGroupAvatar, arg.ID, arg.Avatar)
 	return err
 }

@@ -26,6 +26,72 @@ func (q *Queries) AddParticipant(ctx context.Context, arg AddParticipantParams) 
 	return err
 }
 
+const countParticipants = `-- name: CountParticipants :one
+SELECT count(*) FROM participants
+WHERE conversation_id = $1
+`
+
+func (q *Queries) CountParticipants(ctx context.Context, conversationID string) (int64, error) {
+	row := q.db.QueryRow(ctx, countParticipants, conversationID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createGroup = `-- name: CreateGroup :one
+INSERT INTO conversations (kind, name, owner_id)
+VALUES ('group', $1, $2)
+RETURNING id
+`
+
+type CreateGroupParams struct {
+	Name    *string
+	OwnerID *string
+}
+
+func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (string, error) {
+	row := q.db.QueryRow(ctx, createGroup, arg.Name, arg.OwnerID)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
+const deleteConversation = `-- name: DeleteConversation :exec
+DELETE FROM conversations
+WHERE id = $1
+`
+
+func (q *Queries) DeleteConversation(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteConversation, id)
+	return err
+}
+
+const getConversation = `-- name: GetConversation :one
+SELECT id, kind, name, owner_id, avatar FROM conversations
+WHERE id = $1
+`
+
+type GetConversationRow struct {
+	ID      string
+	Kind    string
+	Name    *string
+	OwnerID *string
+	Avatar  string
+}
+
+func (q *Queries) GetConversation(ctx context.Context, id string) (GetConversationRow, error) {
+	row := q.db.QueryRow(ctx, getConversation, id)
+	var i GetConversationRow
+	err := row.Scan(
+		&i.ID,
+		&i.Kind,
+		&i.Name,
+		&i.OwnerID,
+		&i.Avatar,
+	)
+	return i, err
+}
+
 const getDirectPeer = `-- name: GetDirectPeer :one
 SELECT
     other.user_id,
@@ -90,7 +156,9 @@ SELECT
     last.created_at AS last_message_created_at,
     last.kind AS last_message_kind,
     last.call_outcome AS last_message_call_outcome,
-    last.call_duration AS last_message_call_duration
+    last.call_duration AS last_message_call_duration,
+    last.event AS last_message_event,
+    last.target_id AS last_message_target_id
 FROM participants me
 JOIN conversations c ON c.id = me.conversation_id
 JOIN participants other ON other.conversation_id = c.id AND other.user_id <> me.user_id
@@ -101,7 +169,7 @@ LEFT JOIN messages last ON last.id = (
     ORDER BY m.id DESC
     LIMIT 1
 )
-WHERE me.user_id = $1
+WHERE me.user_id = $1 AND c.kind = 'direct'
 ORDER BY COALESCE(last.created_at, c.created_at) DESC
 `
 
@@ -118,6 +186,8 @@ type ListConversationsRow struct {
 	LastMessageKind         *string
 	LastMessageCallOutcome  *string
 	LastMessageCallDuration *int32
+	LastMessageEvent        *string
+	LastMessageTargetID     *string
 }
 
 func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListConversationsRow, error) {
@@ -142,6 +212,133 @@ func (q *Queries) ListConversations(ctx context.Context, userID string) ([]ListC
 			&i.LastMessageKind,
 			&i.LastMessageCallOutcome,
 			&i.LastMessageCallDuration,
+			&i.LastMessageEvent,
+			&i.LastMessageTargetID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGroupMembers = `-- name: ListGroupMembers :many
+SELECT p.conversation_id, u.id, u.username, u.avatar
+FROM participants p
+JOIN users u ON u.id = p.user_id
+WHERE p.conversation_id = ANY($1::uuid[])
+ORDER BY p.joined_at, u.id
+`
+
+type ListGroupMembersRow struct {
+	ConversationID string
+	ID             string
+	Username       string
+	Avatar         string
+}
+
+func (q *Queries) ListGroupMembers(ctx context.Context, conversationIds []string) ([]ListGroupMembersRow, error) {
+	rows, err := q.db.Query(ctx, listGroupMembers, conversationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListGroupMembersRow
+	for rows.Next() {
+		var i ListGroupMembersRow
+		if err := rows.Scan(
+			&i.ConversationID,
+			&i.ID,
+			&i.Username,
+			&i.Avatar,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGroups = `-- name: ListGroups :many
+SELECT
+    c.id,
+    c.name,
+    c.owner_id,
+    c.avatar,
+    last.id AS last_message_id,
+    last.sender_id AS last_message_sender_id,
+    last.content AS last_message_content,
+    last.created_at AS last_message_created_at,
+    last.kind AS last_message_kind,
+    last.call_outcome AS last_message_call_outcome,
+    last.call_duration AS last_message_call_duration,
+    last.event AS last_message_event,
+    last.target_id AS last_message_target_id,
+    last_sender.username AS last_message_sender_name,
+    last_target.username AS last_message_target_name
+FROM participants me
+JOIN conversations c ON c.id = me.conversation_id
+LEFT JOIN messages last ON last.id = (
+    SELECT m.id FROM messages m
+    WHERE m.conversation_id = c.id
+    ORDER BY m.id DESC
+    LIMIT 1
+)
+LEFT JOIN users last_sender ON last_sender.id = last.sender_id
+LEFT JOIN users last_target ON last_target.id = last.target_id
+WHERE me.user_id = $1 AND c.kind = 'group'
+ORDER BY COALESCE(last.created_at, c.created_at) DESC
+`
+
+type ListGroupsRow struct {
+	ID                      string
+	Name                    *string
+	OwnerID                 *string
+	Avatar                  string
+	LastMessageID           *string
+	LastMessageSenderID     *string
+	LastMessageContent      *string
+	LastMessageCreatedAt    *time.Time
+	LastMessageKind         *string
+	LastMessageCallOutcome  *string
+	LastMessageCallDuration *int32
+	LastMessageEvent        *string
+	LastMessageTargetID     *string
+	LastMessageSenderName   *string
+	LastMessageTargetName   *string
+}
+
+func (q *Queries) ListGroups(ctx context.Context, userID string) ([]ListGroupsRow, error) {
+	rows, err := q.db.Query(ctx, listGroups, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListGroupsRow
+	for rows.Next() {
+		var i ListGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OwnerID,
+			&i.Avatar,
+			&i.LastMessageID,
+			&i.LastMessageSenderID,
+			&i.LastMessageContent,
+			&i.LastMessageCreatedAt,
+			&i.LastMessageKind,
+			&i.LastMessageCallOutcome,
+			&i.LastMessageCallDuration,
+			&i.LastMessageEvent,
+			&i.LastMessageTargetID,
+			&i.LastMessageSenderName,
+			&i.LastMessageTargetName,
 		); err != nil {
 			return nil, err
 		}
@@ -176,6 +373,66 @@ func (q *Queries) ListParticipantIDs(ctx context.Context, conversationID string)
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockConversation = `-- name: LockConversation :one
+SELECT owner_id FROM conversations
+WHERE id = $1
+FOR UPDATE
+`
+
+func (q *Queries) LockConversation(ctx context.Context, id string) (*string, error) {
+	row := q.db.QueryRow(ctx, lockConversation, id)
+	var owner_id *string
+	err := row.Scan(&owner_id)
+	return owner_id, err
+}
+
+const oldestParticipant = `-- name: OldestParticipant :one
+SELECT user_id FROM participants
+WHERE conversation_id = $1
+ORDER BY joined_at, user_id
+LIMIT 1
+`
+
+func (q *Queries) OldestParticipant(ctx context.Context, conversationID string) (string, error) {
+	row := q.db.QueryRow(ctx, oldestParticipant, conversationID)
+	var user_id string
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const removeParticipant = `-- name: RemoveParticipant :execrows
+DELETE FROM participants
+WHERE conversation_id = $1 AND user_id = $2
+`
+
+type RemoveParticipantParams struct {
+	ConversationID string
+	UserID         string
+}
+
+func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantParams) (int64, error) {
+	result, err := q.db.Exec(ctx, removeParticipant, arg.ConversationID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setOwner = `-- name: SetOwner :exec
+UPDATE conversations SET owner_id = $2
+WHERE id = $1
+`
+
+type SetOwnerParams struct {
+	ID      string
+	OwnerID *string
+}
+
+func (q *Queries) SetOwner(ctx context.Context, arg SetOwnerParams) error {
+	_, err := q.db.Exec(ctx, setOwner, arg.ID, arg.OwnerID)
+	return err
 }
 
 const upsertDirectConversation = `-- name: UpsertDirectConversation :one

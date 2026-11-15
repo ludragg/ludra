@@ -8,6 +8,7 @@
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
   import { chat } from "@/stores/chat.svelte";
+  import SettingsGroup from "./settings-group.svelte";
 
   type PasswordField = "current" | "next";
 
@@ -83,6 +84,10 @@
       passwordErrors = { next: t("common.passwordRule") };
       return;
     }
+    if (nextPassword === currentPassword) {
+      passwordErrors = { next: t("settings.samePassword") };
+      return;
+    }
 
     savingPassword = true;
     try {
@@ -105,7 +110,12 @@
       case ErrorCode.INVALID_CREDENTIALS:
         return { current: t("settings.wrongPassword") };
       case ErrorCode.INVALID_REQUEST:
-        return { next: t("common.passwordLength") };
+        return {
+          next:
+            cause.message === "new password must be different"
+              ? t("settings.samePassword")
+              : t("common.passwordLength"),
+        };
       case ErrorCode.TOO_MANY_REQUESTS:
         return { next: t("common.tooManyRequests") };
       default:
@@ -163,116 +173,123 @@
 
 {#if chat.user}
   <div class="settings-account">
-    <section class="settings-account__section">
-      <h2 class="settings-account__title">{t("settings.profile")}</h2>
-      <div class="settings-account__profile">
-        <Avatar user={chat.user} size="huge" />
-        <div class="settings-account__identity">
-          <div class="settings-account__names">
-            <span class="settings-account__username">{chat.user.username}</span>
-            <span class="settings-account__email">
-              <span class="settings-account__email-text">{emailShown ? chat.email : maskEmail(chat.email)}</span>
-              <EyeButton
-                shown={emailShown}
-                show="settings.showEmail"
-                hide="settings.hideEmail"
-                ontoggle={() => (emailShown = !emailShown)}
-              />
-            </span>
-          </div>
-          <div class="settings-account__actions">
-            <Button size="small" disabled={uploading} onclick={() => picker?.click()}>
-              {chat.user.avatar ? t("settings.changePhoto") : t("settings.uploadPhoto")}
-            </Button>
-            {#if chat.user.avatar}
-              <Button size="small" theme="outline" disabled={uploading} onclick={removePhoto}>
-                {t("settings.removePhoto")}
+    <SettingsGroup title={t("settings.profile")}>
+      <div class="settings-account__section">
+        <div class="settings-account__profile">
+          <Avatar user={chat.user} size="huge" />
+          <div class="settings-account__identity">
+            <div class="settings-account__names">
+              <span class="settings-account__username">{chat.user.username}</span>
+              <span class="settings-account__email">
+                <span class="settings-account__email-text">{emailShown ? chat.email : maskEmail(chat.email)}</span>
+                <EyeButton
+                  shown={emailShown}
+                  show="settings.showEmail"
+                  hide="settings.hideEmail"
+                  ontoggle={() => (emailShown = !emailShown)}
+                />
+              </span>
+            </div>
+            <div class="settings-account__actions">
+              <Button size="small" disabled={uploading} onclick={() => picker?.click()}>
+                {chat.user.avatar ? t("settings.changePhoto") : t("settings.uploadPhoto")}
               </Button>
-            {/if}
+              {#if chat.user.avatar}
+                <Button size="small" theme="outline" disabled={uploading} onclick={removePhoto}>
+                  {t("settings.removePhoto")}
+                </Button>
+              {/if}
+            </div>
           </div>
         </div>
-      </div>
-      <input bind:this={picker} class="sr-only" type="file" accept="image/png" tabindex="-1" onchange={pick} />
-      {#if photoError}
-        <span class="settings-account__message settings-account__message--error" role="alert">{photoError}</span>
-      {:else}
-        <span class="settings-account__message">{t("settings.photoHint")}</span>
-      {/if}
-    </section>
-
-    <form class="settings-account__section" onsubmit={savePassword} novalidate>
-      <h2 class="settings-account__title">{t("settings.changePassword")}</h2>
-      <TextField
-        id="current-password"
-        type="password"
-        label={t("settings.currentPassword")}
-        placeholder={t("settings.currentPassword")}
-        hideLabel
-        maxlength={128}
-        error={passwordErrors.current}
-        bind:value={currentPassword}
-        oninput={() => {
-          delete passwordErrors.current;
-          passwordSaved = false;
-        }}
-      />
-      <TextField
-        id="new-password"
-        type="password"
-        label={t("settings.newPassword")}
-        placeholder={t("settings.newPassword")}
-        hideLabel
-        maxlength={128}
-        hint={t("common.passwordHint")}
-        strength
-        error={passwordErrors.next}
-        bind:value={nextPassword}
-        oninput={() => {
-          delete passwordErrors.next;
-          passwordSaved = false;
-        }}
-      />
-      <div class="settings-account__row">
-        <Button type="submit" size="small" disabled={savingPassword}>
-          {savingPassword ? t("settings.saving") : t("settings.savePassword")}
-        </Button>
-        {#if passwordSaved}
-          <span class="settings-account__message settings-account__message--success">
-            {t("settings.passwordSaved")}
-          </span>
+        <input bind:this={picker} class="sr-only" type="file" accept="image/png" tabindex="-1" onchange={pick} />
+        {#if photoError}
+          <span class="settings-account__message settings-account__message--error" role="alert">{photoError}</span>
+        {:else}
+          <span class="settings-account__message">{t("settings.photoHint")}</span>
         {/if}
       </div>
-    </form>
+    </SettingsGroup>
 
-    <section class="settings-account__section settings-account__section--tight">
-      <h2 class="settings-account__title">{t("settings.security")}</h2>
-      <Checkbox
-        label={t("settings.twoFactor")}
-        checked={chat.twoFactor}
-        disabled={changingTwoFactor || confirmingDisable}
-        onchange={toggleTwoFactor}
-      />
-      {#if confirmingDisable}
-        <form class="settings-account__confirm" onsubmit={disableTwoFactor} novalidate>
+    <SettingsGroup title={t("settings.security")}>
+      <div class="settings-account__security">
+        <form class="settings-account__section" onsubmit={savePassword} novalidate>
+          <h3 class="settings-account__title">{t("settings.changePassword")}</h3>
           <TextField
-            id="disable-two-factor"
+            id="current-password"
+            mask="none"
             type="password"
-            label={t("settings.disableTwoFactor")}
+            label={t("settings.currentPassword")}
+            placeholder={t("settings.currentPassword")}
+            hideLabel
             maxlength={128}
-            focus
-            error={twoFactorError}
-            bind:value={disablePassword}
-            oninput={() => (twoFactorError = "")}
+            error={passwordErrors.current}
+            bind:value={currentPassword}
+            oninput={() => {
+              delete passwordErrors.current;
+              passwordSaved = false;
+            }}
+          />
+          <TextField
+            id="new-password"
+            type="password"
+            label={t("settings.newPassword")}
+            placeholder={t("settings.newPassword")}
+            hideLabel
+            maxlength={128}
+            hint={t("common.passwordHint")}
+            strength
+            error={passwordErrors.next}
+            bind:value={nextPassword}
+            oninput={() => {
+              delete passwordErrors.next;
+              passwordSaved = false;
+            }}
           />
           <div class="settings-account__row">
-            <Button type="submit" size="small" disabled={changingTwoFactor}>{t("settings.disable")}</Button>
-            <Button size="small" theme="outline" onclick={cancelDisable}>{t("settings.cancel")}</Button>
+            <Button type="submit" size="small" disabled={savingPassword}>
+              {savingPassword ? t("settings.saving") : t("settings.savePassword")}
+            </Button>
+            {#if passwordSaved}
+              <span class="settings-account__message settings-account__message--success">
+                {t("settings.passwordSaved")}
+              </span>
+            {/if}
           </div>
         </form>
-      {:else if twoFactorError}
-        <span class="settings-account__message settings-account__message--error" role="alert">{twoFactorError}</span>
-      {/if}
-    </section>
+
+        <div class="settings-account__section settings-account__section--tight">
+          <Checkbox
+            label={t("settings.twoFactor")}
+            checked={chat.twoFactor}
+            disabled={changingTwoFactor || confirmingDisable}
+            onchange={toggleTwoFactor}
+          />
+          {#if confirmingDisable}
+            <form class="settings-account__confirm" onsubmit={disableTwoFactor} novalidate>
+              <TextField
+                id="disable-two-factor"
+                mask="none"
+                type="password"
+                label={t("settings.disableTwoFactor")}
+                maxlength={128}
+                focus
+                error={twoFactorError}
+                bind:value={disablePassword}
+                oninput={() => (twoFactorError = "")}
+              />
+              <div class="settings-account__row">
+                <Button type="submit" size="small" disabled={changingTwoFactor}>{t("settings.disable")}</Button>
+                <Button size="small" theme="outline" onclick={cancelDisable}>{t("settings.cancel")}</Button>
+              </div>
+            </form>
+          {:else if twoFactorError}
+            <span class="settings-account__message settings-account__message--error" role="alert">{twoFactorError}</span
+            >
+          {/if}
+        </div>
+      </div>
+    </SettingsGroup>
   </div>
 {/if}
 
@@ -280,13 +297,25 @@
   .settings-account {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 24px;
+  }
+
+  .settings-account__security {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
   }
 
   .settings-account__section {
+    margin-top: 6px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .settings-account__security .settings-account__section {
+    margin-top: 0;
   }
 
   .settings-account__section--tight {
@@ -295,10 +324,9 @@
 
   .settings-account__title {
     margin: 0;
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--muted-color);
+    font-size: var(--hint-font-size);
+    font-weight: 400;
+    color: var(--body-color);
   }
 
   .settings-account__profile {

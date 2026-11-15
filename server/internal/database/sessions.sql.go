@@ -87,6 +87,7 @@ SELECT
     u.email,
     u.avatar,
     u.invisible,
+    u.busy,
     u.two_factor
 FROM sessions s
 JOIN users u ON u.id = s.user_id
@@ -100,6 +101,7 @@ type GetSessionRow struct {
 	Email     string
 	Avatar    string
 	Invisible bool
+	Busy      bool
 	TwoFactor bool
 }
 
@@ -113,6 +115,7 @@ func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionR
 		&i.Email,
 		&i.Avatar,
 		&i.Invisible,
+		&i.Busy,
 		&i.TwoFactor,
 	)
 	return i, err

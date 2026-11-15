@@ -34,6 +34,19 @@ message ClientFrame {
     AnswerCall answer_call = 25;
     EndCall end_call = 26;
     CallSignal call_signal = 27;
+    CreateGroup create_group = 28;
+    AddGroupMembers add_group_members = 29;
+    RemoveGroupMember remove_group_member = 30;
+    LeaveGroup leave_group = 31;
+    JoinGroupCall join_group_call = 32;
+    LeaveGroupCall leave_group_call = 33;
+    DeclineGroupCall decline_group_call = 34;
+    DeleteGroup delete_group = 35;
+    TransferGroup transfer_group = 36;
+    BlockUser block_user = 37;
+    UnblockUser unblock_user = 38;
+    ListBlocked list_blocked = 39;
+    SetGroupAvatar set_group_avatar = 40;
   }
 }
 
@@ -148,4 +161,59 @@ message AnswerCall {
 
 message EndCall {
   string call_id = 1;
+}
+
+message CreateGroup {
+  string name = 1;
+  repeated string member_ids = 2;
+}
+
+message AddGroupMembers {
+  string conversation_id = 1;
+  repeated string user_ids = 2;
+}
+
+message RemoveGroupMember {
+  string conversation_id = 1;
+  string user_id = 2;
+}
+
+message LeaveGroup {
+  string conversation_id = 1;
+}
+
+message JoinGroupCall {
+  string conversation_id = 1;
+}
+
+message LeaveGroupCall {
+  string call_id = 1;
+}
+
+message DeclineGroupCall {
+  string conversation_id = 1;
+}
+
+message DeleteGroup {
+  string conversation_id = 1;
+}
+
+message BlockUser {
+  string user_id = 1;
+}
+
+message UnblockUser {
+  string user_id = 1;
+}
+
+message ListBlocked {}
+
+message SetGroupAvatar {
+  string conversation_id = 1;
+  bytes image = 2;
+}
+
+message TransferGroup {
+  string conversation_id = 1;
+  string user_id = 2;
 }

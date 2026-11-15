@@ -2,7 +2,7 @@ export type Strength = 0 | 1 | 2 | 3 | 4;
 
 export function validPassword(password: string): boolean {
   const length = [...password].length;
-  return length >= 8 && length <= 128 && /\p{L}/u.test(password) && /\p{Nd}/u.test(password);
+  return length >= 8 && length <= 128 && /^[!-~]+$/.test(password) && /[a-zA-Z]/.test(password) && /\d/.test(password);
 }
 
 export function passwordStrength(password: string): Strength {
