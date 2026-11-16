@@ -1,5 +1,18 @@
 [
   {
+    "version": "0.1.1",
+    "notes": {
+      "pt": {
+        "features": ["F5 e Ctrl+R recarregam o app e atualizam as fotos."],
+        "fixes": ["Microfone, áudio e compartilhamento de tela agora funcionam sem precisar pedir permissão."]
+      },
+      "en": {
+        "features": ["F5 and Ctrl+R reload the app and refresh photos."],
+        "fixes": ["Microphone, audio and screen sharing now work without asking for permission."]
+      }
+    }
+  },
+  {
     "version": "0.1.0",
     "notes": {
       "pt": {

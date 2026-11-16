@@ -45,9 +45,8 @@ pub fn reload_app<R: Runtime>(window: WebviewWindow<R>) -> Result<(), String> {
                 return;
             };
             let reload = webview.clone();
-            let handler = ClearBrowsingDataCompletedHandler::create(Box::new(move |_| {
-                reload.Reload()
-            }));
+            let handler =
+                ClearBrowsingDataCompletedHandler::create(Box::new(move |_| reload.Reload()));
             if profile
                 .ClearBrowsingData(COREWEBVIEW2_BROWSING_DATA_KINDS_DISK_CACHE, &handler)
                 .is_err()
