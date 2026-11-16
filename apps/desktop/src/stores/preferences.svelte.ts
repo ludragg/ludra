@@ -29,7 +29,7 @@ const storageKey = "ludra.preferences";
 
 const defaults: Preferences = {
   language: "pt",
-  autostart: true,
+  autostart: false,
   startMinimized: false,
   tray: true,
   notifyMessages: true,

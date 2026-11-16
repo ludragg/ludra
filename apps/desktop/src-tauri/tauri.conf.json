@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Ludra",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -42,6 +42,11 @@
     ],
     "createUpdaterArtifacts": true,
     "publisher": "Ludra",
+    "copyright": "Copyright © 2026 Ludra contributors. AGPL-3.0-only.",
+    "category": "SocialNetworking",
+    "shortDescription": "Voice chat, messages and screen sharing",
+    "longDescription": "Ludra is an open source app for voice calls, messages and screen sharing with friends.",
+    "homepage": "https://github.com/ludragg/ludra",
     "windows": {
       "nsis": {
         "installMode": "currentUser",

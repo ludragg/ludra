@@ -1,5 +1,18 @@
 [
   {
+    "version": "0.1.5",
+    "notes": {
+      "pt": {
+        "features": [],
+        "fixes": ["Iniciar com o Windows agora vem desligado e só é ativado se você ligar em Configurações › Sistema."]
+      },
+      "en": {
+        "features": [],
+        "fixes": ["Start with Windows is now off by default and only turns on if you enable it in Settings › System."]
+      }
+    }
+  },
+  {
     "version": "0.1.4",
     "notes": {
       "pt": {
