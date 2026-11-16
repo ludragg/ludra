@@ -2,6 +2,8 @@
 
 #[cfg(windows)]
 mod screen;
+#[cfg(windows)]
+mod webview;
 
 use tauri::Manager;
 use tauri_plugin_autostart::MacosLauncher;
@@ -24,6 +26,11 @@ fn main() {
             Some(vec![AUTOSTART_FLAG]),
         ))
         .manage(screen::ScreenState::default())
+        .setup(|app| {
+            #[cfg(windows)]
+            webview::setup(app);
+            Ok(())
+        })
         .on_page_load(|webview, payload| {
             if payload.event() == tauri::webview::PageLoadEvent::Started {
                 screen::reset(webview.app_handle());
@@ -31,6 +38,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             launched_by_autostart,
+            webview::reload_app,
             screen::screen_sources,
             screen::screen_start,
             screen::screen_stop,
