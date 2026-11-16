@@ -160,7 +160,8 @@ export const en: Messages = {
     undeafen: "Undeafen",
     busy: "{name} is in another call.",
     failed: "Couldn't place the call.",
-    microphoneDenied: "Allow microphone access to make calls.",
+    microphoneDenied:
+      "Windows blocked the microphone. Turn it on in Settings › Privacy & security › Microphone › Let desktop apps access your microphone.",
     microphoneMissing: "No microphone found.",
     notification: "{name} is calling you!",
   },

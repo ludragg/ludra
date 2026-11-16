@@ -25,6 +25,7 @@ fn main() {
             MacosLauncher::LaunchAgent,
             Some(vec![AUTOSTART_FLAG]),
         ))
+        .on_permission_request(webview::permission)
         .manage(screen::ScreenState::default())
         .setup(|app| {
             #[cfg(windows)]

@@ -1,14 +1,14 @@
-use tauri::{Manager, Runtime, WebviewWindow};
+use tauri::webview::{PermissionKind, PermissionResponse};
+use tauri::{Manager, Runtime, Webview, WebviewWindow};
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     COREWEBVIEW2_BROWSING_DATA_KINDS_DISK_CACHE, COREWEBVIEW2_PERMISSION_KIND,
     COREWEBVIEW2_PERMISSION_KIND_AUTOPLAY, COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ,
     COREWEBVIEW2_PERMISSION_KIND_MICROPHONE, COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS,
     COREWEBVIEW2_PERMISSION_STATE_ALLOW, ICoreWebView2_13, ICoreWebView2Profile2,
+    ICoreWebView2Profile4,
 };
-use webview2_com::{
-    ClearBrowsingDataCompletedHandler, PermissionRequestedEventHandler, take_pwstr,
-};
-use windows::core::{Interface, PWSTR};
+use webview2_com::{ClearBrowsingDataCompletedHandler, SetPermissionStateCompletedHandler};
+use windows::core::{HSTRING, Interface};
 
 const GRANTED: [COREWEBVIEW2_PERMISSION_KIND; 4] = [
     COREWEBVIEW2_PERMISSION_KIND_MICROPHONE,
@@ -23,9 +23,19 @@ const ORIGINS: [&str; 3] = [
     "http://localhost:6767",
 ];
 
+pub fn permission<R: Runtime>(_: Webview<R>, kind: PermissionKind) -> PermissionResponse {
+    match kind {
+        PermissionKind::Microphone
+        | PermissionKind::Autoplay
+        | PermissionKind::Notifications
+        | PermissionKind::ClipboardRead => PermissionResponse::Allow,
+        _ => PermissionResponse::Default,
+    }
+}
+
 pub fn setup<R: Runtime, M: Manager<R>>(manager: &M) {
     if let Some(window) = manager.get_webview_window("main") {
-        grant_permissions(&window);
+        save_permissions(&window);
     }
 }
 
@@ -57,32 +67,27 @@ pub fn reload_app<R: Runtime>(window: WebviewWindow<R>) -> Result<(), String> {
         .map_err(|error| error.to_string())
 }
 
-fn grant_permissions<R: Runtime>(window: &WebviewWindow<R>) {
+fn save_permissions<R: Runtime>(window: &WebviewWindow<R>) {
     let _ = window.with_webview(|platform| unsafe {
-        let Ok(webview) = platform.controller().CoreWebView2() else {
+        let profile = platform
+            .controller()
+            .CoreWebView2()
+            .and_then(|webview| webview.cast::<ICoreWebView2_13>())
+            .and_then(|webview| webview.Profile())
+            .and_then(|profile| profile.cast::<ICoreWebView2Profile4>());
+        let Ok(profile) = profile else {
             return;
         };
-        let handler = PermissionRequestedEventHandler::create(Box::new(|_, args| {
-            let Some(args) = args else {
-                return Ok(());
-            };
-            let mut kind = COREWEBVIEW2_PERMISSION_KIND::default();
-            args.PermissionKind(&mut kind)?;
-            let mut uri = PWSTR::null();
-            args.Uri(&mut uri)?;
-            if GRANTED.contains(&kind) && trusted(&take_pwstr(uri)) {
-                args.SetState(COREWEBVIEW2_PERMISSION_STATE_ALLOW)?;
+        for origin in ORIGINS {
+            for kind in GRANTED {
+                let handler = SetPermissionStateCompletedHandler::create(Box::new(|_| Ok(())));
+                let _ = profile.SetPermissionState(
+                    kind,
+                    &HSTRING::from(origin),
+                    COREWEBVIEW2_PERMISSION_STATE_ALLOW,
+                    &handler,
+                );
             }
-            Ok(())
-        }));
-        let mut token = 0;
-        let _ = webview.add_PermissionRequested(&handler, &mut token);
+        }
     });
-}
-
-fn trusted(uri: &str) -> bool {
-    ORIGINS.iter().any(|origin| {
-        uri.strip_prefix(origin)
-            .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
-    })
 }

@@ -158,7 +158,8 @@ export const pt = {
     undeafen: "Ligar áudio",
     busy: "{name} está em outra chamada.",
     failed: "Não foi possível fazer a chamada.",
-    microphoneDenied: "Permita o acesso ao microfone para fazer chamadas.",
+    microphoneDenied:
+      "O Windows bloqueou o microfone. Ative em Configurações › Privacidade e segurança › Microfone › Permitir que aplicativos da área de trabalho acessem o microfone.",
     microphoneMissing: "Nenhum microfone encontrado.",
     notification: "{name} está te ligando!",
   },
