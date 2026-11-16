@@ -1,0 +1,47 @@
+[
+  {
+    "version": "0.1.0",
+    "notes": {
+      "pt": {
+        "features": [
+          "Conta com cadastro, verificação de e-mail, recuperação de senha e autenticação em duas etapas.",
+          "Perfil com foto, troca de senha e e-mail oculto por padrão.",
+          "Amigos: pedidos de amizade enviados e recebidos, lista de online, remoção e bloqueio de usuários.",
+          "Status Online, Ocupado e Invisível.",
+          "Mensagens diretas com contador de não lidas e mensagens de usuários bloqueados ocultas.",
+          "Grupos de até 10 pessoas com chat, foto, adicionar e remover membros, transferência de posse e exclusão do grupo.",
+          "Chamadas de voz diretas e em grupo, com janela de chamada recebida e histórico de chamadas no chat.",
+          "Chamadas com criptografia de ponta a ponta e código de segurança para conferir com a outra pessoa.",
+          "Áudio: escolha de microfone e saída, volumes, sensibilidade do microfone, supressão de ruído, teste de voz e volume por pessoa.",
+          "Compartilhamento de tela nativo de telas ou janelas em até 1440p a 120 FPS, com áudio do computador, prévia, tela cheia e volume da transmissão.",
+          "Menu com botão direito nos usuários para adicionar, remover, bloquear e ajustar volume.",
+          "Notificações de mensagens, pedidos de amizade e chamadas, com sons configuráveis.",
+          "Iniciar com o Windows, iniciar minimizado e minimizar para a bandeja.",
+          "Interface em português e inglês.",
+          "Atualização automática com aviso das novidades de cada versão."
+        ],
+        "fixes": []
+      },
+      "en": {
+        "features": [
+          "Account with sign-up, email verification, password reset and two-step verification.",
+          "Profile with photo, password change and email hidden by default.",
+          "Friends: sent and received friend requests, online list, removing and blocking users.",
+          "Online, Busy and Invisible status.",
+          "Direct messages with unread counters and hidden messages from blocked users.",
+          "Groups of up to 10 people with chat, photo, adding and removing members, ownership transfer and group deletion.",
+          "Direct and group voice calls, with an incoming call window and call history in the chat.",
+          "End-to-end encrypted calls with a security code to compare with the other person.",
+          "Audio: microphone and output selection, volumes, microphone sensitivity, noise suppression, voice test and per-person volume.",
+          "Native screen sharing of screens or windows up to 1440p at 120 FPS, with computer audio, preview, fullscreen and stream volume.",
+          "Right-click menu on users to add, remove, block and adjust volume.",
+          "Notifications for messages, friend requests and calls, with configurable sounds.",
+          "Start with Windows, start minimized and minimize to tray.",
+          "Interface in Portuguese and English.",
+          "Automatic updates with release notes for each version."
+        ],
+        "fixes": []
+      }
+    }
+  }
+]

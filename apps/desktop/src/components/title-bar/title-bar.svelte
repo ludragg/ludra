@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getVersion } from "@tauri-apps/api/app";
   import { isTauri } from "@tauri-apps/api/core";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import Logo from "@/components/logo/logo.svelte";
@@ -8,6 +9,15 @@
   const appWindow = isTauri() ? getCurrentWindow() : null;
 
   let maximized = $state(false);
+  let version = $state("");
+
+  $effect(() => {
+    if (appWindow) {
+      getVersion()
+        .then((value) => (version = value))
+        .catch(() => undefined);
+    }
+  });
 
   $effect(() => {
     if (!appWindow) {
@@ -30,6 +40,9 @@
   <div class="title-bar__brand" data-tauri-drag-region>
     <Logo size="tiny" />
     <span class="title-bar__name" data-tauri-drag-region>Ludra</span>
+    {#if version}
+      <span class="title-bar__version" data-tauri-drag-region>v{version}</span>
+    {/if}
   </div>
 
   <div class="title-bar__controls">
@@ -132,5 +145,17 @@
 
   .title-bar__button svg {
     width: 14px;
+  }
+
+  .title-bar__version {
+    padding: 2px 5px 1px;
+    border-radius: 4px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--subtle-color);
+    transform: translateY(2px);
   }
 </style>

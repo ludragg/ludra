@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
+	"strings"
 	"sync"
 	"time"
 
@@ -27,6 +29,7 @@ type Gateway struct {
 	origins []string
 	hub     *hub
 	guard   *guard
+	proxies []netip.Prefix
 }
 
 func NewGateway(
@@ -35,6 +38,7 @@ func NewGateway(
 	account *account.Service,
 	relay *voice.Relay,
 	origins []string,
+	proxies []netip.Prefix,
 ) *Gateway {
 	hub := newHub()
 	finish := func(callerID, calleeID, messageID, outcome string, duration time.Duration) {
@@ -75,13 +79,14 @@ func NewGateway(
 		rooms:   newRooms(finishRoom),
 		voice:   &sync.Mutex{},
 		origins: origins,
+		proxies: proxies,
 		hub:     hub,
 		guard:   newGuard(),
 	}
 }
 
 func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ip := clientIP(r)
+	ip := g.clientIP(r)
 	if !g.guard.connections.Acquire(ip) {
 		http.Error(w, "too many connections", http.StatusTooManyRequests)
 		return
@@ -113,10 +118,39 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.run(r.Context())
 }
 
-func clientIP(r *http.Request) string {
+func (g *Gateway) clientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return r.RemoteAddr
+		host = r.RemoteAddr
+	}
+	if !g.trusted(host) {
+		return host
+	}
+
+	hops := strings.Split(r.Header.Get("X-Forwarded-For"), ",")
+	for i := len(hops) - 1; i >= 0; i-- {
+		hop := strings.TrimSpace(hops[i])
+		addr, err := netip.ParseAddr(hop)
+		if err != nil {
+			break
+		}
+		if !g.trusted(hop) {
+			return addr.Unmap().String()
+		}
 	}
 	return host
+}
+
+func (g *Gateway) trusted(ip string) bool {
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return false
+	}
+	addr = addr.Unmap()
+	for _, prefix := range g.proxies {
+		if prefix.Contains(addr) {
+			return true
+		}
+	}
+	return false
 }

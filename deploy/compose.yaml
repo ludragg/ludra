@@ -1,0 +1,45 @@
+name: ludra
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ludra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ludra
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ludra"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  server:
+    build: ../server
+    restart: unless-stopped
+    network_mode: host
+    env_file: .env
+    environment:
+      LUDRA_ADDR: ${LUDRA_ADDR:-127.0.0.1:8080}
+      LUDRA_DATABASE_URL: postgres://ludra:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT:-5432}/ludra?sslmode=disable
+      LUDRA_TRUSTED_PROXIES: ${LUDRA_TRUSTED_PROXIES:-127.0.0.1/32}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    network_mode: host
+    profiles: ["standalone"]
+    environment:
+      LUDRA_DOMAIN: ${LUDRA_DOMAIN:?set LUDRA_DOMAIN in .env}
+      LUDRA_UPSTREAM: ${LUDRA_ADDR:-127.0.0.1:8080}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config

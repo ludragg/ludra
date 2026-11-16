@@ -1,0 +1,4 @@
+{$LUDRA_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy {$LUDRA_UPSTREAM:127.0.0.1:8080}
+}

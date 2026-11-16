@@ -5,7 +5,7 @@
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:6767",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
@@ -26,17 +26,39 @@
     ],
     "security": {
       "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080; style-src 'self'; font-src 'self'; img-src 'self' data: http://127.0.0.1:8080",
-      "devCsp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:1420; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: http://127.0.0.1:8080"
+      "devCsp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:6767; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: http://127.0.0.1:8080"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true,
+    "publisher": "Ludra",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFBNjg2OUFCRkEwRjQyOUEKUldTYVFnLzZxMmxvcXRQYld0UFEvRHp4c3BtNGd1aEVqWkNNNHdERWtBY0xvQ2Vpa0d5SEozanYK",
+      "endpoints": [
+        "https://github.com/ludragg/ludra/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

@@ -57,7 +57,7 @@ func run() error {
 		return err
 	}
 
-	gateway := realtime.NewGateway(chats, friends.NewService(pool), accounts, relay, cfg.Origins)
+	gateway := realtime.NewGateway(chats, friends.NewService(pool), accounts, relay, cfg.Origins, cfg.Proxies)
 	go cleanup(ctx, accounts)
 
 	if cfg.Mail.Host == "" {

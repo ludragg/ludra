@@ -8,9 +8,16 @@
   import TwoFactor from "@/pages/auth/two-factor.svelte";
   import VerifyEmail from "@/pages/auth/verify-email.svelte";
   import Chat from "@/pages/chat/chat.svelte";
+  import UpdateGate from "@/pages/updates/update-gate.svelte";
+  import WhatsNew from "@/pages/updates/whats-new.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { updates } from "@/stores/updates.svelte";
 
   let screen = $state<Screen>({ name: "login" });
+
+  $effect(() => {
+    updates.start();
+  });
 
   $effect(() => {
     if (chat.user) {
@@ -46,6 +53,12 @@
     {/if}
   </div>
 </div>
+
+{#if updates.phase !== "idle"}
+  <UpdateGate />
+{:else if updates.release}
+  <WhatsNew release={updates.release} />
+{/if}
 
 <style>
   .app {

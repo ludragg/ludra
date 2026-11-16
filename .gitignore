@@ -6,3 +6,6 @@ target/
 node_modules/
 apps/desktop/src-tauri/gen/
 .DS_Store
+apps/desktop/src-tauri/tauri.release.conf.json
+*.key
+deploy/data/
