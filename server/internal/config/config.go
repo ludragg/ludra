@@ -14,6 +14,7 @@ type Config struct {
 	DatabaseURL string
 	Origins     []string
 	Proxies     []netip.Prefix
+	UpdatesRepo string
 	Mail        mail.Config
 	Turn        voice.Config
 }
@@ -24,6 +25,7 @@ func Load() Config {
 		DatabaseURL: env("LUDRA_DATABASE_URL", "postgres://ludra:ludra@localhost:5433/ludra?sslmode=disable"),
 		Origins:     strings.Split(env("LUDRA_ORIGINS", "localhost,localhost:*,tauri.localhost"), ","),
 		Proxies:     prefixes(env("LUDRA_TRUSTED_PROXIES", "")),
+		UpdatesRepo: env("LUDRA_UPDATES_REPO", "ludragg/ludra"),
 		Mail: mail.Config{
 			Host:     env("LUDRA_SMTP_HOST", ""),
 			Port:     env("LUDRA_SMTP_PORT", "587"),

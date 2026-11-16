@@ -9,13 +9,15 @@ import (
 
 	"ludra/internal/account"
 	"ludra/internal/chat"
+	"ludra/internal/updates"
 )
 
-func NewHandler(pool *pgxpool.Pool, accounts *account.Service, chats *chat.Service, realtime http.Handler) http.Handler {
+func NewHandler(pool *pgxpool.Pool, accounts *account.Service, chats *chat.Service, feed *updates.Feed, realtime http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", health(pool))
 	mux.HandleFunc("GET /avatars/{id}", avatars(accounts))
 	mux.HandleFunc("GET /group-avatars/{id}", groupAvatars(chats))
+	mux.HandleFunc("GET /update", latestUpdate(feed))
 	mux.Handle("GET /ws", realtime)
 	return mux
 }

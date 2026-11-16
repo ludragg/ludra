@@ -1,5 +1,18 @@
 [
   {
+    "version": "0.1.2",
+    "notes": {
+      "pt": {
+        "features": [],
+        "fixes": ["Atualizações automáticas agora chegam também nas versões de teste."]
+      },
+      "en": {
+        "features": [],
+        "fixes": ["Automatic updates now also reach test versions."]
+      }
+    }
+  },
+  {
     "version": "0.1.1",
     "notes": {
       "pt": {

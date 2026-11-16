@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Ludra",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -54,7 +54,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFBNjg2OUFCRkEwRjQyOUEKUldTYVFnLzZxMmxvcXRQYld0UFEvRHp4c3BtNGd1aEVqWkNNNHdERWtBY0xvQ2Vpa0d5SEozanYK",
       "endpoints": [
-        "https://github.com/ludragg/ludra/releases/latest/download/latest.json"
+        "http://127.0.0.1:8080/update"
       ],
       "windows": {
         "installMode": "passive"

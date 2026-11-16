@@ -21,5 +21,8 @@ const csp = [
 
 writeFileSync(
   new URL("../src-tauri/tauri.release.conf.json", import.meta.url),
-  JSON.stringify({ app: { security: { csp } } }),
+  JSON.stringify({
+    app: { security: { csp } },
+    plugins: { updater: { endpoints: [`${web}/update`] } },
+  }),
 );
