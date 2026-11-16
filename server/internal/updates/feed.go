@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -13,8 +14,7 @@ import (
 
 const (
 	manifestName = "latest.json"
-	cacheFor     = 5 * time.Minute
-	retryAfter   = 30 * time.Second
+	pollEvery    = 30 * time.Second
 	maxBody      = 1 << 20
 )
 
@@ -23,9 +23,11 @@ var ErrNoRelease = errors.New("no published release with an update manifest")
 type Feed struct {
 	repo    string
 	client  *http.Client
-	mu      sync.Mutex
+	mu      sync.RWMutex
 	body    []byte
-	expires time.Time
+	version string
+	asset   string
+	etag    string
 }
 
 func NewFeed(repo string) *Feed {
@@ -35,29 +37,43 @@ func NewFeed(repo string) *Feed {
 	}
 }
 
-func (f *Feed) Latest(ctx context.Context) ([]byte, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
+func (f *Feed) Latest() ([]byte, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 
-	if time.Now().Before(f.expires) {
-		if f.body == nil {
-			return nil, ErrNoRelease
-		}
-		return f.body, nil
+	if f.body == nil {
+		return nil, ErrNoRelease
 	}
+	return f.body, nil
+}
 
-	body, err := f.fetch(ctx)
-	if err != nil {
-		f.expires = time.Now().Add(retryAfter)
-		if f.body != nil {
-			return f.body, nil
+func (f *Feed) Run(ctx context.Context, released func(version string)) {
+	ticker := time.NewTicker(pollEvery)
+	defer ticker.Stop()
+
+	for {
+		previous := f.currentVersion()
+		version, err := f.refresh(ctx)
+		if err != nil && ctx.Err() == nil && !errors.Is(err, ErrNoRelease) {
+			slog.Warn("update feed unavailable", "error", err)
 		}
-		return nil, err
-	}
+		if err == nil && previous != "" && version != previous {
+			slog.Info("new release published", "version", version)
+			released(version)
+		}
 
-	f.body = body
-	f.expires = time.Now().Add(cacheFor)
-	return body, nil
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func (f *Feed) currentVersion() string {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.version
 }
 
 type release struct {
@@ -68,61 +84,95 @@ type release struct {
 	} `json:"assets"`
 }
 
-func (f *Feed) fetch(ctx context.Context) ([]byte, error) {
-	var releases []release
+func (f *Feed) refresh(ctx context.Context) (string, error) {
+	f.mu.RLock()
+	etag, current, version := f.etag, f.asset, f.version
+	f.mu.RUnlock()
+
 	listURL := fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=20", f.repo)
-	if err := f.getJSON(ctx, listURL, "application/vnd.github+json", &releases); err != nil {
-		return nil, err
+	body, newETag, err := f.get(ctx, listURL, "application/vnd.github+json", etag)
+	if err != nil {
+		return "", err
+	}
+	if body == nil {
+		return version, nil
 	}
 
+	var releases []release
+	if err := json.Unmarshal(body, &releases); err != nil {
+		return "", err
+	}
+
+	asset := newestManifest(releases)
+	if asset == "" {
+		return "", ErrNoRelease
+	}
+	if asset == current {
+		f.setETag(newETag)
+		return version, nil
+	}
+
+	manifest, _, err := f.get(ctx, asset, "application/octet-stream", "")
+	if err != nil {
+		return "", err
+	}
+	var parsed struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(manifest, &parsed); err != nil || parsed.Version == "" {
+		return "", fmt.Errorf("invalid update manifest in %s", asset)
+	}
+
+	f.mu.Lock()
+	f.body, f.version, f.asset, f.etag = manifest, parsed.Version, asset, newETag
+	f.mu.Unlock()
+	return parsed.Version, nil
+}
+
+func (f *Feed) setETag(etag string) {
+	f.mu.Lock()
+	f.etag = etag
+	f.mu.Unlock()
+}
+
+func newestManifest(releases []release) string {
 	for _, release := range releases {
 		if release.Draft {
 			continue
 		}
 		for _, asset := range release.Assets {
-			if asset.Name != manifestName {
-				continue
+			if asset.Name == manifestName {
+				return asset.URL
 			}
-			var manifest struct {
-				Version string `json:"version"`
-			}
-			body, err := f.get(ctx, asset.URL, "application/octet-stream")
-			if err != nil {
-				return nil, err
-			}
-			if err := json.Unmarshal(body, &manifest); err != nil || manifest.Version == "" {
-				return nil, fmt.Errorf("invalid update manifest in %s", asset.URL)
-			}
-			return body, nil
 		}
 	}
-	return nil, ErrNoRelease
+	return ""
 }
 
-func (f *Feed) getJSON(ctx context.Context, url, accept string, target any) error {
-	body, err := f.get(ctx, url, accept)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(body, target)
-}
-
-func (f *Feed) get(ctx context.Context, url, accept string) ([]byte, error) {
+func (f *Feed) get(ctx context.Context, url, accept, etag string) ([]byte, string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	request.Header.Set("Accept", accept)
 	request.Header.Set("User-Agent", "ludra-server")
+	if etag != "" {
+		request.Header.Set("If-None-Match", etag)
+	}
 
 	response, err := f.client.Do(request)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: %s", url, response.Status)
+	switch response.StatusCode {
+	case http.StatusNotModified:
+		return nil, etag, nil
+	case http.StatusOK:
+		body, err := io.ReadAll(io.LimitReader(response.Body, maxBody))
+		return body, response.Header.Get("ETag"), err
+	default:
+		return nil, "", fmt.Errorf("GET %s: %s", url, response.Status)
 	}
-	return io.ReadAll(io.LimitReader(response.Body, maxBody))
 }

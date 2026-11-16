@@ -10,10 +10,15 @@
   import Chat from "@/pages/chat/chat.svelte";
   import UpdateGate from "@/pages/updates/update-gate.svelte";
   import WhatsNew from "@/pages/updates/whats-new.svelte";
+  import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { groupCall } from "@/stores/group-call.svelte";
   import { updates } from "@/stores/updates.svelte";
 
   let screen = $state<Screen>({ name: "login" });
+
+  const inCall = $derived(calls.current !== null || groupCall.current !== null);
+  const gated = $derived(updates.phase !== "idle" && !(updates.phase === "available" && inCall));
 
   $effect(() => {
     updates.start();
@@ -54,9 +59,9 @@
   </div>
 </div>
 
-{#if updates.phase !== "idle"}
+{#if gated}
   <UpdateGate />
-{:else if updates.release}
+{:else if updates.release && updates.phase === "idle"}
   <WhatsNew release={updates.release} />
 {/if}
 

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"errors"
-	"log/slog"
 	"net/http"
 
 	"ludra/internal/updates"
@@ -10,11 +8,8 @@ import (
 
 func latestUpdate(feed *updates.Feed) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := feed.Latest(r.Context())
+		body, err := feed.Latest()
 		if err != nil {
-			if !errors.Is(err, updates.ErrNoRelease) {
-				slog.Warn("update feed unavailable", "error", err)
-			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}

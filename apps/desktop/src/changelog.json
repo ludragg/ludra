@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.1.4",
+    "notes": {
+      "pt": {
+        "features": [
+          "Atualizações aparecem na hora em que são lançadas, mesmo com o app aberto, sem interromper chamadas."
+        ],
+        "fixes": []
+      },
+      "en": {
+        "features": [
+          "Updates show up as soon as they are released, even with the app open, without interrupting calls."
+        ],
+        "fixes": []
+      }
+    }
+  },
+  {
     "version": "0.1.3",
     "notes": {
       "pt": {

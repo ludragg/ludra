@@ -15,6 +15,7 @@ import (
 	"ludra/internal/account"
 	"ludra/internal/chat"
 	"ludra/internal/friends"
+	"ludra/internal/protocol"
 	"ludra/internal/voice"
 )
 
@@ -116,6 +117,12 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		send:    make(chan []byte, sendBuffer),
 	}
 	s.run(r.Context())
+}
+
+func (g *Gateway) AnnounceUpdate(version string) {
+	g.hub.broadcast(&protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_UpdateAvailable{UpdateAvailable: &protocol.UpdateAvailable{Version: version}},
+	})
 }
 
 func (g *Gateway) clientIP(r *http.Request) string {

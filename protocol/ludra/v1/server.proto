@@ -39,6 +39,7 @@ message ServerFrame {
     GroupCallRinging group_call_ringing = 30;
     BlockedList blocked_list = 31;
     IdentityKeys identity_keys = 32;
+    UpdateAvailable update_available = 33;
   }
 }
 
@@ -188,4 +189,8 @@ message GroupCallUpdated {
 message GroupCallRinging {
   string conversation_id = 1;
   User starter = 2;
+}
+
+message UpdateAvailable {
+  string version = 1;
 }

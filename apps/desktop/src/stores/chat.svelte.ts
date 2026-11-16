@@ -23,6 +23,7 @@ import { focus } from "@/stores/focus";
 import { groupCall } from "@/stores/group-call.svelte";
 import { preferences } from "@/stores/preferences.svelte";
 import { trust } from "@/stores/trust.svelte";
+import { updates } from "@/stores/updates.svelte";
 
 type Thread = {
   messages: Message[];
@@ -192,6 +193,7 @@ class ChatStore {
         groupCall.ring(conversationId, starter);
       }
     };
+    client.onUpdateAvailable = () => updates.check();
     client.onClose = () => this.#reset(t("common.connectionLost"));
     await trust.attach(client, account.user.id).catch(() => undefined);
     calls.attach(client);

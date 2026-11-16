@@ -62,6 +62,7 @@ export class Client {
   onConversationRemoved: (conversationId: string) => void = () => {};
   onGroupCallUpdated: (conversationId: string, call: GroupCall | undefined) => void = () => {};
   onGroupCallRinging: (conversationId: string, starter: User) => void = () => {};
+  onUpdateAvailable: (version: string) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -414,6 +415,9 @@ export class Client {
         if (payload.value.starter) {
           this.onGroupCallRinging(payload.value.conversationId, payload.value.starter);
         }
+        break;
+      case "updateAvailable":
+        this.onUpdateAvailable(payload.value.version);
         break;
     }
   }

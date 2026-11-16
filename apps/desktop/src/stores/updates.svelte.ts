@@ -6,6 +6,7 @@ import { releases, type Release } from "@/changelog";
 type Phase = "idle" | "available" | "downloading" | "installing" | "failed";
 
 const seenKey = "ludra.version";
+const checkEvery = 15 * 60 * 1000;
 
 class UpdateStore {
   phase = $state<Phase>("idle");
@@ -14,15 +15,24 @@ class UpdateStore {
   release = $state<Release | null>(null);
 
   #update: Update | null = null;
+  #started = false;
 
   async start() {
+    if (this.#started) {
+      return;
+    }
+    this.#started = true;
     await this.#announce();
     if (import.meta.env.PROD) {
       await this.check();
+      setInterval(() => this.check(), checkEvery);
     }
   }
 
   async check() {
+    if (!import.meta.env.PROD || this.phase !== "idle") {
+      return;
+    }
     try {
       const update = await check();
       if (update) {

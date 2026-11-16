@@ -59,6 +59,8 @@ func run() error {
 	}
 
 	gateway := realtime.NewGateway(chats, friends.NewService(pool), accounts, relay, cfg.Origins, cfg.Proxies)
+	feed := updates.NewFeed(cfg.UpdatesRepo)
+	go feed.Run(ctx, gateway.AnnounceUpdate)
 	go cleanup(ctx, accounts)
 
 	if cfg.Mail.Host == "" {
@@ -67,7 +69,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           api.NewHandler(pool, accounts, chats, updates.NewFeed(cfg.UpdatesRepo), gateway),
+		Handler:           api.NewHandler(pool, accounts, chats, feed, gateway),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       time.Minute,
 		MaxHeaderBytes:    16 << 10,
