@@ -240,6 +240,12 @@ export const pt = {
     fixes: "Correções",
     close: "Entendi",
   },
+  directTip: {
+    title: "Chamada com atraso?",
+    body: "A latência está em {latency} ms. Ative a conexão direta com amigos para reduzir o atraso. Funciona quando os dois ativam, e eles poderão ver seu IP.",
+    enable: "Ativar",
+    dismiss: "Não mostrar mais",
+  },
   screen: {
     volume: "Volume da transmissão de {name}",
     resize: "Redimensionar painel da chamada",
@@ -263,6 +269,8 @@ export const pt = {
     fullscreen: "Tela cheia",
     exitFullscreen: "Sair da tela cheia",
     stopWatching: "Parar de assistir",
+    viewers: "{count} assistindo",
+    watchingNow: "Assistindo",
     loading: "Carregando transmissão…",
     failed: "Não foi possível compartilhar a tela.",
   },

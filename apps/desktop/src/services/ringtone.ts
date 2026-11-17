@@ -78,7 +78,7 @@ function stop() {
   context = null;
 }
 
-type Cue = "connected" | "ended" | "off" | "on";
+type Cue = "connected" | "ended" | "off" | "on" | "streamStart" | "streamEnd";
 
 const cues: Record<Cue, [frequency: number, start: number, length: number][]> = {
   off: [
@@ -96,6 +96,16 @@ const cues: Record<Cue, [frequency: number, start: number, length: number][]> = 
   ended: [
     [784, 0, 0.12],
     [523, 0.12, 0.22],
+  ],
+  streamStart: [
+    [659, 0, 0.07],
+    [988, 0.08, 0.07],
+    [1319, 0.16, 0.16],
+  ],
+  streamEnd: [
+    [1319, 0, 0.07],
+    [988, 0.08, 0.07],
+    [659, 0.16, 0.16],
   ],
 };
 

@@ -61,6 +61,10 @@ export class VoiceRoom {
     this.onLatency(this.#latencies.size ? Math.max(...this.#latencies.values()) : 0);
   }
 
+  refreshDirect(peerId: string, restart: boolean) {
+    this.#links.get(peerId)?.setDirect(this.directWith(peerId), restart);
+  }
+
   screen(peerId: string): MediaStream | null {
     return this.#links.get(peerId)?.screen ?? null;
   }

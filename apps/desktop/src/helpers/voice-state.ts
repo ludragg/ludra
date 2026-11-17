@@ -1,10 +1,17 @@
-export type VoiceState = { muted: boolean; deafened: boolean; sharing: string | null };
+export type VoiceState = {
+  muted: boolean;
+  deafened: boolean;
+  sharing: string | null;
+  direct?: boolean;
+  viewers?: string[];
+};
 
 export type VoiceMessage =
   ({ kind: "state" } & VoiceState) | { kind: "watch"; watching: boolean } | { kind: "preview"; image: string };
 
 const previewPrefix = "data:image/jpeg;base64,";
 const maxPreviewLength = 14_000;
+const maxViewers = 16;
 
 export function stateMessage(state: VoiceState): string {
   return JSON.stringify({
@@ -12,6 +19,8 @@ export function stateMessage(state: VoiceState): string {
     deafened: state.deafened,
     sharing: !!state.sharing,
     quality: state.sharing,
+    direct: state.direct,
+    viewers: state.viewers,
   });
 }
 
@@ -42,6 +51,10 @@ export function parseVoiceMessage(payload: string): VoiceMessage {
       muted: data?.muted === true,
       deafened: data?.deafened === true,
       sharing: data?.sharing === true ? quality : null,
+      direct: typeof data?.direct === "boolean" ? data.direct : undefined,
+      viewers: Array.isArray(data?.viewers)
+        ? data.viewers.filter((id: unknown) => typeof id === "string").slice(0, maxViewers)
+        : [],
     };
   } catch {
     return { kind: "state", muted: false, deafened: false, sharing: null };

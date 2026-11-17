@@ -195,7 +195,7 @@ func (r *rooms) finishIfEmpty(found *room, empty bool) {
 	}
 }
 
-func (r *rooms) setVoice(roomID string, from *session, state voiceState) (string, bool) {
+func (r *rooms) setVoice(roomID string, from *session, state voiceState, direct *bool) (string, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -204,10 +204,22 @@ func (r *rooms) setVoice(roomID string, from *session, state voiceState) (string
 		return "", false
 	}
 	userID, ok := current.sessions[from]
-	if !ok || current.voice[userID] == state {
+	if !ok {
 		return "", false
 	}
+	changed := current.voice[userID] != state
 	current.voice[userID] = state
+	if direct != nil && current.direct[userID] != *direct {
+		changed = true
+		if *direct {
+			current.direct[userID] = true
+		} else {
+			delete(current.direct, userID)
+		}
+	}
+	if !changed {
+		return "", false
+	}
 	return current.conversationID, true
 }
 

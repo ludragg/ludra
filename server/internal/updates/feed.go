@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -15,6 +16,7 @@ import (
 const (
 	manifestName = "latest.json"
 	pollEvery    = 30 * time.Second
+	maxWait      = time.Hour
 	maxBody      = 1 << 20
 )
 
@@ -28,6 +30,7 @@ type Feed struct {
 	version string
 	asset   string
 	etag    string
+	wait    time.Duration
 }
 
 func NewFeed(repo string) *Feed {
@@ -48,10 +51,16 @@ func (f *Feed) Latest() ([]byte, error) {
 }
 
 func (f *Feed) Run(ctx context.Context, released func(version string)) {
-	ticker := time.NewTicker(pollEvery)
-	defer ticker.Stop()
+	timer := time.NewTimer(0)
+	defer timer.Stop()
 
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+		}
+
 		previous := f.currentVersion()
 		version, err := f.refresh(ctx)
 		if err != nil && ctx.Err() == nil && !errors.Is(err, ErrNoRelease) {
@@ -61,13 +70,41 @@ func (f *Feed) Run(ctx context.Context, released func(version string)) {
 			slog.Info("new release published", "version", version)
 			released(version)
 		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
+		timer.Reset(f.nextWait())
 	}
+}
+
+func (f *Feed) nextWait() time.Duration {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	wait := f.wait
+	f.wait = 0
+	return max(wait, pollEvery)
+}
+
+func (f *Feed) pace(header http.Header) {
+	if seconds, err := strconv.Atoi(header.Get("Retry-After")); err == nil && seconds > 0 {
+		f.mu.Lock()
+		f.wait = min(time.Duration(seconds)*time.Second, maxWait)
+		f.mu.Unlock()
+		return
+	}
+	remaining, err := strconv.Atoi(header.Get("X-RateLimit-Remaining"))
+	if err != nil {
+		return
+	}
+	reset, err := strconv.ParseInt(header.Get("X-RateLimit-Reset"), 10, 64)
+	if err != nil {
+		return
+	}
+	window := time.Until(time.Unix(reset, 0))
+	if window <= 0 {
+		return
+	}
+	wait := min(window/time.Duration(max(remaining, 1)), maxWait)
+	f.mu.Lock()
+	f.wait = wait
+	f.mu.Unlock()
 }
 
 func (f *Feed) currentVersion() string {
@@ -90,7 +127,7 @@ func (f *Feed) refresh(ctx context.Context) (string, error) {
 	f.mu.RUnlock()
 
 	listURL := fmt.Sprintf("https://api.github.com/repos/%s/releases?per_page=20", f.repo)
-	body, newETag, err := f.get(ctx, listURL, "application/vnd.github+json", etag)
+	body, newETag, err := f.get(ctx, listURL, "application/vnd.github+json", etag, f.pace)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +149,7 @@ func (f *Feed) refresh(ctx context.Context) (string, error) {
 		return version, nil
 	}
 
-	manifest, _, err := f.get(ctx, asset, "application/octet-stream", "")
+	manifest, _, err := f.get(ctx, asset, "application/octet-stream", "", nil)
 	if err != nil {
 		return "", err
 	}
@@ -149,7 +186,7 @@ func newestManifest(releases []release) string {
 	return ""
 }
 
-func (f *Feed) get(ctx context.Context, url, accept, etag string) ([]byte, string, error) {
+func (f *Feed) get(ctx context.Context, url, accept, etag string, limits func(http.Header)) ([]byte, string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, "", err
@@ -165,6 +202,9 @@ func (f *Feed) get(ctx context.Context, url, accept, etag string) ([]byte, strin
 		return nil, "", err
 	}
 	defer response.Body.Close()
+	if limits != nil {
+		limits(response.Header)
+	}
 
 	switch response.StatusCode {
 	case http.StatusNotModified:

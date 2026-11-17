@@ -56,8 +56,8 @@ export class VoiceSession {
     await this.#link?.offer();
   }
 
-  allowDirect() {
-    this.#link?.allowDirect();
+  setDirect(direct: boolean, restart: boolean) {
+    this.#link?.setDirect(direct, restart);
   }
 
   async receive(kind: SignalKind, payload: string) {

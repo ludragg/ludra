@@ -199,6 +199,7 @@ class ChatStore {
     };
     client.onUpdateAvailable = () => updates.check();
     client.onClose = () => this.#reconnect();
+    updates.check();
     await trust.attach(client, account.user.id).catch(() => undefined);
     calls.attach(client);
     groupCall.attach(client);

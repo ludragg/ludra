@@ -54,6 +54,13 @@
   });
 
   const watched = $derived(people.find(({ id }) => id === groupCall.watchingId) ?? null);
+  const watchers = $derived.by(() => {
+    if (!call || !watched || !chat.user) {
+      return [];
+    }
+    const ids = new Set([...(groupCall.states[watched.id]?.viewers ?? []), chat.user.id]);
+    return [...ids].filter((id) => call.participantIds.includes(id)).map((id) => chat.nameOf(id));
+  });
   const sharers = $derived(people.filter(({ live, self, id }) => live && !self && id !== groupCall.watchingId));
   const previewCount = $derived(sharers.length + Number(!!call && groupCall.sharing));
 
@@ -108,6 +115,7 @@
         userId={watched.id}
         name={watched.user.username}
         quality={watched.quality}
+        viewers={watchers}
         onclose={() => groupCall.unwatch()}
       />
     </div>
@@ -159,7 +167,13 @@
   {#if call && previewCount > 0}
     <div class="group-call__previews">
       {#if groupCall.sharing && chat.user}
-        <ScreenPreview image={groupCall.ownPreview} name={chat.user.username} width={previewWidth(previewCount)} own />
+        <ScreenPreview
+          image={groupCall.ownPreview}
+          name={chat.user.username}
+          width={previewWidth(previewCount)}
+          viewers={groupCall.viewers.map((id) => chat.nameOf(id))}
+          own
+        />
       {/if}
       {#each sharers as sharer (sharer.id)}
         <ScreenPreview
@@ -479,6 +493,8 @@
   .group-call--watching .group-call__stage {
     flex: 1 1 auto;
     padding: 0 calc(var(--side) + 16px);
+    justify-content: center;
+    container-type: size;
   }
 
   .group-call--watching .group-call__previews {

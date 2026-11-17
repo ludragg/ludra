@@ -1,5 +1,38 @@
 [
   {
+    "version": "0.2.1",
+    "notes": {
+      "pt": {
+        "features": [
+          "A conexão direta com amigos agora liga e desliga na hora, sem precisar sair e entrar de novo na chamada.",
+          "Dica no ícone de rede da chamada para ativar a conexão direta quando o atraso estiver alto.",
+          "Veja quantas pessoas estão assistindo a uma transmissão e quem são, passando o mouse no olho ao lado da qualidade.",
+          "Sons próprios quando alguém começa ou para de transmitir a tela.",
+          "Os controles da transmissão somem quando o mouse fica parado e voltam ao mexer, e a qualidade aparece de forma compacta (ex.: 1080p60)."
+        ],
+        "fixes": [
+          "O som da transmissão continua tocando quando você vai para outra aba do Ludra.",
+          "A transmissão não tem mais faixas pretas em cima e embaixo.",
+          "O aviso de atualização aparece com o app aberto, sem precisar fechar e abrir de novo."
+        ]
+      },
+      "en": {
+        "features": [
+          "Direct connection with friends now turns on and off instantly, without leaving and rejoining the call.",
+          "A tip on the call's network icon suggests direct connection when the delay is high.",
+          "See how many people are watching a stream and who they are by hovering the eye next to the quality.",
+          "Dedicated sounds when someone starts or stops sharing their screen.",
+          "Stream controls hide when the mouse stops moving and come back when it moves, and the quality is shown compactly (e.g. 1080p60)."
+        ],
+        "fixes": [
+          "Stream audio keeps playing when you switch to another Ludra tab.",
+          "Streams no longer have black bars above and below.",
+          "The update notice now shows up while the app is open, without closing and reopening it."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.2.0",
     "notes": {
       "pt": {

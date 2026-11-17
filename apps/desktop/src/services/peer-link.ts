@@ -12,11 +12,13 @@ type SinkElement = HTMLAudioElement & { setSinkId?: (id: string) => Promise<void
 type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
 
 const encoderCheckEvery = 5000;
+const restartDelay = 1500;
+const restartGap = 15_000;
 
 const hiddenAddress = "0.0.0.0";
 
-function iceUfrag(sdp: string | undefined): string | null {
-  return /^a=ice-ufrag:(\S+)/m.exec(sdp ?? "")?.[1] ?? null;
+function fingerprint(sdp: string | undefined): string | null {
+  return /^a=fingerprint:(.+)$/m.exec(sdp ?? "")?.[1].trim() ?? null;
 }
 
 function isHost(candidate: string): boolean {
@@ -59,6 +61,7 @@ export class PeerLink {
   #connection: RTCPeerConnection;
   #iceServers: RTCIceServer[];
   #polite: boolean;
+  #direct: boolean;
   #context = new AudioContext() as SinkContext;
   #analyser = this.#context.createAnalyser();
   #boost = this.#context.createGain();
@@ -76,11 +79,15 @@ export class PeerLink {
   #senderKinds = new Map<RTCRtpSender, string>();
   #screenQuality: ScreenQuality | null = null;
   #negotiating = false;
+  #restartWanted = false;
+  #restartTimer: number | undefined;
+  #lastRestart = -restartGap;
   #makingOffer = false;
   #ignoreOffer = false;
 
   constructor(iceServers: IceServer[], track: MediaStreamTrack, polite: boolean, direct: boolean) {
     this.#polite = polite;
+    this.#direct = direct;
     this.#iceServers = iceServers.map(({ urls, username, credential }) => ({ urls, username, credential }));
     this.#connection = new RTCPeerConnection({
       iceServers: this.#iceServers,
@@ -101,6 +108,9 @@ export class PeerLink {
         this.#negotiating = true;
         this.onConnected();
         this.#watchLatency();
+        if (this.#restartWanted) {
+          this.#scheduleRestart();
+        }
       } else if (state === "failed") {
         this.onFailed();
       }
@@ -122,13 +132,36 @@ export class PeerLink {
   }
 
   replacedBy(payload: string): boolean {
-    const current = iceUfrag(this.#connection.remoteDescription?.sdp);
-    const incoming = iceUfrag((JSON.parse(payload) as RTCSessionDescriptionInit).sdp);
+    const current = fingerprint(this.#connection.remoteDescription?.sdp);
+    const incoming = fingerprint((JSON.parse(payload) as RTCSessionDescriptionInit).sdp);
     return !!current && !!incoming && current !== incoming;
   }
 
-  allowDirect() {
-    this.#connection.setConfiguration({ iceServers: this.#iceServers, iceTransportPolicy: "all" });
+  setDirect(direct: boolean, restart: boolean) {
+    if (direct === this.#direct) {
+      return;
+    }
+    this.#direct = direct;
+    this.#connection.setConfiguration({ iceServers: this.#iceServers, iceTransportPolicy: direct ? "all" : "relay" });
+    if (restart) {
+      this.#restartWanted = true;
+      this.#scheduleRestart();
+    }
+  }
+
+  #scheduleRestart() {
+    window.clearTimeout(this.#restartTimer);
+    const wait = Math.max(restartDelay, this.#lastRestart + restartGap - performance.now());
+    this.#restartTimer = window.setTimeout(() => this.#restartIce(), wait);
+  }
+
+  #restartIce() {
+    if (!this.#negotiating || this.#connection.connectionState === "closed") {
+      return;
+    }
+    this.#restartWanted = false;
+    this.#lastRestart = performance.now();
+    this.#connection.restartIce();
   }
 
   async receive(kind: SignalKind, payload: string) {
@@ -250,6 +283,7 @@ export class PeerLink {
   }
 
   close() {
+    window.clearTimeout(this.#restartTimer);
     window.clearInterval(this.#stats);
     window.clearInterval(this.#encoderCheck);
     this.#connection.close();

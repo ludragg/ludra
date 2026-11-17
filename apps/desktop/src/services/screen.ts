@@ -24,7 +24,7 @@ const fpsFactors: Record<FrameRate, number> = {
 };
 
 export function qualityLabel({ resolution, fps }: ScreenQuality): string {
-  return `${resolution}p ${fps}`;
+  return `${resolution}p${fps}`;
 }
 
 export async function captureScreen(sourceId: string, quality: ScreenQuality): Promise<NativeScreen> {

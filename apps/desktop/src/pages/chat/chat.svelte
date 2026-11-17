@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Sidebar } from "@/components";
+  import StreamAudio from "@/components/stream-audio/stream-audio.svelte";
   import { t } from "@/i18n";
   import { ConversationKind } from "@/protocol/ludra/v1/models_pb";
   import Friends from "@/pages/friends/friends.svelte";
@@ -50,6 +51,12 @@
     {/if}
   </main>
 </div>
+
+{#if calls.current && calls.watching}
+  <StreamAudio stream={calls.screen} userId={calls.current.peer.id} />
+{:else if groupCall.watchingId}
+  <StreamAudio stream={groupCall.screen} userId={groupCall.watchingId} />
+{/if}
 
 {#if preferences.values.callPopup}
   {#if calls.current?.status === "incoming" && !calls.current.quiet && !calls.current.hidden}

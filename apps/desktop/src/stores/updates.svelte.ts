@@ -7,7 +7,7 @@ type Phase = "idle" | "available" | "downloading" | "installing" | "failed";
 
 const seenKey = "ludra.version";
 const attemptKey = "ludra.updating";
-const checkEvery = 15 * 60 * 1000;
+const checkEvery = 5 * 60 * 1000;
 
 class UpdateStore {
   phase = $state<Phase>("idle");
@@ -19,6 +19,7 @@ class UpdateStore {
 
   #update: Update | null = null;
   #started = false;
+  #checking: Promise<void> | null = null;
 
   async start() {
     if (this.#started) {
@@ -32,10 +33,15 @@ class UpdateStore {
     }
   }
 
-  async check() {
+  check(): Promise<void> {
     if (!import.meta.env.PROD || this.phase !== "idle") {
-      return;
+      return Promise.resolve();
     }
+    this.#checking ??= this.#fetch().finally(() => (this.#checking = null));
+    return this.#checking;
+  }
+
+  async #fetch() {
     try {
       const update = await check();
       if (update) {

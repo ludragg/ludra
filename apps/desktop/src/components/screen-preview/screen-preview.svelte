@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ViewerBadge from "@/components/viewer-badge/viewer-badge.svelte";
   import { t } from "@/i18n";
 
   let {
@@ -6,19 +7,36 @@
     name,
     width,
     own = false,
+    viewers = [],
     onwatch,
-  }: { image: string | null; name: string; width: number; own?: boolean; onwatch?: () => void } = $props();
+  }: {
+    image: string | null;
+    name: string;
+    width: number;
+    own?: boolean;
+    viewers?: string[];
+    onwatch?: () => void;
+  } = $props();
 </script>
 
-{#if onwatch || own}
+{#if own}
+  <div class="screen-preview screen-preview--own" style:width="{width}px" title={t("screen.yourScreen")}>
+    {#if image}
+      <img class="screen-preview__image" src={image} alt="" />
+    {/if}
+    <span class="screen-preview__label">{t("screen.watchShort")}</span>
+    {#if viewers.length}
+      <span class="screen-preview__viewers">
+        <ViewerBadge names={viewers} />
+      </span>
+    {/if}
+  </div>
+{:else if onwatch}
   <button
-    class="screen-preview"
-    class:screen-preview--watchable={!own}
-    class:screen-preview--own={own}
-    disabled={own}
+    class="screen-preview screen-preview--watchable"
     style:width="{width}px"
-    aria-label={own ? t("screen.yourScreen") : t("screen.watch", { name })}
-    title={own ? t("screen.yourScreen") : t("screen.watch", { name })}
+    aria-label={t("screen.watch", { name })}
+    title={t("screen.watch", { name })}
     onclick={() => onwatch?.()}
   >
     {#if image}
@@ -54,7 +72,19 @@
   }
 
   .screen-preview--own {
+    overflow: visible;
     cursor: not-allowed;
+  }
+
+  .screen-preview--own .screen-preview__image {
+    border-radius: 7px;
+  }
+
+  .screen-preview__viewers {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    display: flex;
   }
 
   .screen-preview--watchable:hover .screen-preview__image {

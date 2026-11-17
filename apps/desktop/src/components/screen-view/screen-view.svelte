@@ -1,58 +1,51 @@
 <script lang="ts">
+  import ViewerBadge from "@/components/viewer-badge/viewer-badge.svelte";
   import VolumeMenu from "@/components/volume-menu/volume-menu.svelte";
   import { t } from "@/i18n";
   import { preferences } from "@/stores/preferences.svelte";
 
-  type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
+  const idleAfter = 2500;
 
   let {
     stream,
     userId,
     name,
     quality,
+    viewers,
     onclose,
   }: {
     stream: MediaStream | null;
     userId: string;
     name: string;
     quality: string;
+    viewers: string[];
     onclose: () => void;
   } = $props();
 
   let menu = $state<{ x: number; y: number } | null>(null);
-  let gain = $state<GainNode | null>(null);
+  let idle = $state(false);
+  let holding = $state(false);
+  let idleTimer: number | undefined;
 
   const volume = $derived(preferences.values.streamVolumes[userId] ?? 100);
+  const label = $derived(quality ? `${name} · ${quality.replace(/\s+/g, "")}` : name);
+  const hidden = $derived(idle && !holding && !menu && !!stream);
+
+  function wake() {
+    idle = false;
+    window.clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => (idle = true), idleAfter);
+  }
+
+  function rest() {
+    window.clearTimeout(idleTimer);
+    idle = true;
+    holding = false;
+  }
 
   $effect(() => {
-    if (!stream) {
-      return;
-    }
-    const context = new AudioContext() as SinkContext;
-    const node = context.createGain();
-    node.connect(context.destination);
-    context.setSinkId?.(preferences.values.outputDevice).catch(() => undefined);
-    let source: MediaStreamAudioSourceNode | null = null;
-    const attach = () => {
-      if (!source && stream.getAudioTracks().length > 0) {
-        source = context.createMediaStreamSource(stream);
-        source.connect(node);
-      }
-    };
-    attach();
-    stream.addEventListener("addtrack", attach);
-    gain = node;
-    return () => {
-      stream.removeEventListener("addtrack", attach);
-      gain = null;
-      context.close().catch(() => undefined);
-    };
-  });
-
-  $effect(() => {
-    if (gain) {
-      gain.gain.value = (preferences.values.outputVolume / 100) * (volume / 100);
-    }
+    wake();
+    return () => window.clearTimeout(idleTimer);
   });
 
   function changeVolume(percent: number) {
@@ -96,9 +89,13 @@
 <div
   class="screen-view"
   class:screen-view--fullscreen={fullscreen}
-  style:aspect-ratio={fullscreen ? undefined : ratio}
+  class:screen-view--idle={hidden}
+  style:--ratio={ratio}
   role="presentation"
   oncontextmenu={openMenu}
+  onpointermove={wake}
+  onpointerdown={wake}
+  onpointerleave={rest}
   bind:this={frame}
 >
   <video
@@ -117,9 +114,22 @@
   {/if}
   <div class="screen-view__labels">
     <span class="screen-view__live">{t("screen.live")}</span>
-    <span class="screen-view__name">{name}{quality ? ` · ${quality}` : ""}</span>
+    <span class="screen-view__name">{label}</span>
+    <span
+      class="screen-view__viewers"
+      role="presentation"
+      onpointerenter={() => (holding = true)}
+      onpointerleave={() => (holding = false)}
+    >
+      <ViewerBadge names={viewers} />
+    </span>
   </div>
-  <div class="screen-view__actions">
+  <div
+    class="screen-view__actions"
+    role="presentation"
+    onpointerenter={() => (holding = true)}
+    onpointerleave={() => (holding = false)}
+  >
     <button
       class="screen-view__button"
       aria-label={fullscreen ? t("screen.exitFullscreen") : t("screen.fullscreen")}
@@ -188,11 +198,9 @@
 <style>
   .screen-view {
     position: relative;
-    width: auto;
-    max-width: calc(100% - 2 * var(--previews-space, 0px));
-    min-height: 120px;
-    max-height: 100%;
-    flex: 1 1 auto;
+    width: min(calc(100cqw - 2 * var(--previews-space, 0px)), calc(100cqh * var(--ratio)));
+    aspect-ratio: var(--ratio);
+    flex: none;
     display: grid;
     place-items: center;
     overflow: hidden;
@@ -204,9 +212,12 @@
   .screen-view--fullscreen {
     width: 100vw;
     height: 100vh;
-    max-width: none;
     aspect-ratio: auto;
     border-radius: 0;
+  }
+
+  .screen-view--idle {
+    cursor: none;
   }
 
   .screen-view__video {
@@ -232,6 +243,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    transition: opacity ease 0.2s;
   }
 
   .screen-view__live {
@@ -257,12 +269,24 @@
     font-size: var(--small-font-size);
   }
 
+  .screen-view__viewers {
+    flex: none;
+    display: flex;
+  }
+
   .screen-view__actions {
     position: absolute;
     right: 10px;
     top: 10px;
     display: flex;
     gap: 6px;
+    transition: opacity ease 0.2s;
+  }
+
+  .screen-view--idle .screen-view__labels,
+  .screen-view--idle .screen-view__actions:not(:has(:focus-visible)) {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .screen-view__button {

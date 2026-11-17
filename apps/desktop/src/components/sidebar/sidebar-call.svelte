@@ -1,6 +1,8 @@
 <script lang="ts">
   import CallIcon from "@/components/call-icon/call-icon.svelte";
   import { t } from "@/i18n";
+  import { setDirectCalls } from "@/stores/direct-calls";
+  import { preferences } from "@/stores/preferences.svelte";
 
   type Quality = "unknown" | "good" | "fair" | "poor";
 
@@ -18,9 +20,30 @@
   const quality = $derived<Quality>(
     latency === null ? "unknown" : latency < 100 ? "good" : latency <= 250 ? "fair" : "poor",
   );
+
+  const tip = $derived(
+    !ringing &&
+      (quality === "fair" || quality === "poor") &&
+      !preferences.values.directCalls &&
+      preferences.values.directTip,
+  );
 </script>
 
 <div class="sidebar-call">
+  {#if tip}
+    <div class="sidebar-call__tip" role="status">
+      <strong class="sidebar-call__tip-title">{t("directTip.title")}</strong>
+      <span class="sidebar-call__tip-body">{t("directTip.body", { latency: latency ?? 0 })}</span>
+      <span class="sidebar-call__tip-actions">
+        <button class="sidebar-call__tip-button" onclick={() => preferences.set("directTip", false)}>
+          {t("directTip.dismiss")}
+        </button>
+        <button class="sidebar-call__tip-button sidebar-call__tip-button--primary" onclick={() => setDirectCalls(true)}>
+          {t("directTip.enable")}
+        </button>
+      </span>
+    </div>
+  {/if}
   <button class="sidebar-call__info" class:sidebar-call__info--ringing={ringing} onclick={onopen}>
     <span class="sidebar-call__signal sidebar-call__signal--{ringing ? 'unknown' : quality}">
       <svg
@@ -36,7 +59,7 @@
           <path d={bar} class:sidebar-call__bar--empty={index >= filled[quality]} />
         {/each}
       </svg>
-      {#if latency !== null && !ringing}
+      {#if latency !== null && !ringing && !tip}
         <span class="sidebar-call__latency" role="tooltip">{latency} ms</span>
       {/if}
     </span>
@@ -49,6 +72,7 @@
 
 <style>
   .sidebar-call {
+    position: relative;
     padding: 8px 8px 8px 12px;
     display: flex;
     align-items: center;
@@ -126,6 +150,88 @@
 
   .sidebar-call__signal:hover .sidebar-call__latency {
     display: block;
+  }
+
+  .sidebar-call__tip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 10px);
+    z-index: 2;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 8px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    animation: sidebar-call__tip-in 0.18s ease-out;
+  }
+
+  .sidebar-call__tip::after {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 100%;
+    width: 10px;
+    height: 10px;
+    transform: translateY(-5px) rotate(45deg);
+    background: var(--background-color);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-call__tip-title {
+    color: var(--muted-color);
+    font-size: var(--small-font-size);
+    font-weight: 600;
+  }
+
+  .sidebar-call__tip-body {
+    color: var(--subtle-color);
+    font-size: var(--small-font-size);
+    line-height: 1.4;
+  }
+
+  .sidebar-call__tip-actions {
+    margin-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .sidebar-call__tip-button {
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--subtle-color);
+    font-size: var(--small-font-size);
+    font-weight: 600;
+    transition: all ease 0.1s;
+  }
+
+  .sidebar-call__tip-button:hover {
+    background: var(--active-color);
+    color: var(--muted-color);
+  }
+
+  .sidebar-call__tip-button--primary,
+  .sidebar-call__tip-button--primary:hover {
+    background: var(--brand-color);
+    color: var(--dark-background-color);
+  }
+
+  .sidebar-call__tip-button--primary:hover {
+    filter: brightness(1.1);
+  }
+
+  @keyframes sidebar-call__tip-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
   }
 
   .sidebar-call__hang-up {

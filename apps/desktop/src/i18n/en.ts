@@ -241,6 +241,12 @@ export const en: Messages = {
     fixes: "Fixes",
     close: "Got it",
   },
+  directTip: {
+    title: "Call lagging?",
+    body: "Latency is at {latency} ms. Turn on direct connection with friends to cut the delay. It works when both of you turn it on, and they will be able to see your IP.",
+    enable: "Turn on",
+    dismiss: "Don't show again",
+  },
   screen: {
     volume: "{name}'s stream volume",
     resize: "Resize call panel",
@@ -264,6 +270,8 @@ export const en: Messages = {
     fullscreen: "Fullscreen",
     exitFullscreen: "Exit fullscreen",
     stopWatching: "Stop watching",
+    viewers: "{count} watching",
+    watchingNow: "Watching",
     loading: "Loading stream…",
     failed: "Couldn't share your screen.",
   },

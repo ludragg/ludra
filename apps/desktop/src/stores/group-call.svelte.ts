@@ -48,6 +48,7 @@ class GroupCallStore {
   watchingId = $state<string | null>(null);
   previews = $state<Record<string, string>>({});
   ownPreview = $state<string | null>(null);
+  viewers = $state<string[]>([]);
   screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
@@ -56,6 +57,7 @@ class GroupCallStore {
   #client: Client | null = null;
   #room: VoiceRoom | null = null;
   #direct = false;
+  #peerDirect = new Map<string, boolean>();
   #started: Promise<void> = Promise.resolve();
   #mutedBeforeDeafen = false;
   #beforeTest: { muted: boolean; deafened: boolean } | null = null;
@@ -132,7 +134,9 @@ class GroupCallStore {
       await trust.prepare(joined.participantIds);
       room = new VoiceRoom(joined.iceServers, selfId);
       room.directWith = (peerId) =>
-        this.#direct && this.friendly(peerId) && !!this.#latest.get(conversationId)?.directIds.includes(peerId);
+        this.#direct &&
+        this.friendly(peerId) &&
+        (this.#peerDirect.get(peerId) ?? !!this.#latest.get(conversationId)?.directIds.includes(peerId));
       this.#room = room;
       this.current = {
         id: joined.callId,
@@ -304,6 +308,21 @@ class GroupCallStore {
     }
   }
 
+  setDirect(enabled: boolean) {
+    if (this.#direct === enabled) {
+      return;
+    }
+    this.#direct = enabled;
+    const room = this.#room;
+    if (!this.current || !room) {
+      return;
+    }
+    this.#shareState();
+    for (const peerId of room.peers()) {
+      room.refreshDirect(peerId, this.#peerDirect.has(peerId));
+    }
+  }
+
   setInputVolume(percent: number) {
     this.#room?.microphone?.setVolume(percent);
   }
@@ -379,7 +398,20 @@ class GroupCallStore {
         }
         return;
       }
-      this.states[signal.peerId] = { muted: message.muted, deafened: message.deafened, sharing: message.sharing };
+      const previous = this.states[signal.peerId];
+      if (previous && !!previous.sharing !== !!message.sharing) {
+        playCue(message.sharing ? "streamStart" : "streamEnd");
+      }
+      if (message.direct !== undefined && message.direct !== this.#peerDirect.get(signal.peerId)) {
+        this.#peerDirect.set(signal.peerId, message.direct);
+        room.refreshDirect(signal.peerId, false);
+      }
+      this.states[signal.peerId] = {
+        muted: message.muted,
+        deafened: message.deafened,
+        sharing: message.sharing,
+        viewers: message.viewers,
+      };
       if (!message.sharing) {
         delete this.previews[signal.peerId];
       }
@@ -424,7 +456,14 @@ class GroupCallStore {
       return;
     }
     const sharing = this.#shareQuality ? qualityLabel(this.#shareQuality) : null;
-    const payload = stateMessage({ muted: this.muted, deafened: this.deafened, sharing });
+    const viewers = this.#share ? [...this.#viewers] : undefined;
+    const payload = stateMessage({
+      muted: this.muted,
+      deafened: this.deafened,
+      sharing,
+      direct: this.#direct,
+      viewers,
+    });
     this.#client?.sendSignal(current.id, SignalKind.STATE, payload, "*").catch(() => undefined);
   }
 
@@ -443,6 +482,9 @@ class GroupCallStore {
       this.#capture?.stop(false);
       const stream = capture.stream;
       hintScreenTracks(stream);
+      if (!this.sharing) {
+        playCue("streamStart");
+      }
       this.#capture = capture;
       this.#share = stream;
       this.#shareQuality = quality;
@@ -485,7 +527,9 @@ class GroupCallStore {
       this.#room?.setScreen(viewer, null, null).catch(() => undefined);
     }
     this.#viewers.clear();
+    this.viewers = [];
     if (announce) {
+      playCue("streamEnd");
       this.#shareState();
     }
   }
@@ -518,11 +562,18 @@ class GroupCallStore {
     if (watching && this.#share) {
       this.#viewers.add(peerId);
       this.#capture?.setWatched(true);
+      this.#viewersChanged();
       await this.#room?.setScreen(peerId, this.#share, this.#shareQuality).catch(() => undefined);
     } else if (this.#viewers.delete(peerId)) {
       this.#capture?.setWatched(this.#viewers.size > 0);
+      this.#viewersChanged();
       await this.#room?.setScreen(peerId, null, null).catch(() => undefined);
     }
+  }
+
+  #viewersChanged() {
+    this.viewers = [...this.#viewers];
+    this.#shareState();
   }
 
   #sendPreview() {
@@ -533,12 +584,14 @@ class GroupCallStore {
   }
 
   #forget(peerId: string) {
+    this.#peerDirect.delete(peerId);
     this.#outgoing.delete(peerId);
     this.#incoming.delete(peerId);
     delete this.states[peerId];
     delete this.previews[peerId];
     if (this.#viewers.delete(peerId)) {
       this.#capture?.setWatched(this.#viewers.size > 0);
+      this.#viewersChanged();
     }
     if (this.watchingId === peerId) {
       this.watchingId = null;
@@ -585,6 +638,7 @@ class GroupCallStore {
     }
     this.#room?.close();
     this.#room = null;
+    this.#peerDirect.clear();
     this.current = null;
     this.muted = false;
     this.deafened = false;

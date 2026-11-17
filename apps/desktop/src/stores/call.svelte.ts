@@ -40,6 +40,7 @@ class CallStore {
   peerPreview = $state<string | null>(null);
   ownPreview = $state<string | null>(null);
   watching = $state(false);
+  peerWatching = $state(false);
   screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
@@ -56,10 +57,10 @@ class CallStore {
   #starting = false;
   #nextStart = 0;
   #direct = false;
+  #peerDirect = false;
   #share: MediaStream | null = null;
   #capture: NativeScreen | null = null;
   #shareQuality: ScreenQuality | null = null;
-  #peerWatching = false;
   #shareBusy = false;
   #signalsOut: Promise<void> = Promise.resolve();
   #signalsIn: Promise<void> = Promise.resolve();
@@ -109,6 +110,7 @@ class CallStore {
         await this.hangUp();
       }
       this.#direct = preferences.values.directCalls;
+      this.#peerDirect = false;
       const call = await this.#client
         .startCall(peer.id, this.#direct)
         .finally(() => (this.#nextStart = Date.now() + callInterval));
@@ -150,6 +152,7 @@ class CallStore {
     playCue("connected");
     current.status = "connecting";
     this.#direct = preferences.values.directCalls;
+    this.#peerDirect = !!current.direct;
     this.#syncRing();
     try {
       this.#ready = this.#prepare();
@@ -232,6 +235,15 @@ class CallStore {
     }
   }
 
+  setDirect(enabled: boolean) {
+    if (this.#direct === enabled) {
+      return;
+    }
+    this.#direct = enabled;
+    this.#shareState();
+    this.#voice?.setDirect(this.#direct && this.#peerDirect, true);
+  }
+
   #apply(muted: boolean, deafened: boolean) {
     this.muted = muted;
     this.deafened = deafened;
@@ -246,7 +258,7 @@ class CallStore {
       return;
     }
     const sharing = this.#shareQuality ? qualityLabel(this.#shareQuality) : null;
-    const payload = stateMessage({ muted: this.muted, deafened: this.deafened, sharing });
+    const payload = stateMessage({ muted: this.muted, deafened: this.deafened, sharing, direct: this.#direct });
     this.#client?.sendSignal(current.id, SignalKind.STATE, payload).catch(() => undefined);
   }
 
@@ -265,6 +277,9 @@ class CallStore {
       this.#capture?.stop(false);
       const stream = capture.stream;
       hintScreenTracks(stream);
+      if (!this.sharing) {
+        playCue("streamStart");
+      }
       this.#capture = capture;
       this.#share = stream;
       this.#shareQuality = quality;
@@ -278,8 +293,8 @@ class CallStore {
           this.stopShare();
         }
       };
-      capture.setWatched(this.#peerWatching);
-      if (this.#peerWatching) {
+      capture.setWatched(this.peerWatching);
+      if (this.peerWatching) {
         await this.#voice?.setScreen(stream, quality);
       }
       this.#shareState();
@@ -299,11 +314,12 @@ class CallStore {
     this.#shareQuality = null;
     this.sharing = false;
     this.ownPreview = null;
-    this.#peerWatching = false;
+    this.peerWatching = false;
     this.#capture?.stop();
     this.#capture = null;
     this.#voice?.setScreen(null, null).catch(() => undefined);
     if (announce) {
+      playCue("streamEnd");
       this.#shareState();
     }
   }
@@ -371,7 +387,7 @@ class CallStore {
   async #prepare() {
     const current = this.current!;
     const answering = current.status !== "outgoing";
-    const voice = new VoiceSession(this.#iceServers, answering, answering && this.#direct && !!current.direct);
+    const voice = new VoiceSession(this.#iceServers, answering, answering && this.#direct && this.#peerDirect);
     this.#voice = voice;
 
     voice.onSignal = (kind, payload) => {
@@ -438,9 +454,8 @@ class CallStore {
     this.#syncRing();
     try {
       await this.#ready;
-      if (direct && this.#direct) {
-        this.#voice.allowDirect();
-      }
+      this.#peerDirect = direct;
+      this.#voice.setDirect(this.#direct && direct, false);
       await this.#voice.offer();
     } catch {
       await this.hangUp();
@@ -465,8 +480,8 @@ class CallStore {
     if (signal.kind === SignalKind.STATE) {
       const message = parseVoiceMessage(signal.payload);
       if (message.kind === "watch") {
-        this.#peerWatching = message.watching && !!this.#share;
-        this.#capture?.setWatched(this.#peerWatching);
+        this.peerWatching = message.watching && !!this.#share;
+        this.#capture?.setWatched(this.peerWatching);
         if (this.#share) {
           await this.#voice.setScreen(message.watching ? this.#share : null, this.#shareQuality).catch(() => undefined);
         }
@@ -475,6 +490,13 @@ class CallStore {
       if (message.kind === "preview") {
         this.peerPreview = this.peerSharing && message.image ? message.image : null;
         return;
+      }
+      if (message.direct !== undefined && message.direct !== this.#peerDirect) {
+        this.#peerDirect = message.direct;
+        this.#voice.setDirect(this.#direct && this.#peerDirect, false);
+      }
+      if (!!message.sharing !== !!this.peerSharing) {
+        playCue(message.sharing ? "streamStart" : "streamEnd");
       }
       this.peerMuted = message.muted;
       this.peerDeafened = message.deafened;
@@ -506,7 +528,7 @@ class CallStore {
   #finish() {
     this.#beforeTest = null;
     this.stopShare(false);
-    this.#peerWatching = false;
+    this.peerWatching = false;
     this.peerSharing = null;
     this.peerPreview = null;
     this.watching = false;

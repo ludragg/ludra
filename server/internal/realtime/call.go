@@ -136,10 +136,11 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 			Muted    *bool `json:"muted"`
 			Deafened bool  `json:"deafened"`
 			Sharing  bool  `json:"sharing"`
+			Direct   *bool `json:"direct"`
 		}
 		if json.Unmarshal([]byte(req.Payload), &state) == nil && state.Muted != nil {
 			voice := voiceState{muted: *state.Muted, deafened: state.Deafened, sharing: state.Sharing}
-			conversationID, changed := s.rooms.setVoice(req.CallId, s, voice)
+			conversationID, changed := s.rooms.setVoice(req.CallId, s, voice, state.Direct)
 			if changed && s.guard.voiceChanges.Allow(s.user.Id) {
 				s.announceRoom(conversationID)
 			}

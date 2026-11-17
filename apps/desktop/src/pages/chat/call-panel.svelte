@@ -165,6 +165,7 @@
             userId={call.peer.id}
             name={call.peer.username}
             quality={calls.peerSharing ?? ""}
+            viewers={[chat.user.username]}
             onclose={() => calls.unwatch()}
           />
         </div>
@@ -184,7 +185,13 @@
       {#if previewCount > 0}
         <div class="call-panel__previews">
           {#if calls.sharing}
-            <ScreenPreview image={calls.ownPreview} name={chat.user.username} width={previewWidth(previewCount)} own />
+            <ScreenPreview
+              image={calls.ownPreview}
+              name={chat.user.username}
+              width={previewWidth(previewCount)}
+              viewers={calls.peerWatching ? [call.peer.username] : []}
+              own
+            />
           {/if}
           {#if peerLive}
             <ScreenPreview
@@ -458,6 +465,8 @@
   .call-panel--watching .call-panel__stage {
     flex: 1 1 auto;
     padding: 0 calc(var(--side) + 16px);
+    justify-content: center;
+    container-type: size;
   }
 
   .call-panel--watching .call-panel__previews {

@@ -2,6 +2,7 @@
   import { Checkbox, Select } from "@/components";
   import { localeTag, locales, t } from "@/i18n";
   import { syncAutostart, syncTray } from "@/services/desktop";
+  import { setDirectCalls } from "@/stores/direct-calls";
   import { preferences } from "@/stores/preferences.svelte";
   import SettingsGroup from "./settings-group.svelte";
 
@@ -35,11 +36,7 @@
 
   <SettingsGroup title={t("settings.connection")}>
     <div class="settings-system__connection">
-      <Checkbox
-        label={t("settings.directCalls")}
-        checked={preferences.values.directCalls}
-        onchange={(checked) => preferences.set("directCalls", checked)}
-      />
+      <Checkbox label={t("settings.directCalls")} checked={preferences.values.directCalls} onchange={setDirectCalls} />
       <span class="settings-system__hint">{t("settings.directCallsHint")}</span>
     </div>
   </SettingsGroup>
