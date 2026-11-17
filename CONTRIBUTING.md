@@ -33,7 +33,7 @@ Add the area when it helps: `feat(server): ...`, `fix(desktop): ...`.
 
 ## Code
 
-- Code, commit messages and docs are in English. The app UI is in Portuguese for now.
+- Code, commit messages and docs are in English. The app UI is in Portuguese and English, so add new strings to both `apps/desktop/src/i18n/pt.ts` and `en.ts`.
 - No comments in the code. If something needs explaining, make the code clearer instead.
 - Keep it light. Think twice before adding a dependency.
 - Components live in `apps/desktop/src/components/<name>/<name>.svelte` and use BEM class names.
