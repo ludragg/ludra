@@ -20,15 +20,17 @@ export class VoiceSession {
 
   #iceServers: IceServer[];
   #polite: boolean;
+  #direct: boolean;
   #microphone: Microphone | null = null;
   #link: PeerLink | null = null;
   #meter: number | undefined;
   #muted = false;
   #closed = false;
 
-  constructor(iceServers: IceServer[], polite: boolean) {
+  constructor(iceServers: IceServer[], polite: boolean, direct: boolean) {
     this.#iceServers = iceServers;
     this.#polite = polite;
+    this.#direct = direct;
   }
 
   async start(outputDevice: string, outputVolume: number) {
@@ -38,7 +40,7 @@ export class VoiceSession {
       throw new Error("closed");
     }
     this.#microphone = microphone;
-    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#polite);
+    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#polite, this.#direct);
     link.onScreen = (stream) => this.onScreen(stream);
     link.onSignal = (kind, payload) => this.onSignal(kind, payload);
     link.onConnected = () => this.onConnected();
@@ -52,6 +54,10 @@ export class VoiceSession {
 
   async offer() {
     await this.#link?.offer();
+  }
+
+  allowDirect() {
+    this.#link?.allowDirect();
   }
 
   async receive(kind: SignalKind, payload: string) {

@@ -6,6 +6,7 @@ import { releases, type Release } from "@/changelog";
 type Phase = "idle" | "available" | "downloading" | "installing" | "failed";
 
 const seenKey = "ludra.version";
+const attemptKey = "ludra.updating";
 const checkEvery = 15 * 60 * 1000;
 
 class UpdateStore {
@@ -13,6 +14,8 @@ class UpdateStore {
   version = $state("");
   progress = $state(0);
   release = $state<Release | null>(null);
+  stuck = $state(false);
+  readonly resumed = takeAttempt();
 
   #update: Update | null = null;
   #started = false;
@@ -63,10 +66,12 @@ class UpdateStore {
           this.progress = total ? Math.min(100, Math.round((received / total) * 100)) : 0;
         } else {
           this.phase = "installing";
+          rememberAttempt(update.version);
         }
       });
       await relaunch();
     } catch {
+      forgetAttempt();
       this.phase = "failed";
     }
   }
@@ -80,6 +85,7 @@ class UpdateStore {
     if (!current) {
       return;
     }
+    this.stuck = this.resumed !== null && this.resumed !== current;
     let previous: string | null = null;
     try {
       previous = localStorage.getItem(seenKey);
@@ -90,6 +96,32 @@ class UpdateStore {
     if (previous && previous !== current) {
       this.release = releases.find(({ version }) => version === current) ?? null;
     }
+  }
+}
+
+function rememberAttempt(version: string) {
+  try {
+    localStorage.setItem(attemptKey, version);
+  } catch {
+    return;
+  }
+}
+
+function forgetAttempt() {
+  try {
+    localStorage.removeItem(attemptKey);
+  } catch {
+    return;
+  }
+}
+
+function takeAttempt(): string | null {
+  try {
+    const attempted = localStorage.getItem(attemptKey);
+    localStorage.removeItem(attemptKey);
+    return attempted;
+  } catch {
+    return null;
   }
 }
 

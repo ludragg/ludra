@@ -26,6 +26,9 @@ type Replies = { [R in Reply as R extends { case: infer K extends string } ? K :
 type ReplyCase = Exclude<keyof Replies, "error">;
 type Settle = (reply: Reply | null) => void;
 
+const pingEvery = 10_000;
+const pingTimeout = 20_000;
+
 export type Account = {
   user: User;
   token: string;
@@ -54,7 +57,7 @@ export class Client {
   onTwoFactorChanged: (enabled: boolean) => void = () => {};
   onCallIncoming: (call: Call) => void = (call) => (this.waitingCall = call);
   waitingCall: Call | null = null;
-  onCallAccepted: (callId: string) => void = () => {};
+  onCallAccepted: (callId: string, direct: boolean) => void = () => {};
   onCallEnded: (callId: string, reason: CallEndReason) => void = () => {};
   onCallSignal: (signal: CallSignal) => void = () => {};
   onConversationUpdated: (conversation: Conversation) => void = () => {};
@@ -68,6 +71,7 @@ export class Client {
   #socket: WebSocket;
   #nextId = 1;
   #pending = new Map<number, Settle>();
+  #heartbeat: number;
 
   static connect(url: string): Promise<Client> {
     return new Promise((resolve, reject) => {
@@ -82,11 +86,8 @@ export class Client {
     this.#socket = socket;
     socket.onerror = null;
     socket.onmessage = (event) => this.#receive(event.data);
-    socket.onclose = () => {
-      this.#pending.forEach((settle) => settle(null));
-      this.#pending.clear();
-      this.onClose();
-    };
+    socket.onclose = () => this.#closed();
+    this.#heartbeat = window.setInterval(() => this.#ping(), pingEvery);
   }
 
   register(email: string, username: string, password: string, locale: string): Promise<SignIn> {
@@ -215,13 +216,13 @@ export class Client {
     return user!;
   }
 
-  async startCall(userId: string): Promise<Call> {
-    const { call } = await this.#request({ case: "startCall", value: { userId } }, "callStarted");
+  async startCall(userId: string, direct: boolean): Promise<Call> {
+    const { call } = await this.#request({ case: "startCall", value: { userId, direct } }, "callStarted");
     return call!;
   }
 
-  async answerCall(callId: string) {
-    await this.#request({ case: "answerCall", value: { callId } }, "callAccepted");
+  async answerCall(callId: string, direct: boolean) {
+    await this.#request({ case: "answerCall", value: { callId, direct } }, "callAccepted");
   }
 
   async endCall(callId: string) {
@@ -260,8 +261,8 @@ export class Client {
     await this.#request({ case: "leaveGroup", value: { conversationId } }, "conversationRemoved");
   }
 
-  joinGroupCall(conversationId: string): Promise<GroupCallJoined> {
-    return this.#request({ case: "joinGroupCall", value: { conversationId } }, "groupCallJoined");
+  joinGroupCall(conversationId: string, direct: boolean): Promise<GroupCallJoined> {
+    return this.#request({ case: "joinGroupCall", value: { conversationId, direct } }, "groupCallJoined");
   }
 
   async transferGroup(conversationId: string, userId: string): Promise<Conversation> {
@@ -295,6 +296,26 @@ export class Client {
   close() {
     this.onClose = () => {};
     this.#socket.close();
+  }
+
+  async #ping() {
+    const timer = window.setTimeout(() => this.#drop(), pingTimeout);
+    await this.#send({ case: "ping", value: {} }).catch(() => undefined);
+    window.clearTimeout(timer);
+  }
+
+  #drop() {
+    this.#socket.onclose = null;
+    this.#socket.onmessage = null;
+    this.#socket.close();
+    this.#closed();
+  }
+
+  #closed() {
+    window.clearInterval(this.#heartbeat);
+    this.#pending.forEach((settle) => settle(null));
+    this.#pending.clear();
+    this.onClose();
   }
 
   async #signIn(payload: Request): Promise<SignIn> {
@@ -389,7 +410,7 @@ export class Client {
         }
         break;
       case "callAccepted":
-        this.onCallAccepted(payload.value.callId);
+        this.onCallAccepted(payload.value.callId, payload.value.direct);
         break;
       case "callEnded":
         this.onCallEnded(payload.value.callId, payload.value.reason);

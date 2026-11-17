@@ -1,4 +1,4 @@
-import type { IceServer, SignalKind } from "@/protocol/ludra/v1/models_pb";
+import { SignalKind, type IceServer } from "@/protocol/ludra/v1/models_pb";
 import { Microphone } from "@/services/microphone";
 import { PeerLink } from "@/services/peer-link";
 import type { ScreenQuality } from "@/services/screen";
@@ -12,6 +12,7 @@ export class VoiceRoom {
   onPeerFailed: (peerId: string) => void = () => {};
   onPeerConnected: (peerId: string) => void = () => {};
   onScreen: (peerId: string, stream: MediaStream | null) => void = () => {};
+  directWith: (peerId: string) => boolean = () => false;
 
   #iceServers: IceServer[];
   #selfId: string;
@@ -47,6 +48,9 @@ export class VoiceRoom {
   }
 
   async receive(peerId: string, kind: SignalKind, payload: string) {
+    if (kind === SignalKind.OFFER && this.#links.get(peerId)?.replacedBy(payload)) {
+      this.onPeerFailed(peerId);
+    }
     await this.#link(peerId)?.receive(kind, payload);
   }
 
@@ -114,7 +118,7 @@ export class VoiceRoom {
       return null;
     }
 
-    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#selfId > peerId);
+    const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#selfId > peerId, this.directWith(peerId));
     link.onScreen = (stream) => this.onScreen(peerId, stream);
     link.onSignal = (kind, payload) => this.onSignal(peerId, kind, payload);
     link.onFailed = () => this.onPeerFailed(peerId);

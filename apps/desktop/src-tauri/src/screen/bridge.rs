@@ -1,15 +1,41 @@
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc;
 
 use tauri::Webview;
 use webview2_com::Microsoft::Web::WebView2::Win32::{
-    COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY, ICoreWebView2_17, ICoreWebView2Environment12,
+    COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_WRITE, ICoreWebView2_17, ICoreWebView2Environment12,
     ICoreWebView2SharedBuffer,
 };
 use windows::core::{HSTRING, Interface, PCWSTR};
 
 const SLOTS: usize = 3;
+const HEADER: usize = 16;
+const FREE: u8 = 0;
+const BUSY: u8 = 1;
+
+#[derive(Clone, Copy)]
+pub enum Format {
+    Bgra,
+    Nv12,
+}
+
+impl Format {
+    pub fn length(self, width: u32, height: u32) -> usize {
+        let pixels = width as usize * height as usize;
+        match self {
+            Self::Bgra => pixels * 4,
+            Self::Nv12 => pixels * 3 / 2,
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Bgra => "BGRA",
+            Self::Nv12 => "NV12",
+        }
+    }
+}
 
 struct SharedBuffer(ICoreWebView2SharedBuffer);
 
@@ -19,7 +45,6 @@ unsafe impl Sync for SharedBuffer {}
 struct Slot {
     buffer: Arc<SharedBuffer>,
     pointer: usize,
-    busy: Arc<AtomicBool>,
 }
 
 pub struct Bridge {
@@ -27,6 +52,27 @@ pub struct Bridge {
     slots: Vec<Slot>,
     size: usize,
     session: u64,
+}
+
+pub fn browser_process(webview: &Webview) -> Option<u32> {
+    let (sender, receiver) = mpsc::channel();
+    webview
+        .with_webview(move |platform| {
+            let mut id = 0u32;
+            let result = unsafe {
+                platform
+                    .controller()
+                    .CoreWebView2()
+                    .and_then(|core| core.BrowserProcessId(&mut id))
+            };
+            let _ = sender.send(result.ok().map(|()| id));
+        })
+        .ok()?;
+    receiver.recv().ok().flatten().filter(|id| *id != 0)
+}
+
+fn state(pointer: usize) -> &'static AtomicU8 {
+    unsafe { AtomicU8::from_ptr(pointer as *mut u8) }
 }
 
 impl Bridge {
@@ -38,7 +84,8 @@ impl Bridge {
                     let environment: ICoreWebView2Environment12 = platform.environment().cast()?;
                     let mut buffers = Vec::with_capacity(SLOTS);
                     for _ in 0..SLOTS {
-                        let buffer = unsafe { environment.CreateSharedBuffer(size as u64)? };
+                        let buffer =
+                            unsafe { environment.CreateSharedBuffer((HEADER + size) as u64)? };
                         let mut pointer = std::ptr::null_mut();
                         unsafe { buffer.Buffer(&mut pointer)? };
                         buffers.push((SharedBuffer(buffer), pointer as usize));
@@ -52,10 +99,12 @@ impl Bridge {
         let buffers = receiver.recv().map_err(|error| error.to_string())??;
         let slots = buffers
             .into_iter()
-            .map(|(buffer, pointer)| Slot {
-                buffer: Arc::new(buffer),
-                pointer,
-                busy: Arc::new(AtomicBool::new(false)),
+            .map(|(buffer, pointer)| {
+                state(pointer).store(FREE, Ordering::Release);
+                Slot {
+                    buffer: Arc::new(buffer),
+                    pointer,
+                }
             })
             .collect();
         Ok(Self {
@@ -70,45 +119,39 @@ impl Bridge {
         self.size
     }
 
-    pub fn release(&self, session: u64, slot: usize) {
-        if session != self.session {
-            return;
-        }
-        if let Some(slot) = self.slots.get(slot) {
-            slot.busy.store(false, Ordering::Release);
-        }
-    }
-
     pub fn send(
         &self,
         width: u32,
         height: u32,
+        format: Format,
         timestamp: u64,
         fill: impl FnOnce(&mut [u8]) -> bool,
     ) -> bool {
-        let length = (width * height * 4) as usize;
+        let length = format.length(width, height);
         if length > self.size {
             return false;
         }
         let Some((index, slot)) = self.slots.iter().enumerate().find(|(_, slot)| {
-            slot.busy
-                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
+            state(slot.pointer)
+                .compare_exchange(FREE, BUSY, Ordering::AcqRel, Ordering::Relaxed)
                 .is_ok()
         }) else {
             return false;
         };
 
-        let target = unsafe { std::slice::from_raw_parts_mut(slot.pointer as *mut u8, length) };
+        let pointer = slot.pointer;
+        let target =
+            unsafe { std::slice::from_raw_parts_mut((pointer + HEADER) as *mut u8, length) };
         if !fill(target) {
-            slot.busy.store(false, Ordering::Release);
+            state(pointer).store(FREE, Ordering::Release);
             return false;
         }
 
         let buffer = slot.buffer.clone();
-        let busy = slot.busy.clone();
         let session = self.session;
         let meta = HSTRING::from(format!(
-            r#"{{"kind":"ludra-screen","session":{session},"slot":{index},"width":{width},"height":{height},"timestamp":{timestamp}}}"#
+            r#"{{"kind":"ludra-screen","session":{session},"slot":{index},"offset":{HEADER},"format":"{}","width":{width},"height":{height},"timestamp":{timestamp}}}"#,
+            format.name()
         ));
         let posted = self.webview.with_webview(move |platform| {
             let result = (|| -> windows::core::Result<()> {
@@ -117,17 +160,17 @@ impl Bridge {
                 unsafe {
                     core.PostSharedBufferToScript(
                         &buffer.0,
-                        COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_ONLY,
+                        COREWEBVIEW2_SHARED_BUFFER_ACCESS_READ_WRITE,
                         PCWSTR(meta.as_ptr()),
                     )
                 }
             })();
             if result.is_err() {
-                busy.store(false, Ordering::Release);
+                state(pointer).store(FREE, Ordering::Release);
             }
         });
         if posted.is_err() {
-            slot.busy.store(false, Ordering::Release);
+            state(pointer).store(FREE, Ordering::Release);
             return false;
         }
         true

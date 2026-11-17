@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Logo } from "@/components";
+  import { openExternal, repositoryUrl } from "@/helpers/external";
   import { t } from "@/i18n";
   import { updates } from "@/stores/updates.svelte";
 
@@ -34,6 +35,17 @@
       <Button onclick={() => updates.install()} {@attach (button) => button.focus()}>
         {updates.phase === "failed" ? t("updates.retry") : t("updates.install")}
       </Button>
+      {#if updates.stuck || updates.phase === "failed"}
+        <a
+          class="update-gate__manual"
+          href="{repositoryUrl}/releases"
+          target="_blank"
+          rel="noreferrer"
+          onclick={openExternal}
+        >
+          {t("updates.manual")}
+        </a>
+      {/if}
     {/if}
   </div>
 </div>
@@ -88,6 +100,16 @@
     font-size: var(--small-font-size);
     color: var(--subtle-color);
     font-variant-numeric: tabular-nums;
+  }
+
+  .update-gate__manual {
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
+    transition: color ease 0.2s;
+  }
+
+  .update-gate__manual:hover {
+    color: var(--muted-color);
   }
 
   .update-gate__error {

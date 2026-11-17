@@ -3,7 +3,7 @@ mod bridge;
 mod capture;
 mod sources;
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -22,7 +22,7 @@ use sources::{Source, Target};
 
 struct Session {
     control: CaptureControl<Capture, String>,
-    bridge: Arc<Bridge>,
+    watched: Arc<AtomicBool>,
     audio: Option<SystemAudio>,
 }
 
@@ -74,9 +74,11 @@ pub async fn screen_start(
             Target::Window(_) => (width, height),
         };
         let size = (buffer_width * buffer_height * 4) as usize;
-        let bridge = Arc::new(Bridge::new(webview, size, session_id)?);
+        let excluded = bridge::browser_process(&webview).unwrap_or_else(std::process::id);
+        let watched = Arc::new(AtomicBool::new(true));
         let flags = Flags {
-            bridge: bridge.clone(),
+            bridge: Arc::new(Bridge::new(webview, size, session_id)?),
+            watched: watched.clone(),
             app,
             width,
             height,
@@ -95,8 +97,8 @@ pub async fn screen_start(
         .map_err(|error| error.to_string())?;
         Ok(Session {
             control,
-            bridge,
-            audio: SystemAudio::start(audio).ok(),
+            watched,
+            audio: SystemAudio::start(audio, excluded).ok(),
         })
     })
     .await
@@ -123,11 +125,11 @@ pub fn screen_stop(state: State<'_, ScreenState>) {
 }
 
 #[tauri::command]
-pub fn screen_release(state: State<'_, ScreenState>, session: u64, slot: usize) {
+pub fn screen_watched(state: State<'_, ScreenState>, watched: bool) {
     if let Ok(guard) = state.session.lock()
         && let Some(current) = guard.as_ref()
     {
-        current.bridge.release(session, slot);
+        current.watched.store(watched, Ordering::Release);
     }
 }
 

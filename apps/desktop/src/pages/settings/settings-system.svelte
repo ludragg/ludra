@@ -33,6 +33,17 @@
     />
   </SettingsGroup>
 
+  <SettingsGroup title={t("settings.connection")}>
+    <div class="settings-system__connection">
+      <Checkbox
+        label={t("settings.directCalls")}
+        checked={preferences.values.directCalls}
+        onchange={(checked) => preferences.set("directCalls", checked)}
+      />
+      <span class="settings-system__hint">{t("settings.directCallsHint")}</span>
+    </div>
+  </SettingsGroup>
+
   <SettingsGroup title={t("settings.language")}>
     <div class="settings-system__language">
       <Select
@@ -56,6 +67,17 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+  }
+
+  .settings-system__connection {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .settings-system__hint {
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
   }
 
   .settings-system__language {

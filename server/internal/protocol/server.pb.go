@@ -1681,6 +1681,7 @@ func (x *CallIncoming) GetCall() *Call {
 type CallAccepted struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CallId        string                 `protobuf:"bytes,1,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	Direct        bool                   `protobuf:"varint,2,opt,name=direct,proto3" json:"direct,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1720,6 +1721,13 @@ func (x *CallAccepted) GetCallId() string {
 		return x.CallId
 	}
 	return ""
+}
+
+func (x *CallAccepted) GetDirect() bool {
+	if x != nil {
+		return x.Direct
+	}
+	return false
 }
 
 type CallEnded struct {
@@ -2255,9 +2263,10 @@ const file_ludra_v1_server_proto_rawDesc = "" +
 	"\vCallStarted\x12\"\n" +
 	"\x04call\x18\x01 \x01(\v2\x0e.ludra.v1.CallR\x04call\"2\n" +
 	"\fCallIncoming\x12\"\n" +
-	"\x04call\x18\x01 \x01(\v2\x0e.ludra.v1.CallR\x04call\"'\n" +
+	"\x04call\x18\x01 \x01(\v2\x0e.ludra.v1.CallR\x04call\"?\n" +
 	"\fCallAccepted\x12\x17\n" +
-	"\acall_id\x18\x01 \x01(\tR\x06callId\"U\n" +
+	"\acall_id\x18\x01 \x01(\tR\x06callId\x12\x16\n" +
+	"\x06direct\x18\x02 \x01(\bR\x06direct\"U\n" +
 	"\tCallEnded\x12\x17\n" +
 	"\acall_id\x18\x01 \x01(\tR\x06callId\x12/\n" +
 	"\x06reason\x18\x02 \x01(\x0e2\x17.ludra.v1.CallEndReasonR\x06reason\"\x05\n" +

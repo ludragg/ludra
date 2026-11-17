@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"time"
 
 	"ludra/internal/account"
 	"ludra/internal/protocol"
@@ -26,6 +27,7 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 	}
 	if outcome.Challenge != nil {
 		s.challenge = outcome.Challenge
+		s.expires = time.Now().Add(challengeTimeout)
 		return twoFactorRequiredFrame(outcome.Challenge.Hint())
 	}
 
@@ -79,4 +81,5 @@ func (s *session) signOut() {
 	}
 	s.user = nil
 	s.sessionID = ""
+	s.expires = time.Now().Add(authTimeout)
 }

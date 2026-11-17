@@ -45,6 +45,8 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0
         with:
           workspaces: apps/desktop/src-tauri
+          shared-key: release
+          save-if: false
 
       - name: Install
         working-directory: apps/desktop

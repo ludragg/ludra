@@ -144,6 +144,7 @@ message CallIncoming {
 
 message CallAccepted {
   string call_id = 1;
+  bool direct = 2;
 }
 
 enum CallEndReason {

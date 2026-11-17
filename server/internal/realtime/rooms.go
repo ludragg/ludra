@@ -22,6 +22,7 @@ type room struct {
 	ringing        map[string]bool
 	ringTimer      *time.Timer
 	voice          map[string]voiceState
+	direct         map[string]bool
 }
 
 type voiceState struct {
@@ -57,7 +58,51 @@ func (r *rooms) busy(userID string) bool {
 	return r.byUser[userID] != nil
 }
 
-func (r *rooms) join(conversationID string, s *session) (*room, bool, bool) {
+func (r *rooms) holder(userID string) (*session, string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current := r.byUser[userID]
+	if current == nil {
+		return nil, ""
+	}
+	for s, id := range current.sessions {
+		if id == userID {
+			return s, current.conversationID
+		}
+	}
+	return nil, ""
+}
+
+func (r *rooms) reclaim(conversationID string, s *session, direct bool) *session {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	userID := s.user.Id
+	current := r.byConversation[conversationID]
+	if current == nil || r.byUser[userID] != current {
+		return nil
+	}
+	var previous *session
+	for held, id := range current.sessions {
+		if id == userID {
+			previous = held
+			break
+		}
+	}
+	if previous == nil {
+		return nil
+	}
+	delete(current.sessions, previous)
+	current.sessions[s] = userID
+	delete(current.direct, userID)
+	if direct {
+		current.direct[userID] = true
+	}
+	return previous
+}
+
+func (r *rooms) join(conversationID string, s *session, direct bool) (*room, bool, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -77,6 +122,7 @@ func (r *rooms) join(conversationID string, s *session) (*room, bool, bool) {
 			sessions:       make(map[*session]string),
 			ringing:        make(map[string]bool),
 			voice:          make(map[string]voiceState),
+			direct:         make(map[string]bool),
 			startedAt:      time.Now(),
 		}
 		r.byID[current.id] = current
@@ -85,6 +131,9 @@ func (r *rooms) join(conversationID string, s *session) (*room, bool, bool) {
 
 	current.sessions[s] = userID
 	r.byUser[userID] = current
+	if direct {
+		current.direct[userID] = true
+	}
 	delete(current.ringing, userID)
 	r.watchAlone(current)
 	return current, created, true
@@ -125,6 +174,7 @@ func (r *rooms) leave(s *session) (string, bool) {
 
 func (r *rooms) leaveLocked(found *room, s *session) bool {
 	delete(found.voice, found.sessions[s])
+	delete(found.direct, found.sessions[s])
 	delete(r.byUser, found.sessions[s])
 	delete(found.sessions, s)
 	empty := len(found.sessions) == 0
@@ -318,8 +368,11 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 		ringing = append(ringing, id)
 	}
 	sort.Strings(ringing)
-	var muted, deafened, sharing []string
+	var muted, deafened, sharing, direct []string
 	for _, id := range participants {
+		if current.direct[id] {
+			direct = append(direct, id)
+		}
 		state := current.voice[id]
 		if state.muted {
 			muted = append(muted, id)
@@ -331,5 +384,5 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 			sharing = append(sharing, id)
 		}
 	}
-	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened, SharingIds: sharing}
+	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened, SharingIds: sharing, DirectIds: direct}
 }

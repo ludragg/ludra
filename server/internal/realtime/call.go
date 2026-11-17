@@ -22,7 +22,7 @@ var signalKinds = map[protocol.SignalKind]bool{
 }
 
 func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *protocol.ServerFrame {
-	if !s.guard.callStarts.Allow(s.user.Id) {
+	if !s.guard.callCooldown.Allow(s.user.Id) || !s.guard.callStarts.Allow(s.user.Id) {
 		return tooManyRequests()
 	}
 
@@ -39,12 +39,13 @@ func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *proto
 		return failed(err)
 	}
 
+	s.displace()
 	s.voice.Lock()
 	if s.rooms.busy(s.user.Id) {
 		s.voice.Unlock()
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
 	}
-	ringing, ok := s.calls.start(s, friend.ID, s.rooms.busy(friend.ID))
+	ringing, ok := s.calls.start(s, friend.ID, s.rooms.busy(friend.ID), req.Direct)
 	s.voice.Unlock()
 	if !ok {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
@@ -58,7 +59,7 @@ func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *proto
 	s.logCall(ctx, ringing.id, friend.ID)
 	if !ringing.silent {
 		me := &protocol.User{Id: s.user.Id, Username: s.user.Username, Avatar: s.user.Avatar}
-		incoming := callIncomingFrame(&protocol.Call{Id: ringing.id, Peer: me, IceServers: calleeIce})
+		incoming := callIncomingFrame(&protocol.Call{Id: ringing.id, Peer: me, IceServers: calleeIce, Direct: req.Direct})
 		s.calls.setIncoming(ringing.id, incoming)
 		s.hub.publish([]string{friend.ID}, incoming, nil)
 	}
@@ -68,6 +69,10 @@ func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *proto
 }
 
 func (s *session) answerCall(req *protocol.AnswerCall) *protocol.ServerFrame {
+	if !s.calls.ringingFor(req.CallId, s.user.Id) {
+		return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, "call not found")
+	}
+	s.displace()
 	s.voice.Lock()
 	if s.rooms.busy(s.user.Id) {
 		s.voice.Unlock()
@@ -79,13 +84,13 @@ func (s *session) answerCall(req *protocol.AnswerCall) *protocol.ServerFrame {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_NOT_FOUND, "call not found")
 	}
 
-	answered.caller.reply(callAcceptedFrame(answered.id))
+	answered.caller.reply(callAcceptedFrame(answered.id, req.Direct))
 	s.hub.publish(
 		[]string{s.user.Id},
 		callEndedFrame(answered.id, protocol.CallEndReason_CALL_END_REASON_ANSWERED_ELSEWHERE),
 		s,
 	)
-	return callAcceptedFrame(answered.id)
+	return callAcceptedFrame(answered.id, answered.direct)
 }
 
 func (s *session) endCall(req *protocol.EndCall) *protocol.ServerFrame {
@@ -148,6 +153,22 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 	}
 	other.offer(forwarded)
 	return ackFrame()
+}
+
+func (s *session) displace() {
+	s.calls.displace(s.user.Id)
+
+	holder, conversationID := s.rooms.holder(s.user.Id)
+	if holder == nil {
+		return
+	}
+	if _, found := s.rooms.leave(holder); !found {
+		return
+	}
+	if holder != s {
+		holder.reply(groupCallUpdatedFrame(conversationID, nil))
+	}
+	s.announceRoom(conversationID)
 }
 
 func (s *session) logCall(ctx context.Context, callID, calleeID string) {

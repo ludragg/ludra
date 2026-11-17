@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TitleBar } from "@/components";
+  import { t } from "@/i18n";
   import ForgotPassword from "@/pages/auth/forgot-password.svelte";
   import Login from "@/pages/auth/login.svelte";
   import Register from "@/pages/auth/register.svelte";
@@ -43,6 +44,10 @@
       <Chat />
     {:else if chat.restoring}
       <div class="app__loading"></div>
+    {:else if chat.reconnecting}
+      <div class="app__loading">
+        <span class="app__status" role="status">{t("common.reconnecting")}</span>
+      </div>
     {:else if screen.name === "register"}
       <Register {navigate} />
     {:else if screen.name === "verify"}
@@ -79,6 +84,13 @@
 
   .app__loading {
     height: 100%;
+    display: grid;
+    place-items: center;
     background: linear-gradient(0deg, var(--dark-background-color) 50%, var(--background-color) 100%);
+  }
+
+  .app__status {
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
   }
 </style>

@@ -2,6 +2,7 @@ export const pt = {
   common: {
     connectionFailed: "Não foi possível conectar ao servidor.",
     connectionLost: "Conexão com o servidor perdida.",
+    reconnecting: "Reconectando…",
     unexpectedReply: "Resposta inesperada do servidor.",
     tooManyRequests: "Muitas tentativas. Aguarde alguns minutos.",
     invalidEmail: "Digite um e-mail válido.",
@@ -157,6 +158,7 @@ export const pt = {
     deafen: "Desligar áudio",
     undeafen: "Ligar áudio",
     busy: "{name} está em outra chamada.",
+    cooldown: "Aguarde {seconds}s para ligar de novo.",
     failed: "Não foi possível fazer a chamada.",
     microphoneDenied:
       "O Windows bloqueou o microfone. Ative em Configurações › Privacidade e segurança › Microfone › Permitir que aplicativos da área de trabalho acessem o microfone.",
@@ -231,6 +233,7 @@ export const pt = {
     downloading: "Baixando… {progress}%",
     installing: "Instalando e reiniciando…",
     failed: "Não foi possível atualizar. Verifique sua conexão e tente de novo.",
+    manual: "Não funcionou? Baixe o instalador",
     version: "Versão {version}",
     whatsNew: "Novidades do Ludra",
     features: "Novidades",
@@ -333,6 +336,10 @@ export const pt = {
     twoFactorFailed: "Não foi possível alterar a autenticação em duas etapas.",
     devices: "Dispositivos",
     processing: "Processamento",
+    connection: "Conexão",
+    directCalls: "Conexão direta com amigos",
+    directCallsHint:
+      "Reduz o atraso das chamadas ligando você direto aos seus amigos, sem passar pelo servidor. Só funciona quando os dois ativam, e esses amigos conseguem descobrir o seu endereço IP. Desligada, seu IP fica sempre escondido.",
     microphone: "Microfone",
     output: "Saída",
     systemDefault: "Padrão do sistema",

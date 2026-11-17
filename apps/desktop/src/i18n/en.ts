@@ -4,6 +4,7 @@ export const en: Messages = {
   common: {
     connectionFailed: "Couldn't connect to the server.",
     connectionLost: "Lost connection to the server.",
+    reconnecting: "Reconnecting…",
     unexpectedReply: "Unexpected reply from the server.",
     tooManyRequests: "Too many attempts. Wait a few minutes.",
     invalidEmail: "Enter a valid email.",
@@ -159,6 +160,7 @@ export const en: Messages = {
     deafen: "Deafen",
     undeafen: "Undeafen",
     busy: "{name} is in another call.",
+    cooldown: "Wait {seconds}s before calling again.",
     failed: "Couldn't place the call.",
     microphoneDenied:
       "Windows blocked the microphone. Turn it on in Settings › Privacy & security › Microphone › Let desktop apps access your microphone.",
@@ -232,6 +234,7 @@ export const en: Messages = {
     downloading: "Downloading… {progress}%",
     installing: "Installing and restarting…",
     failed: "Couldn't update. Check your connection and try again.",
+    manual: "Didn't work? Download the installer",
     version: "Version {version}",
     whatsNew: "What's new in Ludra",
     features: "New",
@@ -334,6 +337,10 @@ export const en: Messages = {
     twoFactorFailed: "Couldn't change two-step verification.",
     devices: "Devices",
     processing: "Processing",
+    connection: "Connection",
+    directCalls: "Direct connection with friends",
+    directCallsHint:
+      "Lowers call delay by connecting you straight to your friends instead of through the server. It only works when both of you turn it on, and those friends can find out your IP address. When off, your IP always stays hidden.",
     microphone: "Microphone",
     output: "Output",
     systemDefault: "System default",

@@ -12,6 +12,8 @@ type FrameInfo = {
   kind: "ludra-screen";
   session: number;
   slot: number;
+  offset: number;
+  format: "BGRA" | "NV12";
   width: number;
   height: number;
   timestamp: number;
@@ -33,6 +35,13 @@ type TrackGenerator<T> = MediaStreamTrack & { writable: WritableStream<T> };
 declare const MediaStreamTrackGenerator: {
   new (init: { kind: "video" }): TrackGenerator<VideoFrame>;
   new (init: { kind: "audio" }): TrackGenerator<AudioData>;
+};
+
+const studioColors: VideoColorSpaceInit = {
+  primaries: "bt709",
+  transfer: "bt709",
+  matrix: "bt709",
+  fullRange: false,
 };
 
 const sampleRate = 48_000;
@@ -99,6 +108,12 @@ export class NativeScreen {
 
   get stream(): MediaStream {
     return new MediaStream([this.#video, this.#audio]);
+  }
+
+  setWatched(watched: boolean) {
+    if (!this.#stopped) {
+      invoke("screen_watched", { watched }).catch(() => undefined);
+    }
   }
 
   stop(native = true) {
@@ -174,18 +189,17 @@ export class NativeScreen {
     if (info?.kind !== "ludra-screen") {
       return;
     }
-    if (info.session !== this.#session) {
-      this.#host.releaseBuffer(event.getBuffer());
-      return;
-    }
     const buffer = event.getBuffer();
     try {
-      if (!this.#stopped && (this.#writer.desiredSize ?? 1) > 0) {
-        const frame = new VideoFrame(new Uint8Array(buffer, 0, info.width * info.height * 4), {
-          format: "BGRA",
+      if (info.session === this.#session && !this.#stopped && (this.#writer.desiredSize ?? 1) > 0) {
+        const pixels = info.width * info.height;
+        const length = info.format === "NV12" ? (pixels * 3) / 2 : pixels * 4;
+        const frame = new VideoFrame(new Uint8Array(buffer, info.offset, length), {
+          format: info.format,
           codedWidth: info.width,
           codedHeight: info.height,
           timestamp: info.timestamp,
+          colorSpace: info.format === "NV12" ? studioColors : undefined,
         });
         if (performance.now() - this.#previewAt >= previewEvery) {
           this.#previewAt = performance.now();
@@ -194,8 +208,8 @@ export class NativeScreen {
         this.#writer.write(frame).catch(() => frame.close());
       }
     } finally {
+      new Uint8Array(buffer, 0, 1)[0] = 0;
       this.#host.releaseBuffer(buffer);
-      invoke("screen_release", { session: info.session, slot: info.slot }).catch(() => undefined);
     }
   }
 }

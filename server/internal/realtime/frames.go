@@ -170,9 +170,9 @@ func callIncomingFrame(call *protocol.Call) *protocol.ServerFrame {
 	}
 }
 
-func callAcceptedFrame(callID string) *protocol.ServerFrame {
+func callAcceptedFrame(callID string, direct bool) *protocol.ServerFrame {
 	return &protocol.ServerFrame{
-		Payload: &protocol.ServerFrame_CallAccepted{CallAccepted: &protocol.CallAccepted{CallId: callID}},
+		Payload: &protocol.ServerFrame_CallAccepted{CallAccepted: &protocol.CallAccepted{CallId: callID, Direct: direct}},
 	}
 }
 

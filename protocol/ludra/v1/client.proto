@@ -49,8 +49,11 @@ message ClientFrame {
     SetGroupAvatar set_group_avatar = 40;
     SetIdentityKey set_identity_key = 41;
     ListIdentityKeys list_identity_keys = 42;
+    Ping ping = 43;
   }
 }
+
+message Ping {}
 
 enum CodePurpose {
   CODE_PURPOSE_UNSPECIFIED = 0;
@@ -155,10 +158,12 @@ message SendMessage {
 
 message StartCall {
   string user_id = 1;
+  bool direct = 2;
 }
 
 message AnswerCall {
   string call_id = 1;
+  bool direct = 2;
 }
 
 message EndCall {
@@ -186,6 +191,7 @@ message LeaveGroup {
 
 message JoinGroupCall {
   string conversation_id = 1;
+  bool direct = 2;
 }
 
 message LeaveGroupCall {

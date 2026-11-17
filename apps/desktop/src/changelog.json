@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.2.0",
+    "notes": {
+      "pt": {
+        "features": [
+          "Nova opção Conexão direta com amigos (Configurações › Sistema): reduz bastante o atraso das chamadas quando você e o amigo ativam. Desligada por padrão, porque esses amigos conseguem descobrir o seu IP.",
+          "O app reconecta sozinho quando a internet cai ou a VPN muda, e volta para a chamada de grupo em que você estava.",
+          "Transmissão de tela mais leve: usa o encoder de vídeo da placa quando disponível e quase não consome nada enquanto ninguém assiste."
+        ],
+        "fixes": [
+          "Você não fica mais preso em uma chamada depois de perder a conexão, e consegue entrar de novo normalmente.",
+          "O endereço IP de quem não usa a conexão direta agora fica escondido também nos dados técnicos da chamada.",
+          "Quem assiste a uma transmissão não ouve mais a própria voz nela.",
+          "Abrir o Ludra com ele já aberto agora mostra a janela existente, em vez de abrir uma segunda cópia.",
+          "Depois de atualizar, o app sempre reabre na tela, e a tela de atualização oferece o download manual se a instalação não funcionar.",
+          "Intervalo de 5 segundos entre ligações, para ninguém ser inundado de chamadas."
+        ]
+      },
+      "en": {
+        "features": [
+          "New Direct connection with friends option (Settings › System): it greatly lowers call delay when both you and your friend turn it on. Off by default, because those friends can find out your IP.",
+          "The app reconnects by itself when the internet drops or the VPN changes, and returns to the group call you were in.",
+          "Lighter screen sharing: it uses the graphics card's video encoder when available and uses almost nothing while nobody is watching."
+        ],
+        "fixes": [
+          "You no longer get stuck in a call after losing the connection, and you can join again normally.",
+          "The IP address of people who don't use the direct connection is now also hidden from the call's technical data.",
+          "People watching a stream no longer hear their own voice in it.",
+          "Opening Ludra while it is already open now shows the existing window instead of starting a second copy.",
+          "After updating, the app always reopens on screen, and the update screen offers a manual download if the install doesn't work.",
+          "A 5-second interval between calls, so nobody gets flooded with calls."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.1.5",
     "notes": {
       "pt": {

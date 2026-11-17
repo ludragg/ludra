@@ -1,9 +1,53 @@
 import type { IceServer } from "@/protocol/ludra/v1/models_pb";
 import { SignalKind } from "@/protocol/ludra/v1/models_pb";
-import { applyScreenEncoding, preferScreenCodecs, tuneVideoBitrate, type ScreenQuality } from "@/services/screen";
+import {
+  applyScreenEncoding,
+  preferScreenCodecs,
+  tuneVideoBitrate,
+  verifyScreenEncoder,
+  type ScreenQuality,
+} from "@/services/screen";
 
 type SinkElement = HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
 type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
+
+const encoderCheckEvery = 5000;
+
+const hiddenAddress = "0.0.0.0";
+
+function iceUfrag(sdp: string | undefined): string | null {
+  return /^a=ice-ufrag:(\S+)/m.exec(sdp ?? "")?.[1] ?? null;
+}
+
+function isHost(candidate: string): boolean {
+  return candidate.includes(" typ host");
+}
+
+function scrubCandidate(candidate: string): string {
+  return candidate.replace(/ raddr \S+ rport \d+/, ` raddr ${hiddenAddress} rport 0`);
+}
+
+function scrubLine(line: string): string {
+  if (line.startsWith("a=candidate:")) {
+    return scrubCandidate(line);
+  }
+  if (line.startsWith("c=IN IP")) {
+    return `c=IN IP4 ${hiddenAddress}`;
+  }
+  if (line.startsWith("a=rtcp:")) {
+    return line.replace(/ IN IP\d \S+$/, ` IN IP4 ${hiddenAddress}`);
+  }
+  return line;
+}
+
+function describe(description: RTCSessionDescriptionInit | null): string {
+  const sdp = (description?.sdp ?? "")
+    .split("\r\n")
+    .filter((line) => !(line.startsWith("a=candidate:") && isHost(line)))
+    .map(scrubLine)
+    .join("\r\n");
+  return JSON.stringify({ type: description?.type, sdp });
+}
 
 export class PeerLink {
   onSignal: (kind: SignalKind, payload: string) => void = () => {};
@@ -13,6 +57,7 @@ export class PeerLink {
   onScreen: (stream: MediaStream | null) => void = () => {};
 
   #connection: RTCPeerConnection;
+  #iceServers: RTCIceServer[];
   #polite: boolean;
   #context = new AudioContext() as SinkContext;
   #analyser = this.#context.createAnalyser();
@@ -21,6 +66,7 @@ export class PeerLink {
   #buffer = new Float32Array(this.#analyser.fftSize);
   #pending: RTCIceCandidateInit[] = [];
   #stats: number | undefined;
+  #encoderCheck: number | undefined;
   #outputVolume = 1;
   #peerVolume = 1;
   #deafened = false;
@@ -33,17 +79,20 @@ export class PeerLink {
   #makingOffer = false;
   #ignoreOffer = false;
 
-  constructor(iceServers: IceServer[], track: MediaStreamTrack, polite: boolean) {
+  constructor(iceServers: IceServer[], track: MediaStreamTrack, polite: boolean, direct: boolean) {
     this.#polite = polite;
+    this.#iceServers = iceServers.map(({ urls, username, credential }) => ({ urls, username, credential }));
     this.#connection = new RTCPeerConnection({
-      iceServers: iceServers.map(({ urls, username, credential }) => ({ urls, username, credential })),
-      iceTransportPolicy: "relay",
+      iceServers: this.#iceServers,
+      iceTransportPolicy: direct ? "all" : "relay",
     });
     this.#connection.addTrack(track, new MediaStream([track]));
 
     this.#connection.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        this.onSignal(SignalKind.CANDIDATE, JSON.stringify(candidate.toJSON()));
+      if (candidate && !isHost(candidate.candidate)) {
+        const shared = candidate.toJSON();
+        shared.candidate = scrubCandidate(candidate.candidate);
+        this.onSignal(SignalKind.CANDIDATE, JSON.stringify(shared));
       }
     };
     this.#connection.onconnectionstatechange = () => {
@@ -69,7 +118,17 @@ export class PeerLink {
     const offer = await this.#connection.createOffer();
     offer.sdp = tuneVideoBitrate(offer.sdp ?? "");
     await this.#connection.setLocalDescription(offer);
-    this.onSignal(SignalKind.OFFER, JSON.stringify(offer));
+    this.onSignal(SignalKind.OFFER, describe(offer));
+  }
+
+  replacedBy(payload: string): boolean {
+    const current = iceUfrag(this.#connection.remoteDescription?.sdp);
+    const incoming = iceUfrag((JSON.parse(payload) as RTCSessionDescriptionInit).sdp);
+    return !!current && !!incoming && current !== incoming;
+  }
+
+  allowDirect() {
+    this.#connection.setConfiguration({ iceServers: this.#iceServers, iceTransportPolicy: "all" });
   }
 
   async receive(kind: SignalKind, payload: string) {
@@ -105,7 +164,7 @@ export class PeerLink {
       const answer = await this.#connection.createAnswer();
       answer.sdp = tuneVideoBitrate(answer.sdp ?? "");
       await this.#connection.setLocalDescription(answer);
-      this.onSignal(SignalKind.ANSWER, JSON.stringify(this.#connection.localDescription));
+      this.onSignal(SignalKind.ANSWER, describe(this.#connection.localDescription));
     }
     await this.#applyEncoding();
   }
@@ -116,6 +175,7 @@ export class PeerLink {
 
   async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
     this.#screenQuality = stream ? quality : null;
+    window.clearInterval(this.#encoderCheck);
     if (!stream || !quality) {
       await Promise.all(this.#screenSenders.map((sender) => sender.replaceTrack(null).catch(() => undefined)));
       return;
@@ -135,6 +195,17 @@ export class PeerLink {
       }
     }
     await this.#applyEncoding();
+    window.clearInterval(this.#encoderCheck);
+    if (this.#connection.connectionState === "closed") {
+      return;
+    }
+    this.#encoderCheck = window.setInterval(() => {
+      for (const sender of this.#screenSenders) {
+        if (this.#senderKinds.get(sender) === "video") {
+          verifyScreenEncoder(sender);
+        }
+      }
+    }, encoderCheckEvery);
   }
 
   async #applyEncoding() {
@@ -180,6 +251,7 @@ export class PeerLink {
 
   close() {
     window.clearInterval(this.#stats);
+    window.clearInterval(this.#encoderCheck);
     this.#connection.close();
     this.#remote.pause();
     this.#remote.srcObject = null;
@@ -196,7 +268,7 @@ export class PeerLink {
       const offer = await this.#connection.createOffer();
       offer.sdp = tuneVideoBitrate(offer.sdp ?? "");
       await this.#connection.setLocalDescription(offer);
-      this.onSignal(SignalKind.OFFER, JSON.stringify(this.#connection.localDescription));
+      this.onSignal(SignalKind.OFFER, describe(this.#connection.localDescription));
     } catch {
       return;
     } finally {

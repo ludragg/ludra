@@ -1,5 +1,6 @@
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter};
@@ -7,25 +8,29 @@ use windows::Win32::Foundation::TRUE;
 use windows::Win32::Graphics::Direct3D11::{
     D3D11_BIND_RENDER_TARGET, D3D11_CPU_ACCESS_READ, D3D11_MAP_READ, D3D11_MAPPED_SUBRESOURCE,
     D3D11_TEXTURE2D_DESC, D3D11_USAGE_DEFAULT, D3D11_USAGE_STAGING,
-    D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, D3D11_VIDEO_PROCESSOR_CONTENT_DESC,
+    D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE, D3D11_VIDEO_PROCESSOR_COLOR_SPACE,
+    D3D11_VIDEO_PROCESSOR_CONTENT_DESC, D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT,
     D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC, D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC,
-    D3D11_VIDEO_PROCESSOR_STREAM, D3D11_VIDEO_USAGE_OPTIMAL_QUALITY,
-    D3D11_VPIV_DIMENSION_TEXTURE2D, D3D11_VPOV_DIMENSION_TEXTURE2D, ID3D11Device,
-    ID3D11DeviceContext, ID3D11Texture2D, ID3D11VideoContext, ID3D11VideoDevice,
-    ID3D11VideoProcessor, ID3D11VideoProcessorEnumerator, ID3D11VideoProcessorOutputView,
+    D3D11_VIDEO_PROCESSOR_STREAM, D3D11_VIDEO_USAGE_OPTIMAL_SPEED, D3D11_VPIV_DIMENSION_TEXTURE2D,
+    D3D11_VPOV_DIMENSION_TEXTURE2D, ID3D11Device, ID3D11DeviceContext, ID3D11Texture2D,
+    ID3D11VideoContext, ID3D11VideoDevice, ID3D11VideoProcessor, ID3D11VideoProcessorEnumerator,
+    ID3D11VideoProcessorOutputView,
 };
-use windows::Win32::Graphics::Dxgi::Common::{
-    DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_RATIONAL, DXGI_SAMPLE_DESC,
-};
+use windows::Win32::Graphics::Dxgi::Common::{DXGI_FORMAT_NV12, DXGI_RATIONAL, DXGI_SAMPLE_DESC};
 use windows::core::Interface;
 use windows_capture::capture::{Context, GraphicsCaptureApiHandler};
 use windows_capture::frame::Frame;
 use windows_capture::graphics_capture_api::InternalCaptureControl;
 
-use super::bridge::Bridge;
+use super::bridge::{Bridge, Format};
+
+const IDLE_INTERVAL: Duration = Duration::from_secs(1);
+const FULL_RANGE_RGB: u32 = 0;
+const LIMITED_RANGE_BT709: u32 = 1 << 2 | 1 << 4;
 
 pub struct Flags {
     pub bridge: Arc<Bridge>,
+    pub watched: Arc<AtomicBool>,
     pub app: AppHandle,
     pub width: u32,
     pub height: u32,
@@ -34,6 +39,7 @@ pub struct Flags {
 
 pub struct Capture {
     bridge: Arc<Bridge>,
+    watched: Arc<AtomicBool>,
     app: AppHandle,
     device: ID3D11Device,
     context: ID3D11DeviceContext,
@@ -72,9 +78,10 @@ impl Capture {
         let scaler = self.scaler.as_ref().expect("scaler exists");
         scaler.process(frame.as_raw_texture())?;
         let context = &self.context;
-        self.bridge.send(width, height, timestamp, |target| {
-            scaler.read(context, target).is_ok()
-        });
+        self.bridge
+            .send(width, height, Format::Nv12, timestamp, |target| {
+                scaler.read(context, target).is_ok()
+            });
         Ok(())
     }
 }
@@ -114,6 +121,7 @@ impl GraphicsCaptureApiHandler for Capture {
         let flags = ctx.flags;
         Ok(Self {
             bridge: flags.bridge,
+            watched: flags.watched,
             app: flags.app,
             device: ctx.device,
             context: ctx.device_context,
@@ -133,9 +141,14 @@ impl GraphicsCaptureApiHandler for Capture {
         _control: InternalCaptureControl,
     ) -> Result<(), Self::Error> {
         let now = Instant::now();
+        let interval = if self.watched.load(Ordering::Relaxed) {
+            self.interval
+        } else {
+            IDLE_INTERVAL
+        };
         if self
             .last
-            .is_some_and(|last| now.duration_since(last) < self.interval)
+            .is_some_and(|last| now.duration_since(last) < interval)
         {
             return Ok(());
         }
@@ -161,17 +174,18 @@ impl GraphicsCaptureApiHandler for Capture {
             };
             let pitch = buffer.row_pitch() as usize;
             let source = buffer.as_raw_buffer();
-            self.bridge.send(width, height, timestamp, |target| {
-                scale_on_cpu(
-                    source,
-                    pitch,
-                    input_width,
-                    input_height,
-                    target,
-                    width,
-                    height,
-                )
-            });
+            self.bridge
+                .send(width, height, Format::Bgra, timestamp, |target| {
+                    scale_on_cpu(
+                        source,
+                        pitch,
+                        input_width,
+                        input_height,
+                        target,
+                        width,
+                        height,
+                    )
+                });
         }
         Ok(())
     }
@@ -227,10 +241,24 @@ impl Scaler {
             OutputFrameRate: rate,
             OutputWidth: width,
             OutputHeight: height,
-            Usage: D3D11_VIDEO_USAGE_OPTIMAL_QUALITY,
+            Usage: D3D11_VIDEO_USAGE_OPTIMAL_SPEED,
         };
         let enumerator = unsafe { video_device.CreateVideoProcessorEnumerator(&content)? };
+        let support = unsafe { enumerator.CheckVideoProcessorFormat(DXGI_FORMAT_NV12)? };
+        if support & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT.0 as u32 == 0 {
+            return Err(windows::core::Error::empty());
+        }
         let processor = unsafe { video_device.CreateVideoProcessor(&enumerator, 0)? };
+        let input_space = D3D11_VIDEO_PROCESSOR_COLOR_SPACE {
+            _bitfield: FULL_RANGE_RGB,
+        };
+        let output_space = D3D11_VIDEO_PROCESSOR_COLOR_SPACE {
+            _bitfield: LIMITED_RANGE_BT709,
+        };
+        unsafe {
+            video_context.VideoProcessorSetStreamColorSpace(&processor, 0, &input_space);
+            video_context.VideoProcessorSetOutputColorSpace(&processor, &output_space);
+        }
 
         let output = texture(
             device,
@@ -320,17 +348,16 @@ impl Scaler {
             context.CopyResource(&self.staging, &self.output);
             let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
             context.Map(&self.staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))?;
-            let row = (self.width * 4) as usize;
+            let row = self.width as usize;
+            let rows = self.height as usize * 3 / 2;
             let pitch = mapped.RowPitch as usize;
-            if mapped.pData.is_null() || pitch < row || target.len() < row * self.height as usize {
+            if mapped.pData.is_null() || pitch < row || target.len() < row * rows {
                 context.Unmap(&self.staging, 0);
                 return Err(windows::core::Error::empty());
             }
-            let source = std::slice::from_raw_parts(
-                mapped.pData as *const u8,
-                pitch * (self.height as usize - 1) + row,
-            );
-            for y in 0..self.height as usize {
+            let source =
+                std::slice::from_raw_parts(mapped.pData as *const u8, pitch * (rows - 1) + row);
+            for y in 0..rows {
                 target[y * row..(y + 1) * row].copy_from_slice(&source[y * pitch..y * pitch + row]);
             }
             context.Unmap(&self.staging, 0);
@@ -352,7 +379,7 @@ fn texture(
         Height: height,
         MipLevels: 1,
         ArraySize: 1,
-        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+        Format: DXGI_FORMAT_NV12,
         SampleDesc: DXGI_SAMPLE_DESC {
             Count: 1,
             Quality: 0,

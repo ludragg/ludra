@@ -472,6 +472,7 @@ type GroupCall struct {
 	MutedIds       []string               `protobuf:"bytes,6,rep,name=muted_ids,json=mutedIds,proto3" json:"muted_ids,omitempty"`
 	DeafenedIds    []string               `protobuf:"bytes,7,rep,name=deafened_ids,json=deafenedIds,proto3" json:"deafened_ids,omitempty"`
 	SharingIds     []string               `protobuf:"bytes,8,rep,name=sharing_ids,json=sharingIds,proto3" json:"sharing_ids,omitempty"`
+	DirectIds      []string               `protobuf:"bytes,9,rep,name=direct_ids,json=directIds,proto3" json:"direct_ids,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -551,6 +552,13 @@ func (x *GroupCall) GetDeafenedIds() []string {
 func (x *GroupCall) GetSharingIds() []string {
 	if x != nil {
 		return x.SharingIds
+	}
+	return nil
+}
+
+func (x *GroupCall) GetDirectIds() []string {
+	if x != nil {
+		return x.DirectIds
 	}
 	return nil
 }
@@ -912,6 +920,7 @@ type Call struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Peer          *User                  `protobuf:"bytes,2,opt,name=peer,proto3" json:"peer,omitempty"`
 	IceServers    []*IceServer           `protobuf:"bytes,3,rep,name=ice_servers,json=iceServers,proto3" json:"ice_servers,omitempty"`
+	Direct        bool                   `protobuf:"varint,4,opt,name=direct,proto3" json:"direct,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -965,6 +974,13 @@ func (x *Call) GetIceServers() []*IceServer {
 		return x.IceServers
 	}
 	return nil
+}
+
+func (x *Call) GetDirect() bool {
+	if x != nil {
+		return x.Direct
+	}
+	return false
 }
 
 type CallSignal struct {
@@ -1044,7 +1060,7 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12.\n" +
 	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\x12\x16\n" +
-	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\x87\x02\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xa6\x02\n" +
 	"\tGroupCall\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fparticipant_ids\x18\x02 \x03(\tR\x0eparticipantIds\x129\n" +
@@ -1055,7 +1071,9 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\tmuted_ids\x18\x06 \x03(\tR\bmutedIds\x12!\n" +
 	"\fdeafened_ids\x18\a \x03(\tR\vdeafenedIds\x12\x1f\n" +
 	"\vsharing_ids\x18\b \x03(\tR\n" +
-	"sharingIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
+	"sharingIds\x12\x1d\n" +
+	"\n" +
+	"direct_ids\x18\t \x03(\tR\tdirectIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -1090,12 +1108,13 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1e\n" +
 	"\n" +
 	"credential\x18\x03 \x01(\tR\n" +
-	"credential\"p\n" +
+	"credential\"\x88\x01\n" +
 	"\x04Call\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\x04peer\x18\x02 \x01(\v2\x0e.ludra.v1.UserR\x04peer\x124\n" +
 	"\vice_servers\x18\x03 \x03(\v2\x13.ludra.v1.IceServerR\n" +
-	"iceServers\"\x82\x01\n" +
+	"iceServers\x12\x16\n" +
+	"\x06direct\x18\x04 \x01(\bR\x06direct\"\x82\x01\n" +
 	"\n" +
 	"CallSignal\x12\x17\n" +
 	"\acall_id\x18\x01 \x01(\tR\x06callId\x12(\n" +

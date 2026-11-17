@@ -14,12 +14,15 @@ import { trust } from "@/stores/trust.svelte";
 
 export type CallStatus = "outgoing" | "incoming" | "connecting" | "active";
 
+const callInterval = 5000;
+
 export type Current = {
   id: string;
   peer: User;
   status: CallStatus;
   startedAt: number | null;
   quiet?: boolean;
+  direct?: boolean;
   hidden?: boolean;
 };
 
@@ -51,6 +54,8 @@ class CallStore {
   #beforeTest: { muted: boolean; deafened: boolean } | null = null;
   #errorTimer: number | undefined;
   #starting = false;
+  #nextStart = 0;
+  #direct = false;
   #share: MediaStream | null = null;
   #capture: NativeScreen | null = null;
   #shareQuality: ScreenQuality | null = null;
@@ -62,7 +67,7 @@ class CallStore {
   attach(client: Client) {
     this.#client = client;
     client.onCallIncoming = (call) => this.#incoming(call);
-    client.onCallAccepted = (callId) => this.#accepted(callId);
+    client.onCallAccepted = (callId, direct) => this.#accepted(callId, direct);
     client.onCallEnded = (callId) => this.#ended(callId);
     client.onCallSignal = (signal) => this.#signal(signal);
     if (client.waitingCall) {
@@ -77,14 +82,21 @@ class CallStore {
     this.#client = null;
   }
 
+  coolingDown(peer: User): boolean {
+    const wait = this.#nextStart - Date.now();
+    if (wait <= 0 || this.#callsBack(peer)) {
+      return false;
+    }
+    this.#showError(t("call.cooldown", { seconds: Math.ceil(wait / 1000) }));
+    return true;
+  }
+
   async start(peer: User) {
-    const calledBack =
-      this.waiting?.peer.id === peer.id || (this.current?.status === "incoming" && this.current.peer.id === peer.id);
-    if (calledBack) {
+    if (this.#callsBack(peer)) {
       await this.answer();
       return;
     }
-    if (!this.#client || this.#starting || this.current?.peer.id === peer.id) {
+    if (!this.#client || this.#starting || this.current?.peer.id === peer.id || this.coolingDown(peer)) {
       return;
     }
     this.#starting = true;
@@ -96,7 +108,10 @@ class CallStore {
       if (this.current) {
         await this.hangUp();
       }
-      const call = await this.#client.startCall(peer.id);
+      this.#direct = preferences.values.directCalls;
+      const call = await this.#client
+        .startCall(peer.id, this.#direct)
+        .finally(() => (this.#nextStart = Date.now() + callInterval));
       mine = call.id;
       this.#iceServers = call.iceServers;
       this.current = { id: call.id, peer: call.peer ?? peer, status: "outgoing", startedAt: null };
@@ -116,6 +131,12 @@ class CallStore {
     }
   }
 
+  #callsBack(peer: User): boolean {
+    return (
+      this.waiting?.peer.id === peer.id || (this.current?.status === "incoming" && this.current.peer.id === peer.id)
+    );
+  }
+
   async answer() {
     if (this.waiting) {
       await this.hangUp();
@@ -128,11 +149,12 @@ class CallStore {
 
     playCue("connected");
     current.status = "connecting";
+    this.#direct = preferences.values.directCalls;
     this.#syncRing();
     try {
       this.#ready = this.#prepare();
       await this.#ready;
-      await this.#client.answerCall(current.id);
+      await this.#client.answerCall(current.id, this.#direct);
     } catch (cause) {
       if (this.current?.id !== current.id) {
         return;
@@ -256,6 +278,7 @@ class CallStore {
           this.stopShare();
         }
       };
+      capture.setWatched(this.#peerWatching);
       if (this.#peerWatching) {
         await this.#voice?.setScreen(stream, quality);
       }
@@ -347,7 +370,8 @@ class CallStore {
 
   async #prepare() {
     const current = this.current!;
-    const voice = new VoiceSession(this.#iceServers, current.status !== "outgoing");
+    const answering = current.status !== "outgoing";
+    const voice = new VoiceSession(this.#iceServers, answering, answering && this.#direct && !!current.direct);
     this.#voice = voice;
 
     voice.onSignal = (kind, payload) => {
@@ -384,7 +408,14 @@ class CallStore {
       return;
     }
     const quiet = focus.busy;
-    const incoming: Current = { id: call.id, peer: call.peer, status: "incoming", startedAt: null, quiet };
+    const incoming: Current = {
+      id: call.id,
+      peer: call.peer,
+      status: "incoming",
+      startedAt: null,
+      quiet,
+      direct: call.direct,
+    };
     if (this.current) {
       this.#waitingIce = call.iceServers;
       this.waiting = incoming;
@@ -398,7 +429,7 @@ class CallStore {
     }
   }
 
-  async #accepted(callId: string) {
+  async #accepted(callId: string, direct: boolean) {
     if (this.current?.id !== callId || !this.#voice) {
       return;
     }
@@ -407,6 +438,9 @@ class CallStore {
     this.#syncRing();
     try {
       await this.#ready;
+      if (direct && this.#direct) {
+        this.#voice.allowDirect();
+      }
       await this.#voice.offer();
     } catch {
       await this.hangUp();
@@ -432,6 +466,7 @@ class CallStore {
       const message = parseVoiceMessage(signal.payload);
       if (message.kind === "watch") {
         this.#peerWatching = message.watching && !!this.#share;
+        this.#capture?.setWatched(this.#peerWatching);
         if (this.#share) {
           await this.#voice.setScreen(message.watching ? this.#share : null, this.#shareQuality).catch(() => undefined);
         }

@@ -12,6 +12,7 @@ const (
 	maxConnectionsPerIP = 20
 	authTimeout         = 30 * time.Second
 	challengeTimeout    = 15 * time.Minute
+	callInterval        = 5 * time.Second
 )
 
 type guard struct {
@@ -30,6 +31,7 @@ type guard struct {
 	passwordChecks  *limit.Limiter
 	avatarChanges   *limit.Limiter
 	callStarts      *limit.Limiter
+	callCooldown    *limit.Limiter
 	signals         *limit.Limiter
 	groupChanges    *limit.Limiter
 	roomStarts      *limit.Limiter
@@ -56,6 +58,7 @@ func newGuard() *guard {
 		passwordChecks:  limit.New(10, 15*time.Minute),
 		avatarChanges:   limit.New(10, 10*time.Minute),
 		callStarts:      limit.New(10, time.Minute),
+		callCooldown:    limit.New(1, callInterval),
 		signals:         limit.New(100, 10*time.Second),
 		groupChanges:    limit.New(30, 10*time.Minute),
 		roomStarts:      limit.New(3, 5*time.Minute),

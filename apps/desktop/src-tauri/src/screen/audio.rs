@@ -51,13 +51,13 @@ pub struct SystemAudio {
 }
 
 impl SystemAudio {
-    pub fn start(channel: Channel<InvokeResponseBody>) -> Result<Self, String> {
+    pub fn start(channel: Channel<InvokeResponseBody>, excluded: u32) -> Result<Self, String> {
         let running = Arc::new(AtomicBool::new(true));
         let (ready_sender, ready_receiver) = mpsc::channel();
         let flag = running.clone();
         let thread = std::thread::spawn(move || {
             let initialized = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) }.is_ok();
-            match open() {
+            match open(excluded) {
                 Ok((client, capture)) => {
                     let _ = ready_sender.send(Ok(()));
                     pump(&client, &capture, &flag, &channel);
@@ -90,12 +90,12 @@ impl Drop for SystemAudio {
     }
 }
 
-fn open() -> windows::core::Result<(IAudioClient, IAudioCaptureClient)> {
+fn open(excluded: u32) -> windows::core::Result<(IAudioClient, IAudioCaptureClient)> {
     let mut params = AUDIOCLIENT_ACTIVATION_PARAMS {
         ActivationType: AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK,
         Anonymous: AUDIOCLIENT_ACTIVATION_PARAMS_0 {
             ProcessLoopbackParams: AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS {
-                TargetProcessId: std::process::id(),
+                TargetProcessId: excluded,
                 ProcessLoopbackMode: PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE,
             },
         },

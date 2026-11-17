@@ -7,6 +7,7 @@ import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { t } from "@/i18n";
 import { preferences } from "@/stores/preferences.svelte";
+import { updates } from "@/stores/updates.svelte";
 
 const desktop = isTauri();
 const appWindow = desktop ? getCurrentWindow() : null;
@@ -28,7 +29,7 @@ export async function startDesktop() {
   );
   const autostarted = await invoke<boolean>("launched_by_autostart").catch(() => false);
 
-  if (!autostarted || !preferences.values.startMinimized) {
+  if (!autostarted || !preferences.values.startMinimized || updates.resumed !== null) {
     await appWindow.show();
   } else if (!trayReady) {
     await appWindow.show();

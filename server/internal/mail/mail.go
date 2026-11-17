@@ -2,6 +2,7 @@ package mail
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -9,7 +10,10 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+	"time"
 )
+
+const sendTimeout = 10 * time.Second
 
 type Sender interface {
 	Send(ctx context.Context, to, subject, body string) error
@@ -41,7 +45,7 @@ type smtpSender struct {
 	cfg Config
 }
 
-func (s smtpSender) Send(_ context.Context, to, subject, body string) error {
+func (s smtpSender) Send(ctx context.Context, to, subject, body string) error {
 	if strings.ContainsAny(to+subject, "\r\n") {
 		return errors.New("invalid email header")
 	}
@@ -55,12 +59,62 @@ func (s smtpSender) Send(_ context.Context, to, subject, body string) error {
 	}
 	message := strings.Join(headers, "\r\n") + "\r\n\r\n" + strings.ReplaceAll(body, "\n", "\r\n")
 
-	auth := smtp.PlainAuth("", s.cfg.Username, s.cfg.Password, s.cfg.Host)
-	address := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
-	if err := smtp.SendMail(address, auth, envelope(s.cfg.From), []string{to}, []byte(message)); err != nil {
+	if err := s.deliver(ctx, to, []byte(message)); err != nil {
 		return fmt.Errorf("send email: %w", err)
 	}
 	return nil
+}
+
+func (s smtpSender) deliver(ctx context.Context, to string, message []byte) error {
+	ctx, cancel := context.WithTimeout(ctx, sendTimeout)
+	defer cancel()
+
+	address := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
+	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", address)
+	if err != nil {
+		return err
+	}
+	deadline, _ := ctx.Deadline()
+	if err := conn.SetDeadline(deadline); err != nil {
+		conn.Close()
+		return err
+	}
+
+	client, err := smtp.NewClient(conn, s.cfg.Host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		if err := client.StartTLS(&tls.Config{ServerName: s.cfg.Host}); err != nil {
+			return err
+		}
+	}
+	if ok, _ := client.Extension("AUTH"); ok {
+		if err := client.Auth(smtp.PlainAuth("", s.cfg.Username, s.cfg.Password, s.cfg.Host)); err != nil {
+			return err
+		}
+	}
+	if err := client.Mail(envelope(s.cfg.From)); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+	writer, err := client.Data()
+	if err != nil {
+		return err
+	}
+	if _, err := writer.Write(message); err != nil {
+		writer.Close()
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+	return client.Quit()
 }
 
 func envelope(from string) string {

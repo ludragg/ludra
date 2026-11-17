@@ -27,6 +27,13 @@ export type Ringing = {
   hidden?: boolean;
 };
 
+export type VoiceSnapshot = {
+  conversationId: string;
+  muted: boolean;
+  deafened: boolean;
+  mutedBeforeDeafen: boolean;
+};
+
 const ringTimeout = 30_000;
 
 class GroupCallStore {
@@ -44,9 +51,11 @@ class GroupCallStore {
   screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
+  friendly: (userId: string) => boolean = () => false;
 
   #client: Client | null = null;
   #room: VoiceRoom | null = null;
+  #direct = false;
   #started: Promise<void> = Promise.resolve();
   #mutedBeforeDeafen = false;
   #beforeTest: { muted: boolean; deafened: boolean } | null = null;
@@ -84,6 +93,25 @@ class GroupCallStore {
     this.#client = null;
   }
 
+  snapshot(): VoiceSnapshot | null {
+    if (!this.current) {
+      return null;
+    }
+    return {
+      conversationId: this.current.conversationId,
+      muted: this.muted,
+      deafened: this.deafened,
+      mutedBeforeDeafen: this.#mutedBeforeDeafen,
+    };
+  }
+
+  async restore(snapshot: VoiceSnapshot, selfId: string) {
+    this.muted = snapshot.muted;
+    this.deafened = snapshot.deafened;
+    this.#mutedBeforeDeafen = snapshot.mutedBeforeDeafen;
+    await this.join(snapshot.conversationId, selfId);
+  }
+
   async join(conversationId: string, selfId: string) {
     if (!this.#client || this.joining || this.current?.conversationId === conversationId) {
       return;
@@ -99,9 +127,12 @@ class GroupCallStore {
     this.joining = true;
     let room: VoiceRoom | null = null;
     try {
-      const joined = await this.#client.joinGroupCall(conversationId);
+      this.#direct = preferences.values.directCalls;
+      const joined = await this.#client.joinGroupCall(conversationId, this.#direct);
       await trust.prepare(joined.participantIds);
       room = new VoiceRoom(joined.iceServers, selfId);
+      room.directWith = (peerId) =>
+        this.#direct && this.friendly(peerId) && !!this.#latest.get(conversationId)?.directIds.includes(peerId);
       this.#room = room;
       this.current = {
         id: joined.callId,
@@ -114,6 +145,7 @@ class GroupCallStore {
       this.#started = room.start();
       await this.#started;
       room.setMuted(this.muted);
+      room.setDeafened(this.deafened);
       const alone = this.current?.participantIds.length === 1;
       if (alone && this.#latest.get(conversationId)?.ringingIds.length) {
         this.#startCalling();
@@ -425,6 +457,7 @@ class GroupCallStore {
           this.stopShare();
         }
       };
+      capture.setWatched(this.#viewers.size > 0);
       for (const viewer of this.#viewers) {
         await room.setScreen(viewer, stream, quality).catch(() => undefined);
       }
@@ -484,8 +517,10 @@ class GroupCallStore {
   async #setViewer(peerId: string, watching: boolean) {
     if (watching && this.#share) {
       this.#viewers.add(peerId);
+      this.#capture?.setWatched(true);
       await this.#room?.setScreen(peerId, this.#share, this.#shareQuality).catch(() => undefined);
     } else if (this.#viewers.delete(peerId)) {
+      this.#capture?.setWatched(this.#viewers.size > 0);
       await this.#room?.setScreen(peerId, null, null).catch(() => undefined);
     }
   }
@@ -502,7 +537,9 @@ class GroupCallStore {
     this.#incoming.delete(peerId);
     delete this.states[peerId];
     delete this.previews[peerId];
-    this.#viewers.delete(peerId);
+    if (this.#viewers.delete(peerId)) {
+      this.#capture?.setWatched(this.#viewers.size > 0);
+    }
     if (this.watchingId === peerId) {
       this.watchingId = null;
       this.screen = null;

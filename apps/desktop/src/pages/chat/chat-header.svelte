@@ -10,6 +10,9 @@
   let { peer }: { peer: User } = $props();
 
   async function call() {
+    if (calls.coolingDown(peer)) {
+      return;
+    }
     await groupCall.leave();
     await calls.start(peer);
   }

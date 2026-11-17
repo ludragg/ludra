@@ -23,6 +23,7 @@ export type Preferences = {
   shareFps: number;
   watchHeight: number;
   callHeight: number;
+  directCalls: boolean;
 };
 
 const storageKey = "ludra.preferences";
@@ -50,6 +51,7 @@ const defaults: Preferences = {
   shareFps: 60,
   watchHeight: 420,
   callHeight: 0,
+  directCalls: false,
 };
 
 class PreferencesStore {

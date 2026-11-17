@@ -154,21 +154,24 @@ func (s *session) joinGroupCall(ctx context.Context, req *protocol.JoinGroupCall
 	if err != nil {
 		return failed(err)
 	}
+	if previous := s.rooms.reclaim(group.ID, s, req.Direct); previous != nil {
+		if previous != s {
+			previous.reply(groupCallUpdatedFrame(group.ID, nil))
+		}
+		return s.joinedRoom(group)
+	}
+
 	if !s.rooms.exists(group.ID) && !s.guard.roomStarts.Allow(group.ID) {
 		return tooManyRequests()
 	}
 
-	ice, err := s.iceServers(s.user.Id)
-	if err != nil {
-		return failed(err)
-	}
-
+	s.displace()
 	s.voice.Lock()
 	if s.calls.busy(s.user.Id) {
 		s.voice.Unlock()
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
 	}
-	current, created, ok := s.rooms.join(group.ID, s)
+	current, created, ok := s.rooms.join(group.ID, s, req.Direct)
 	s.voice.Unlock()
 	if !ok {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_UNAVAILABLE, "busy")
@@ -187,14 +190,20 @@ func (s *session) joinGroupCall(ctx context.Context, req *protocol.JoinGroupCall
 		s.logGroupCall(ctx, current.id, group.ID, members)
 	}
 
-	state := s.rooms.state(group.ID)
-	s.hub.publish(members, groupCallUpdatedFrame(group.ID, state), nil)
+	return s.joinedRoom(group)
+}
 
-	var others []string
-	if state != nil {
-		others = without(state.ParticipantIds, s.user.Id)
+func (s *session) joinedRoom(group chat.Group) *protocol.ServerFrame {
+	ice, err := s.iceServers(s.user.Id)
+	if err != nil {
+		return failed(err)
 	}
-	return groupCallJoinedFrame(current.id, group.ID, ice, others)
+	state := s.rooms.state(group.ID)
+	if state == nil {
+		return failed(chat.ErrGroupNotFound)
+	}
+	s.hub.publish(group.MemberIDs(), groupCallUpdatedFrame(group.ID, state), nil)
+	return groupCallJoinedFrame(state.Id, group.ID, ice, without(state.ParticipantIds, s.user.Id))
 }
 
 func (s *session) leaveGroupCall() *protocol.ServerFrame {

@@ -37,11 +37,15 @@ export type SidebarTab = "direct" | "group";
 
 export type Next = { verify: string } | { twoFactor: string } | null;
 
+const retryDelays = [1000, 2000, 4000, 8000, 15_000];
+const maxAttempts = 12;
+
 class ChatStore {
   user = $state<User | null>(null);
   email = $state("");
   twoFactor = $state(false);
   restoring = $state(true);
+  reconnecting = $state(false);
   notice = $state("");
   view = $state<View>("friends");
   conversations = $state<Conversation[]>([]);
@@ -194,10 +198,11 @@ class ChatStore {
       }
     };
     client.onUpdateAvailable = () => updates.check();
-    client.onClose = () => this.#reset(t("common.connectionLost"));
+    client.onClose = () => this.#reconnect();
     await trust.attach(client, account.user.id).catch(() => undefined);
     calls.attach(client);
     groupCall.attach(client);
+    groupCall.friendly = (userId) => this.isFriend(userId);
 
     this.#client = client;
     this.user = account.user;
@@ -223,6 +228,52 @@ class ChatStore {
     this.blocked = blocked;
     this.view = "friends";
     this.notice = "";
+  }
+
+  async #reconnect() {
+    const token = readSessionToken();
+    const activeId = this.activeId;
+    const sidebarTab = this.sidebarTab;
+    const voice = groupCall.snapshot();
+    this.#reset(token ? "" : t("common.connectionLost"));
+    if (!token) {
+      return;
+    }
+
+    this.reconnecting = true;
+    for (let attempt = 0; this.reconnecting; attempt++) {
+      if (attempt === maxAttempts) {
+        this.reconnecting = false;
+        this.notice = t("common.connectionLost");
+        return;
+      }
+      try {
+        await this.#authenticate((client) => client.resume(token));
+        break;
+      } catch (error) {
+        if (error instanceof ServerError && error.code === ErrorCode.UNAUTHENTICATED) {
+          clearSessionToken();
+          this.reconnecting = false;
+          this.notice = t("common.connectionLost");
+          return;
+        }
+        const delay = retryDelays[Math.min(attempt, retryDelays.length - 1)];
+        await new Promise((resolve) => window.setTimeout(resolve, delay));
+      }
+    }
+    this.reconnecting = false;
+
+    const user = this.user;
+    if (!user) {
+      return;
+    }
+    this.sidebarTab = sidebarTab;
+    if (activeId && this.conversations.some(({ id }) => id === activeId)) {
+      await this.select(activeId).catch(() => undefined);
+    }
+    if (voice && this.conversations.some(({ id, call }) => id === voice.conversationId && call)) {
+      await groupCall.restore(voice, user.id);
+    }
   }
 
   nameOf(userId: string): string {

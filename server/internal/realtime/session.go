@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -22,6 +23,8 @@ const (
 	maxFrameSize = 64 << 10
 	sendBuffer   = 64
 	writeTimeout = 5 * time.Second
+	pingInterval = 10 * time.Second
+	pingTimeout  = 10 * time.Second
 )
 
 type session struct {
@@ -39,6 +42,8 @@ type session struct {
 	user      *protocol.User
 	sessionID string
 	challenge *account.Challenge
+	expires   time.Time
+	handling  atomic.Bool
 	later     []*protocol.ServerFrame
 	send      chan []byte
 }
@@ -47,7 +52,9 @@ func (s *session) run(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	s.expires = time.Now().Add(authTimeout)
 	go s.writeLoop(ctx, cancel)
+	go s.heartbeat(ctx)
 	s.readLoop(ctx)
 	s.signOut()
 }
@@ -70,7 +77,9 @@ func (s *session) readLoop(ctx context.Context) {
 			continue
 		}
 
+		s.handling.Store(true)
 		reply := s.handle(ctx, frame)
+		s.handling.Store(false)
 		reply.RequestId = frame.RequestId
 		s.reply(reply)
 		for _, pending := range s.later {
@@ -85,12 +94,7 @@ func (s *session) read(ctx context.Context) (websocket.MessageType, []byte, erro
 		return s.conn.Read(ctx)
 	}
 
-	timeout := authTimeout
-	if s.challenge != nil {
-		timeout = challengeTimeout
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithDeadline(ctx, s.expires)
 	defer cancel()
 	return s.conn.Read(ctx)
 }
@@ -107,6 +111,29 @@ func (s *session) writeLoop(ctx context.Context, cancel context.CancelFunc) {
 			err := s.conn.Write(writeCtx, websocket.MessageBinary, data)
 			done()
 			if err != nil {
+				return
+			}
+		}
+	}
+}
+
+func (s *session) heartbeat(ctx context.Context) {
+	ticker := time.NewTicker(pingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if s.handling.Load() {
+				continue
+			}
+			pingCtx, done := context.WithTimeout(ctx, pingTimeout)
+			err := s.conn.Ping(pingCtx)
+			done()
+			if err != nil && ctx.Err() == nil && !s.handling.Load() {
+				s.conn.CloseNow()
 				return
 			}
 		}
@@ -147,6 +174,8 @@ func (s *session) push(data []byte) {
 
 func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *protocol.ServerFrame {
 	switch payload := frame.Payload.(type) {
+	case *protocol.ClientFrame_Ping:
+		return ackFrame()
 	case *protocol.ClientFrame_Register:
 		req := payload.Register
 		if !s.guard.allowAuth(s.ip) {

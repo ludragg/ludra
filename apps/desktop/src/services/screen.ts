@@ -91,13 +91,81 @@ export function tuneVideoBitrate(sdp: string): string {
   return output.join("\r\n");
 }
 
+type CodecEncoding = RTCRtpEncodingParameters & { codec?: RTCRtpCodec };
+
+let hardwareFailed = false;
+
+function bitrateOf(quality: ScreenQuality): number {
+  return Math.round(baseBitrates[quality.resolution] * fpsFactors[quality.fps]);
+}
+
+async function hardwareCodec(sender: RTCRtpSender, quality: ScreenQuality): Promise<RTCRtpCodec | null> {
+  if (hardwareFailed) {
+    return null;
+  }
+  const codec = sender
+    .getParameters()
+    .codecs.find(
+      ({ mimeType, sdpFmtpLine }) =>
+        mimeType.toLowerCase() === "video/h264" && sdpFmtpLine?.includes("packetization-mode=1"),
+    );
+  if (!codec) {
+    return null;
+  }
+  const info = await navigator.mediaCapabilities
+    .encodingInfo({
+      type: "webrtc",
+      video: {
+        contentType: "video/H264",
+        width: Math.round((quality.resolution * 16) / 9),
+        height: quality.resolution,
+        bitrate: bitrateOf(quality),
+        framerate: quality.fps,
+      },
+    })
+    .catch(() => null);
+  return info?.supported && info.powerEfficient ? codec : null;
+}
+
+async function setCodec(sender: RTCRtpSender, codec: RTCRtpCodec | null) {
+  const parameters = sender.getParameters();
+  const encodings: CodecEncoding[] = parameters.encodings ?? [];
+  if (!encodings.length || encodings.every((encoding) => encoding.codec?.mimeType === codec?.mimeType)) {
+    return;
+  }
+  for (const encoding of encodings) {
+    if (codec) {
+      encoding.codec = codec;
+    } else {
+      delete encoding.codec;
+    }
+  }
+  await sender.setParameters(parameters).catch(() => undefined);
+}
+
 export async function applyScreenEncoding(sender: RTCRtpSender, quality: ScreenQuality) {
   const parameters = sender.getParameters();
   parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
   for (const encoding of parameters.encodings) {
-    encoding.maxBitrate = Math.round(baseBitrates[quality.resolution] * fpsFactors[quality.fps]);
+    encoding.maxBitrate = bitrateOf(quality);
     encoding.maxFramerate = quality.fps;
   }
   parameters.degradationPreference = "maintain-resolution";
   await sender.setParameters(parameters).catch(() => undefined);
+  await setCodec(sender, await hardwareCodec(sender, quality));
+}
+
+export async function verifyScreenEncoder(sender: RTCRtpSender) {
+  const stats = await sender.getStats().catch(() => null);
+  let software = false;
+  stats?.forEach((report) => {
+    if (report.type === "outbound-rtp" && report.framesEncoded > 0 && report.powerEfficientEncoder === false) {
+      software = true;
+    }
+  });
+  const encodings: CodecEncoding[] = sender.getParameters().encodings ?? [];
+  if (software && encodings.some((encoding) => encoding.codec)) {
+    hardwareFailed = true;
+    await setCodec(sender, null);
+  }
 }

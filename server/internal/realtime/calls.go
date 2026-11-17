@@ -22,6 +22,7 @@ type call struct {
 	answeredAt time.Time
 	timer      *time.Timer
 	silent     bool
+	direct     bool
 }
 
 type finisher func(callerID, calleeID, messageID, outcome string, duration time.Duration)
@@ -87,7 +88,7 @@ func (c *calls) attachMessage(id, messageID string) bool {
 	return true
 }
 
-func (c *calls) start(caller *session, calleeID string, calleeBusy bool) (*call, bool) {
+func (c *calls) start(caller *session, calleeID string, calleeBusy, direct bool) (*call, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -108,6 +109,7 @@ func (c *calls) start(caller *session, calleeID string, calleeBusy bool) (*call,
 		caller:   caller,
 		calleeID: calleeID,
 		silent:   alreadyRinging,
+		direct:   direct,
 	}
 	ringing.timer = time.AfterFunc(ringTimeout, func() { c.expire(ringing.id) })
 
@@ -251,6 +253,33 @@ func (c *calls) leave(s *session) {
 		return
 	}
 	c.end(current.id, s, protocol.CallEndReason_CALL_END_REASON_DISCONNECTED)
+}
+
+func (c *calls) displace(userID string) {
+	c.mu.Lock()
+	current := c.byUser[userID]
+	held := current != nil && (current.callerID == userID || current.callee != nil)
+	c.mu.Unlock()
+	if !held {
+		return
+	}
+
+	ended := c.remove(current.id, nil, false)
+	if ended == nil {
+		return
+	}
+	if ended.messageID != "" {
+		go c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, nil), duration(ended))
+	}
+
+	frame := callEndedFrame(ended.id, protocol.CallEndReason_CALL_END_REASON_DISCONNECTED)
+	ended.caller.reply(frame)
+	switch {
+	case ended.callee != nil:
+		ended.callee.reply(frame)
+	case !ended.silent:
+		c.hub.publish([]string{ended.calleeID}, callEndedFrame(ended.id, protocol.CallEndReason_CALL_END_REASON_MISSED), nil)
+	}
 }
 
 func (c *calls) remove(id string, by *session, onlyRinging bool) *call {

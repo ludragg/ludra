@@ -17,6 +17,13 @@ fn launched_by_autostart() -> bool {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -43,7 +50,7 @@ fn main() {
             screen::screen_sources,
             screen::screen_start,
             screen::screen_stop,
-            screen::screen_release
+            screen::screen_watched
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Ludra");
