@@ -7,7 +7,14 @@ import { playCue, setRingtone } from "@/services/ringtone";
 import { VoiceRoom } from "@/services/voice-room";
 import { captureScreen, hintScreenTracks, qualityLabel, type ScreenQuality } from "@/services/screen";
 import type { NativeScreen } from "@/services/native-screen";
-import { parseVoiceMessage, previewMessage, stateMessage, watchMessage, type VoiceState } from "@/helpers/voice-state";
+import {
+  parseVoiceMessage,
+  previewMessage,
+  stateMessage,
+  validPreview,
+  watchMessage,
+  type VoiceState,
+} from "@/helpers/voice-state";
 import { calls } from "@/stores/call.svelte";
 import { focus } from "@/stores/focus";
 import { preferences } from "@/stores/preferences.svelte";
@@ -47,6 +54,7 @@ class GroupCallStore {
   sharing = $state(false);
   watchingId = $state<string | null>(null);
   previews = $state<Record<string, string>>({});
+  outsidePreviews = $state<Record<string, Record<string, string>>>({});
   ownPreview = $state<string | null>(null);
   viewers = $state<string[]>([]);
   connecting = $state(false);
@@ -69,6 +77,8 @@ class GroupCallStore {
   #shareQuality: ScreenQuality | null = null;
   #viewers = new Set<string>();
   #preview: string | null = null;
+  #pendingWatch: string | null = null;
+  #linked = new Set<string>();
   #shareBusy = false;
   #outgoing = new Map<string, Promise<void>>();
   #incoming = new Map<string, Promise<void>>();
@@ -87,12 +97,14 @@ class GroupCallStore {
         direct(signal);
       }
     };
+    client.onStreamPreview = (conversationId, userId, image) => this.#outsidePreview(conversationId, userId, image);
   }
 
   detach() {
     this.#dismiss();
     this.#finish();
     this.#latest.clear();
+    this.outsidePreviews = {};
     this.#client = null;
   }
 
@@ -113,6 +125,21 @@ class GroupCallStore {
     this.deafened = snapshot.deafened;
     this.#mutedBeforeDeafen = snapshot.mutedBeforeDeafen;
     await this.join(snapshot.conversationId, selfId);
+  }
+
+  async joinWatching(conversationId: string, selfId: string, peerId: string) {
+    if (this.current?.conversationId === conversationId) {
+      this.watch(peerId);
+      return;
+    }
+    if (!this.#client || this.joining) {
+      return;
+    }
+    this.#pendingWatch = peerId;
+    await this.join(conversationId, selfId);
+    if (!this.current) {
+      this.#pendingWatch = null;
+    }
   }
 
   async join(conversationId: string, selfId: string) {
@@ -223,6 +250,7 @@ class GroupCallStore {
     } else {
       this.#latest.delete(conversationId);
     }
+    this.#pruneOutside(conversationId, call?.sharingIds ?? []);
     if (this.ringing?.conversationId === conversationId && !call) {
       this.#dismiss();
     }
@@ -260,6 +288,7 @@ class GroupCallStore {
   }
 
   conversationGone(conversationId: string) {
+    delete this.outsidePreviews[conversationId];
     if (this.ringing?.conversationId === conversationId) {
       this.#dismiss();
     }
@@ -368,9 +397,11 @@ class GroupCallStore {
     room.onSpeaking = (speaking) => (this.speaking = speaking);
     room.onConnecting = (connecting) => (this.connecting = connecting);
     room.onLatency = (milliseconds) => (this.latency = room.peers().length ? milliseconds : null);
-    room.onPeerConnected = () => {
+    room.onPeerConnected = (peerId) => {
+      this.#linked.add(peerId);
       this.#shareState();
       this.#sendPreview();
+      this.#watchPending(peerId);
     };
     room.onPeerFailed = (peerId) => {
       room.remove(peerId);
@@ -421,6 +452,7 @@ class GroupCallStore {
         this.watchingId = null;
         this.screen = null;
       }
+      this.#watchPending(signal.peerId);
       return;
     }
     const peerId = signal.peerId;
@@ -541,6 +573,7 @@ class GroupCallStore {
     if (!current || !this.states[peerId]?.sharing || this.watchingId === peerId) {
       return;
     }
+    this.#pendingWatch = null;
     this.unwatch();
     this.watchingId = peerId;
     this.screen = this.#room?.screen(peerId) ?? null;
@@ -585,7 +618,34 @@ class GroupCallStore {
     }
   }
 
+  #watchPending(peerId: string) {
+    if (this.#pendingWatch === peerId && this.#linked.has(peerId) && this.states[peerId]?.sharing) {
+      this.watch(peerId);
+    }
+  }
+
+  #outsidePreview(conversationId: string, userId: string, image: string) {
+    if (!validPreview(image)) {
+      return;
+    }
+    this.outsidePreviews[conversationId] = { ...this.outsidePreviews[conversationId], [userId]: image };
+  }
+
+  #pruneOutside(conversationId: string, sharingIds: string[]) {
+    const previews = this.outsidePreviews[conversationId];
+    if (!previews) {
+      return;
+    }
+    const kept = Object.fromEntries(Object.entries(previews).filter(([id]) => sharingIds.includes(id)));
+    if (Object.keys(kept).length) {
+      this.outsidePreviews[conversationId] = kept;
+    } else {
+      delete this.outsidePreviews[conversationId];
+    }
+  }
+
   #forget(peerId: string) {
+    this.#linked.delete(peerId);
     this.#peerDirect.delete(peerId);
     this.#outgoing.delete(peerId);
     this.#incoming.delete(peerId);
@@ -632,8 +692,13 @@ class GroupCallStore {
     this.#beforeTest = null;
     this.#stopCalling();
     this.stopShare(false);
+    this.#pendingWatch = null;
+    this.#linked.clear();
     this.watchingId = null;
     this.screen = null;
+    if (this.current && Object.keys(this.previews).length) {
+      this.outsidePreviews[this.current.conversationId] = this.previews;
+    }
     this.previews = {};
     if (this.current) {
       playCue("ended");

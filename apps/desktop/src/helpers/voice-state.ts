@@ -32,6 +32,14 @@ export function previewMessage(image: string): string {
   return JSON.stringify({ preview: image });
 }
 
+export function validPreview(image: string): boolean {
+  return (
+    image.length <= maxPreviewLength &&
+    image.startsWith(previewPrefix) &&
+    /^[A-Za-z0-9+/]+={0,2}$/.test(image.slice(previewPrefix.length))
+  );
+}
+
 export function parseVoiceMessage(payload: string): VoiceMessage {
   try {
     const data = JSON.parse(payload);
@@ -39,11 +47,7 @@ export function parseVoiceMessage(payload: string): VoiceMessage {
       return { kind: "watch", watching: data.watch };
     }
     if (typeof data?.preview === "string") {
-      const valid =
-        data.preview.length <= maxPreviewLength &&
-        data.preview.startsWith(previewPrefix) &&
-        /^[A-Za-z0-9+/]+={0,2}$/.test(data.preview.slice(previewPrefix.length));
-      return { kind: "preview", image: valid ? data.preview : "" };
+      return { kind: "preview", image: validPreview(data.preview) ? data.preview : "" };
     }
     const quality = typeof data?.quality === "string" ? data.quality.slice(0, 16) : "";
     return {

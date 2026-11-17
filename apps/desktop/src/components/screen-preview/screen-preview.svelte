@@ -7,6 +7,7 @@
     name,
     width,
     own = false,
+    disabled = false,
     viewers = [],
     onwatch,
   }: {
@@ -14,17 +15,26 @@
     name: string;
     width: number;
     own?: boolean;
+    disabled?: boolean;
     viewers?: string[];
     onwatch?: () => void;
   } = $props();
 </script>
 
 {#if own}
-  <div class="screen-preview screen-preview--own" style:width="{width}px" title={t("screen.yourScreen")}>
+  <div
+    class="screen-preview screen-preview--own"
+    style:width="{width}px"
+    role="group"
+    aria-label={t("screen.yourScreen")}
+  >
     {#if image}
       <img class="screen-preview__image" src={image} alt="" />
     {/if}
-    <span class="screen-preview__label">{t("screen.watchShort")}</span>
+    <span class="screen-preview__label">
+      <span class="screen-preview__idle">{t("screen.watchShort")}</span>
+      <span class="screen-preview__hover">{t("screen.yourScreen")}</span>
+    </span>
     {#if viewers.length}
       <span class="screen-preview__viewers">
         <ViewerBadge names={viewers} />
@@ -36,7 +46,7 @@
     class="screen-preview screen-preview--watchable"
     style:width="{width}px"
     aria-label={t("screen.watch", { name })}
-    title={t("screen.watch", { name })}
+    {disabled}
     onclick={() => onwatch?.()}
   >
     {#if image}
@@ -87,8 +97,21 @@
     display: flex;
   }
 
-  .screen-preview--watchable:hover .screen-preview__image {
+  .screen-preview--watchable:hover:not(:disabled) .screen-preview__image {
     filter: brightness(0.75);
+  }
+
+  .screen-preview--watchable:disabled {
+    cursor: progress;
+  }
+
+  .screen-preview__hover,
+  .screen-preview--own:hover .screen-preview__idle {
+    display: none;
+  }
+
+  .screen-preview--own:hover .screen-preview__hover {
+    display: inline;
   }
 
   .screen-preview__label {

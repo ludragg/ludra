@@ -119,6 +119,23 @@ func (h *hub) publish(userIDs []string, frame *protocol.ServerFrame, skip *sessi
 	}
 }
 
+func (h *hub) offer(userIDs []string, frame *protocol.ServerFrame) {
+	data, err := proto.Marshal(frame)
+	if err != nil {
+		slog.Error("marshal frame", "error", err)
+		return
+	}
+
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	for _, userID := range userIDs {
+		for s := range h.sessions[userID] {
+			s.deliver(data)
+		}
+	}
+}
+
 func (h *hub) broadcast(frame *protocol.ServerFrame) {
 	data, err := proto.Marshal(frame)
 	if err != nil {

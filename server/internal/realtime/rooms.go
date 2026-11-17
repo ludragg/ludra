@@ -23,6 +23,7 @@ type room struct {
 	ringTimer      *time.Timer
 	voice          map[string]voiceState
 	direct         map[string]bool
+	previews       map[string]string
 }
 
 type voiceState struct {
@@ -123,6 +124,7 @@ func (r *rooms) join(conversationID string, s *session, direct bool) (*room, boo
 			ringing:        make(map[string]bool),
 			voice:          make(map[string]voiceState),
 			direct:         make(map[string]bool),
+			previews:       make(map[string]string),
 			startedAt:      time.Now(),
 		}
 		r.byID[current.id] = current
@@ -175,6 +177,7 @@ func (r *rooms) leave(s *session) (string, bool) {
 func (r *rooms) leaveLocked(found *room, s *session) bool {
 	delete(found.voice, found.sessions[s])
 	delete(found.direct, found.sessions[s])
+	delete(found.previews, found.sessions[s])
 	delete(r.byUser, found.sessions[s])
 	delete(found.sessions, s)
 	empty := len(found.sessions) == 0
@@ -209,6 +212,9 @@ func (r *rooms) setVoice(roomID string, from *session, state voiceState, direct 
 	}
 	changed := current.voice[userID] != state
 	current.voice[userID] = state
+	if !state.sharing {
+		delete(current.previews, userID)
+	}
 	if direct != nil && current.direct[userID] != *direct {
 		changed = true
 		if *direct {
@@ -221,6 +227,41 @@ func (r *rooms) setVoice(roomID string, from *session, state voiceState, direct 
 		return "", false
 	}
 	return current.conversationID, true
+}
+
+func (r *rooms) setPreview(roomID string, from *session, image string) (string, map[string]bool, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current := r.byID[roomID]
+	if current == nil {
+		return "", nil, false
+	}
+	userID, ok := current.sessions[from]
+	if !ok || !current.voice[userID].sharing {
+		return "", nil, false
+	}
+	current.previews[userID] = image
+	inside := make(map[string]bool, len(current.sessions))
+	for _, id := range current.sessions {
+		inside[id] = true
+	}
+	return current.conversationID, inside, true
+}
+
+func (r *rooms) previewsOf(conversationID string) map[string]string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	current := r.byConversation[conversationID]
+	if current == nil {
+		return nil
+	}
+	result := make(map[string]string, len(current.previews))
+	for id, image := range current.previews {
+		result[id] = image
+	}
+	return result
 }
 
 func (r *rooms) exists(conversationID string) bool {

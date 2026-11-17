@@ -237,6 +237,14 @@ func groupCallRingingFrame(conversationID string, starter *protocol.User) *proto
 	}
 }
 
+func streamPreviewFrame(conversationID, userID, image string) *protocol.ServerFrame {
+	return &protocol.ServerFrame{
+		Payload: &protocol.ServerFrame_StreamPreview{
+			StreamPreview: &protocol.StreamPreview{ConversationId: conversationID, UserId: userID, Image: image},
+		},
+	}
+}
+
 func ackFrame() *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_Ack{Ack: &protocol.Ack{}},

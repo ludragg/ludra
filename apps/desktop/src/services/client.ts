@@ -66,6 +66,7 @@ export class Client {
   onGroupCallUpdated: (conversationId: string, call: GroupCall | undefined) => void = () => {};
   onGroupCallRinging: (conversationId: string, starter: User) => void = () => {};
   onUpdateAvailable: (version: string) => void = () => {};
+  onStreamPreview: (conversationId: string, userId: string, image: string) => void = () => {};
   onClose: () => void = () => {};
 
   #socket: WebSocket;
@@ -439,6 +440,9 @@ export class Client {
         break;
       case "updateAvailable":
         this.onUpdateAvailable(payload.value.version);
+        break;
+      case "streamPreview":
+        this.onStreamPreview(payload.value.conversationId, payload.value.userId, payload.value.image);
         break;
     }
   }

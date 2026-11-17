@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.2.3",
+    "notes": {
+      "pt": {
+        "features": [
+          "Quem está fora da chamada do grupo agora vê a miniatura das transmissões. Clique em Assistir para entrar na chamada já assistindo."
+        ],
+        "fixes": [
+          "Ao passar o mouse na miniatura da sua própria transmissão, aparece Sua tela no estilo do app, em vez da dica do navegador.",
+          "Novos padrões de áudio para quem instala agora: ativação da voz um pouco acima do mínimo e supressão de ruído em 75%."
+        ]
+      },
+      "en": {
+        "features": [
+          "People outside a group call now see the stream thumbnails. Click Watch to join the call already watching."
+        ],
+        "fixes": [
+          "Hovering your own stream thumbnail now shows Your screen in the app style, instead of the browser tooltip.",
+          "New audio defaults for new installs: voice activation slightly above the minimum and noise suppression at 75%."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.2.2",
     "notes": {
       "pt": {

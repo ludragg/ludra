@@ -255,6 +255,29 @@ func (s *session) announceRoom(conversationID string) {
 	s.hub.publish(members, groupCallUpdatedFrame(conversationID, s.rooms.state(conversationID)), nil)
 }
 
+func (s *session) sharePreview(roomID, image string) {
+	conversationID, inside, ok := s.rooms.setPreview(roomID, s, image)
+	if !ok {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+	defer cancel()
+
+	members, err := s.chat.ParticipantIDs(ctx, conversationID)
+	if err != nil {
+		slog.Error("load group members", "error", err)
+		return
+	}
+	outside := make([]string, 0, len(members))
+	for _, id := range members {
+		if !inside[id] {
+			outside = append(outside, id)
+		}
+	}
+	s.hub.offer(outside, streamPreviewFrame(conversationID, s.user.Id, image))
+}
+
 func (s *session) logGroupCall(ctx context.Context, roomID, groupID string, members []string) {
 	message, err := s.chat.StartGroupCallMessage(ctx, groupID, s.user.Id)
 	if err != nil {

@@ -40,6 +40,7 @@ message ServerFrame {
     BlockedList blocked_list = 31;
     IdentityKeys identity_keys = 32;
     UpdateAvailable update_available = 33;
+    StreamPreview stream_preview = 34;
   }
 }
 
@@ -194,4 +195,10 @@ message GroupCallRinging {
 
 message UpdateAvailable {
   string version = 1;
+}
+
+message StreamPreview {
+  string conversation_id = 1;
+  string user_id = 2;
+  string image = 3;
 }

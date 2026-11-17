@@ -2,16 +2,20 @@ package realtime
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"log/slog"
+	"strings"
 
 	"ludra/internal/friends"
 	"ludra/internal/protocol"
 )
 
 const (
-	maxSignalSize  = 16 << 10
-	largeStateSize = 1 << 10
+	maxSignalSize    = 16 << 10
+	largeStateSize   = 1 << 10
+	maxPreviewLength = 14_000
+	previewPrefix    = "data:image/jpeg;base64,"
 )
 
 var signalKinds = map[protocol.SignalKind]bool{
@@ -133,12 +137,19 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 			other.offer(forwarded)
 		}
 		var state struct {
-			Muted    *bool `json:"muted"`
-			Deafened bool  `json:"deafened"`
-			Sharing  bool  `json:"sharing"`
-			Direct   *bool `json:"direct"`
+			Muted    *bool   `json:"muted"`
+			Deafened bool    `json:"deafened"`
+			Sharing  bool    `json:"sharing"`
+			Direct   *bool   `json:"direct"`
+			Preview  *string `json:"preview"`
 		}
-		if json.Unmarshal([]byte(req.Payload), &state) == nil && state.Muted != nil {
+		if json.Unmarshal([]byte(req.Payload), &state) != nil {
+			return ackFrame()
+		}
+		if state.Preview != nil && validPreview(*state.Preview) {
+			s.sharePreview(req.CallId, *state.Preview)
+		}
+		if state.Muted != nil {
 			voice := voiceState{muted: *state.Muted, deafened: state.Deafened, sharing: state.Sharing}
 			conversationID, changed := s.rooms.setVoice(req.CallId, s, voice, state.Direct)
 			if changed && s.guard.voiceChanges.Allow(s.user.Id) {
@@ -154,6 +165,14 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 	}
 	other.offer(forwarded)
 	return ackFrame()
+}
+
+func validPreview(image string) bool {
+	if len(image) > maxPreviewLength || !strings.HasPrefix(image, previewPrefix) {
+		return false
+	}
+	_, err := base64.StdEncoding.DecodeString(image[len(previewPrefix):])
+	return err == nil
 }
 
 func (s *session) displace() {

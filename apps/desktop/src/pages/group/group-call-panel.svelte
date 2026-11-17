@@ -77,6 +77,14 @@
     }
   }
 
+  function watchSharer(peerId: string) {
+    if (call) {
+      groupCall.watch(peerId);
+    } else if (chat.user) {
+      groupCall.joinWatching(group.id, chat.user.id, peerId);
+    }
+  }
+
   function openMenu(event: MouseEvent, user: User) {
     event.preventDefault();
     menu = { user, x: event.clientX, y: event.clientY };
@@ -164,7 +172,7 @@
       </div>
     {/each}
   </div>
-  {#if call && previewCount > 0}
+  {#if previewCount > 0}
     <div class="group-call__previews">
       {#if groupCall.sharing && chat.user}
         <ScreenPreview
@@ -177,10 +185,11 @@
       {/if}
       {#each sharers as sharer (sharer.id)}
         <ScreenPreview
-          image={groupCall.previews[sharer.id] ?? null}
+          image={(call ? groupCall.previews : groupCall.outsidePreviews[group.id])?.[sharer.id] ?? null}
           name={sharer.user.username}
           width={previewWidth(previewCount)}
-          onwatch={() => groupCall.watch(sharer.id)}
+          disabled={groupCall.joining}
+          onwatch={() => watchSharer(sharer.id)}
         />
       {/each}
     </div>

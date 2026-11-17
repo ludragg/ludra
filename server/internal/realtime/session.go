@@ -155,6 +155,10 @@ func (s *session) offer(frame *protocol.ServerFrame) {
 		slog.Error("marshal frame", "error", err)
 		return
 	}
+	s.deliver(data)
+}
+
+func (s *session) deliver(data []byte) {
 	if len(s.send) >= sendBuffer/2 {
 		return
 	}
@@ -362,6 +366,9 @@ func (s *session) listConversations(ctx context.Context) *protocol.ServerFrame {
 	}
 	for _, group := range groups {
 		list = append(list, s.groupConversation(group))
+		for userID, image := range s.rooms.previewsOf(group.ID) {
+			s.offer(streamPreviewFrame(group.ID, userID, image))
+		}
 	}
 	return conversationListFrame(list)
 }
