@@ -14,8 +14,15 @@ type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
 const encoderCheckEvery = 5000;
 const restartDelay = 1500;
 const restartGap = 15_000;
+const recoverAfter = 4000;
+const giveUpAfter = 30_000;
+const switchTimeout = 20_000;
 
 const hiddenAddress = "0.0.0.0";
+
+function iceUfrag(sdp: string | undefined): string | null {
+  return /^a=ice-ufrag:(\S+)/m.exec(sdp ?? "")?.[1] ?? null;
+}
 
 function fingerprint(sdp: string | undefined): string | null {
   return /^a=fingerprint:(.+)$/m.exec(sdp ?? "")?.[1].trim() ?? null;
@@ -57,6 +64,7 @@ export class PeerLink {
   onFailed: () => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
   onScreen: (stream: MediaStream | null) => void = () => {};
+  onStatus: (connecting: boolean) => void = () => {};
 
   #connection: RTCPeerConnection;
   #iceServers: RTCIceServer[];
@@ -82,6 +90,14 @@ export class PeerLink {
   #restartWanted = false;
   #restartTimer: number | undefined;
   #lastRestart = -restartGap;
+  #linked = false;
+  #switching = false;
+  #connecting = true;
+  #pair: string | null = null;
+  #switchFrom: string | null = null;
+  #recoverTimer: number | undefined;
+  #giveUpTimer: number | undefined;
+  #switchTimer: number | undefined;
   #makingOffer = false;
   #ignoreOffer = false;
 
@@ -102,19 +118,7 @@ export class PeerLink {
         this.onSignal(SignalKind.CANDIDATE, JSON.stringify(shared));
       }
     };
-    this.#connection.onconnectionstatechange = () => {
-      const state = this.#connection.connectionState;
-      if (state === "connected") {
-        this.#negotiating = true;
-        this.onConnected();
-        this.#watchLatency();
-        if (this.#restartWanted) {
-          this.#scheduleRestart();
-        }
-      } else if (state === "failed") {
-        this.onFailed();
-      }
-    };
+    this.#connection.onconnectionstatechange = () => this.#stateChanged();
     this.#connection.onnegotiationneeded = () => {
       if (this.#negotiating) {
         this.#renegotiate();
@@ -125,6 +129,7 @@ export class PeerLink {
   }
 
   async offer() {
+    this.#armGiveUp();
     const offer = await this.#connection.createOffer();
     offer.sdp = tuneVideoBitrate(offer.sdp ?? "");
     await this.#connection.setLocalDescription(offer);
@@ -145,7 +150,91 @@ export class PeerLink {
     this.#connection.setConfiguration({ iceServers: this.#iceServers, iceTransportPolicy: direct ? "all" : "relay" });
     if (restart) {
       this.#restartWanted = true;
+      this.#beginSwitch();
       this.#scheduleRestart();
+    }
+  }
+
+  #stateChanged() {
+    const state = this.#connection.connectionState;
+    if (state === "connected") {
+      this.#negotiating = true;
+      this.#linked = true;
+      window.clearTimeout(this.#recoverTimer);
+      window.clearTimeout(this.#giveUpTimer);
+      this.#giveUpTimer = undefined;
+      this.#emitStatus();
+      this.onConnected();
+      this.#watchLatency();
+      if (this.#restartWanted) {
+        this.#scheduleRestart();
+      }
+      return;
+    }
+    if (state !== "disconnected" && state !== "failed") {
+      return;
+    }
+    this.#linked = false;
+    this.#emitStatus();
+    if (!this.#negotiating) {
+      if (state === "failed") {
+        this.onFailed();
+      }
+      return;
+    }
+    this.#armGiveUp();
+    window.clearTimeout(this.#recoverTimer);
+    if (state === "failed") {
+      this.#recover();
+    } else {
+      this.#recoverTimer = window.setTimeout(() => this.#recover(), recoverAfter);
+    }
+  }
+
+  #recover() {
+    if (this.#polite || this.#linked || this.#connection.connectionState === "closed") {
+      return;
+    }
+    const wait = this.#lastRestart + restartGap - performance.now();
+    if (wait > 0) {
+      window.clearTimeout(this.#recoverTimer);
+      this.#recoverTimer = window.setTimeout(() => this.#recover(), wait);
+      return;
+    }
+    this.#restartIce();
+  }
+
+  #armGiveUp() {
+    if (this.#linked || this.#giveUpTimer !== undefined) {
+      return;
+    }
+    this.#giveUpTimer = window.setTimeout(() => {
+      this.#giveUpTimer = undefined;
+      if (!this.#linked && this.#connection.connectionState !== "closed") {
+        this.onFailed();
+      }
+    }, giveUpAfter);
+  }
+
+  #beginSwitch() {
+    this.#switching = true;
+    this.#switchFrom = this.#pair;
+    window.clearTimeout(this.#switchTimer);
+    this.#switchTimer = window.setTimeout(() => this.#endSwitch(), switchTimeout);
+    this.#emitStatus();
+  }
+
+  #endSwitch() {
+    window.clearTimeout(this.#switchTimer);
+    this.#switching = false;
+    this.#emitStatus();
+  }
+
+  #emitStatus() {
+    const connecting = !this.#linked || this.#switching;
+    if (connecting !== this.#connecting) {
+      this.#connecting = connecting;
+      this.onStatus(connecting);
     }
   }
 
@@ -166,6 +255,7 @@ export class PeerLink {
 
   async receive(kind: SignalKind, payload: string) {
     const data = JSON.parse(payload);
+    this.#armGiveUp();
 
     if (kind === SignalKind.CANDIDATE) {
       if (!this.#connection.remoteDescription) {
@@ -185,6 +275,11 @@ export class PeerLink {
       this.#ignoreOffer = !this.#polite && collision;
       if (this.#ignoreOffer) {
         return;
+      }
+      const previous = iceUfrag(this.#connection.remoteDescription?.sdp);
+      const next = iceUfrag(data.sdp);
+      if (previous && next && previous !== next) {
+        this.#beginSwitch();
       }
     }
 
@@ -284,6 +379,9 @@ export class PeerLink {
 
   close() {
     window.clearTimeout(this.#restartTimer);
+    window.clearTimeout(this.#recoverTimer);
+    window.clearTimeout(this.#giveUpTimer);
+    window.clearTimeout(this.#switchTimer);
     window.clearInterval(this.#stats);
     window.clearInterval(this.#encoderCheck);
     this.#connection.close();
@@ -347,11 +445,21 @@ export class PeerLink {
     window.clearInterval(this.#stats);
     const measure = async () => {
       const stats = await this.#connection.getStats().catch(() => null);
-      stats?.forEach((report) => {
-        if (report.type === "candidate-pair" && report.nominated && report.currentRoundTripTime !== undefined) {
-          this.onLatency(Math.round(report.currentRoundTripTime * 1000));
-        }
-      });
+      if (!stats) {
+        return;
+      }
+      const reports = [...stats.values()];
+      const pair: string | null =
+        reports.find((report) => report.type === "transport" && report.selectedCandidatePairId)
+          ?.selectedCandidatePairId ?? null;
+      const selected = pair ? stats.get(pair) : null;
+      if (selected?.currentRoundTripTime !== undefined) {
+        this.onLatency(Math.round(selected.currentRoundTripTime * 1000));
+      }
+      this.#pair = pair;
+      if (this.#switching && this.#linked && pair && pair !== this.#switchFrom) {
+        this.#endSwitch();
+      }
     };
     measure();
     this.#stats = window.setInterval(measure, 2000);

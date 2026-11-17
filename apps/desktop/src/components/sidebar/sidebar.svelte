@@ -122,9 +122,11 @@
   <div class="sidebar__footer">
     {#if calls.current && calls.current.status !== "incoming"}
       {@const call = calls.current}
+      {@const connecting = call.status === "connecting" || calls.connecting}
       <SidebarCall
-        label={call.status === "outgoing" ? t("call.calling") : t("call.inCall")}
+        label={call.status === "outgoing" ? t("call.calling") : connecting ? t("call.connecting") : t("call.inCall")}
         ringing={call.status === "outgoing"}
+        {connecting}
         latency={calls.latency}
         onopen={() => chat.start(call.peer.username).catch(() => undefined)}
         onhangup={() => calls.hangUp()}
@@ -132,8 +134,11 @@
     {:else if groupCall.current}
       {@const call = groupCall.current}
       <SidebarCall
-        label={t("group.inCall", { name: chat.conversations.find(({ id }) => id === call.conversationId)?.name ?? "" })}
+        label={groupCall.connecting
+          ? t("call.connecting")
+          : t("group.inCall", { name: chat.conversations.find(({ id }) => id === call.conversationId)?.name ?? "" })}
         ringing={false}
+        connecting={groupCall.connecting}
         latency={groupCall.latency}
         onopen={() => openGroup(call.conversationId)}
         onhangup={() => groupCall.leave()}

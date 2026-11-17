@@ -145,6 +145,7 @@ export const en: Messages = {
     panel: "Voice call",
     calling: "Calling…",
     connecting: "Connecting…",
+    connectionQuality: "Connection quality",
     inCall: "In call",
     incoming: "Incoming voice call…",
     incomingDialog: "Incoming call",
@@ -245,7 +246,7 @@ export const en: Messages = {
     title: "Call lagging?",
     body: "Latency is at {latency} ms. Turn on direct connection with friends to cut the delay. It works when both of you turn it on, and they will be able to see your IP.",
     enable: "Turn on",
-    dismiss: "Don't show again",
+    dismiss: "Close tip",
   },
   screen: {
     volume: "{name}'s stream volume",

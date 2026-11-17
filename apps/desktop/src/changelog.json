@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.2.2",
+    "notes": {
+      "pt": {
+        "features": [
+          "Novo status Conectando…, em amarelo na barra lateral, enquanto a chamada se conecta, se recupera ou troca a conexão direta.",
+          "A chamada não cai mais quando a conexão oscila: o Ludra reconecta sozinho e só encerra se ficar 30 segundos sem voltar.",
+          "Clique no ícone de rede da chamada para ver a dica de conexão direta quando o atraso estiver alto."
+        ],
+        "fixes": [
+          "A atualização aparece na hora, mesmo durante uma chamada.",
+          "A dica de conexão direta agora tem o botão Fechar dica e volta a aparecer nas próximas chamadas se a conexão estiver ruim."
+        ]
+      },
+      "en": {
+        "features": [
+          "New Connecting… status, in yellow in the sidebar, while the call connects, recovers or switches the direct connection.",
+          "Calls no longer drop when the connection wobbles: Ludra reconnects by itself and only ends the call after 30 seconds without recovering.",
+          "Click the call's network icon to see the direct connection tip when the delay is high."
+        ],
+        "fixes": [
+          "Updates now show up right away, even during a call.",
+          "The direct connection tip now has a Close tip button and shows up again in later calls if the connection is poor."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.2.1",
     "notes": {
       "pt": {

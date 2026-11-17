@@ -24,7 +24,6 @@ export type Preferences = {
   watchHeight: number;
   callHeight: number;
   directCalls: boolean;
-  directTip: boolean;
 };
 
 const storageKey = "ludra.preferences";
@@ -53,7 +52,6 @@ const defaults: Preferences = {
   watchHeight: 420,
   callHeight: 0,
   directCalls: false,
-  directTip: true,
 };
 
 class PreferencesStore {

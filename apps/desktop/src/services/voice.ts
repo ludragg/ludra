@@ -17,6 +17,7 @@ export class VoiceSession {
   onFailed: () => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
   onScreen: (stream: MediaStream | null) => void = () => {};
+  onStatus: (connecting: boolean) => void = () => {};
 
   #iceServers: IceServer[];
   #polite: boolean;
@@ -42,6 +43,7 @@ export class VoiceSession {
     this.#microphone = microphone;
     const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#polite, this.#direct);
     link.onScreen = (stream) => this.onScreen(stream);
+    link.onStatus = (connecting) => this.onStatus(connecting);
     link.onSignal = (kind, payload) => this.onSignal(kind, payload);
     link.onConnected = () => this.onConnected();
     link.onFailed = () => this.onFailed();

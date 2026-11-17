@@ -143,6 +143,7 @@ export const pt = {
     panel: "Chamada de voz",
     calling: "Chamando…",
     connecting: "Conectando…",
+    connectionQuality: "Qualidade da conexão",
     inCall: "Em chamada",
     incoming: "Chamada de voz recebida…",
     incomingDialog: "Chamada recebida",
@@ -244,7 +245,7 @@ export const pt = {
     title: "Chamada com atraso?",
     body: "A latência está em {latency} ms. Ative a conexão direta com amigos para reduzir o atraso. Funciona quando os dois ativam, e eles poderão ver seu IP.",
     enable: "Ativar",
-    dismiss: "Não mostrar mais",
+    dismiss: "Fechar dica",
   },
   screen: {
     volume: "Volume da transmissão de {name}",

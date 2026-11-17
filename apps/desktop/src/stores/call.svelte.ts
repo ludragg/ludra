@@ -41,6 +41,7 @@ class CallStore {
   ownPreview = $state<string | null>(null);
   watching = $state(false);
   peerWatching = $state(false);
+  connecting = $state(false);
   screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
@@ -410,6 +411,8 @@ class CallStore {
       }
     };
     voice.onFailed = () => this.hangUp();
+    voice.onStatus = (connecting) => (this.connecting = connecting);
+    this.connecting = true;
     voice.onLatency = (milliseconds) => (this.latency = milliseconds);
     voice.onScreen = (stream) => (this.screen = this.watching ? stream : null);
 
@@ -545,6 +548,7 @@ class CallStore {
     this.peerSpeaking = false;
     this.peerMuted = false;
     this.peerDeafened = false;
+    this.connecting = false;
     this.latency = null;
 
     const waiting = this.waiting;

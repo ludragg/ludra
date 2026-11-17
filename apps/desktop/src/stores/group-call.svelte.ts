@@ -49,6 +49,7 @@ class GroupCallStore {
   previews = $state<Record<string, string>>({});
   ownPreview = $state<string | null>(null);
   viewers = $state<string[]>([]);
+  connecting = $state(false);
   screen = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
@@ -365,6 +366,7 @@ class GroupCallStore {
       );
     };
     room.onSpeaking = (speaking) => (this.speaking = speaking);
+    room.onConnecting = (connecting) => (this.connecting = connecting);
     room.onLatency = (milliseconds) => (this.latency = room.peers().length ? milliseconds : null);
     room.onPeerConnected = () => {
       this.#shareState();
@@ -644,6 +646,7 @@ class GroupCallStore {
     this.deafened = false;
     this.speaking = new Set();
     this.states = {};
+    this.connecting = false;
     this.latency = null;
   }
 

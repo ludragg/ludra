@@ -12,6 +12,7 @@ export class VoiceRoom {
   onPeerFailed: (peerId: string) => void = () => {};
   onPeerConnected: (peerId: string) => void = () => {};
   onScreen: (peerId: string, stream: MediaStream | null) => void = () => {};
+  onConnecting: (connecting: boolean) => void = () => {};
   directWith: (peerId: string) => boolean = () => false;
 
   #iceServers: IceServer[];
@@ -19,6 +20,7 @@ export class VoiceRoom {
   #microphone: Microphone | null = null;
   #links = new Map<string, PeerLink>();
   #latencies = new Map<string, number>();
+  #connecting = new Set<string>();
   #meter: number | undefined;
   #muted = false;
   #deafened = false;
@@ -58,6 +60,7 @@ export class VoiceRoom {
     this.#links.get(peerId)?.close();
     this.#links.delete(peerId);
     this.#latencies.delete(peerId);
+    this.#setConnecting(peerId, false);
     this.onLatency(this.#latencies.size ? Math.max(...this.#latencies.values()) : 0);
   }
 
@@ -124,6 +127,7 @@ export class VoiceRoom {
 
     const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#selfId > peerId, this.directWith(peerId));
     link.onScreen = (stream) => this.onScreen(peerId, stream);
+    link.onStatus = (connecting) => this.#setConnecting(peerId, connecting);
     link.onSignal = (kind, payload) => this.onSignal(peerId, kind, payload);
     link.onFailed = () => this.onPeerFailed(peerId);
     link.onConnected = () => this.onPeerConnected(peerId);
@@ -136,7 +140,21 @@ export class VoiceRoom {
     link.setDeafened(this.#deafened);
     link.setOutputDevice(preferences.values.outputDevice);
     this.#links.set(peerId, link);
+    this.#setConnecting(peerId, true);
     return link;
+  }
+
+  #setConnecting(peerId: string, connecting: boolean) {
+    const before = this.#connecting.size > 0;
+    if (connecting) {
+      this.#connecting.add(peerId);
+    } else {
+      this.#connecting.delete(peerId);
+    }
+    const after = this.#connecting.size > 0;
+    if (before !== after) {
+      this.onConnecting(after);
+    }
   }
 
   #watchSpeaking() {

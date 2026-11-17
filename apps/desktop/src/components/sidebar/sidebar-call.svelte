@@ -9,24 +9,40 @@
   let {
     label,
     ringing,
+    connecting,
     latency,
     onopen,
     onhangup,
-  }: { label: string; ringing: boolean; latency: number | null; onopen: () => void; onhangup: () => void } = $props();
+  }: {
+    label: string;
+    ringing: boolean;
+    connecting: boolean;
+    latency: number | null;
+    onopen: () => void;
+    onhangup: () => void;
+  } = $props();
 
   const bars = ["M5 20v-4", "M12 20v-9", "M19 20V6"];
   const filled: Record<Quality, number> = { unknown: 3, good: 3, fair: 2, poor: 1 };
 
+  let dismissed = $state(false);
+
   const quality = $derived<Quality>(
     latency === null ? "unknown" : latency < 100 ? "good" : latency <= 250 ? "fair" : "poor",
   );
-
-  const tip = $derived(
-    !ringing &&
-      (quality === "fair" || quality === "poor") &&
-      !preferences.values.directCalls &&
-      preferences.values.directTip,
+  const signal = $derived(ringing ? "ringing" : connecting ? "connecting" : quality);
+  const weak = $derived(
+    !ringing && !connecting && (quality === "fair" || quality === "poor") && !preferences.values.directCalls,
   );
+  const tip = $derived(weak && !dismissed);
+
+  function toggleTip() {
+    if (weak) {
+      dismissed = tip;
+    } else {
+      onopen();
+    }
+  }
 </script>
 
 <div class="sidebar-call">
@@ -35,7 +51,7 @@
       <strong class="sidebar-call__tip-title">{t("directTip.title")}</strong>
       <span class="sidebar-call__tip-body">{t("directTip.body", { latency: latency ?? 0 })}</span>
       <span class="sidebar-call__tip-actions">
-        <button class="sidebar-call__tip-button" onclick={() => preferences.set("directTip", false)}>
+        <button class="sidebar-call__tip-button" onclick={() => (dismissed = true)}>
           {t("directTip.dismiss")}
         </button>
         <button class="sidebar-call__tip-button sidebar-call__tip-button--primary" onclick={() => setDirectCalls(true)}>
@@ -44,25 +60,35 @@
       </span>
     </div>
   {/if}
-  <button class="sidebar-call__info" class:sidebar-call__info--ringing={ringing} onclick={onopen}>
-    <span class="sidebar-call__signal sidebar-call__signal--{ringing ? 'unknown' : quality}">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.4"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        {#each bars as bar, index (bar)}
-          <path d={bar} class:sidebar-call__bar--empty={index >= filled[quality]} />
-        {/each}
-      </svg>
-      {#if latency !== null && !ringing && !tip}
-        <span class="sidebar-call__latency" role="tooltip">{latency} ms</span>
-      {/if}
-    </span>
+  <button
+    class="sidebar-call__signal sidebar-call__signal--{signal}"
+    aria-label={t("call.connectionQuality")}
+    aria-expanded={weak ? tip : undefined}
+    onclick={toggleTip}
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      {#each bars as bar, index (bar)}
+        <path d={bar} class:sidebar-call__bar--empty={!connecting && index >= filled[quality]} />
+      {/each}
+    </svg>
+    {#if latency !== null && !ringing && !tip}
+      <span class="sidebar-call__latency" role="tooltip">{latency} ms</span>
+    {/if}
+  </button>
+  <button
+    class="sidebar-call__info"
+    class:sidebar-call__info--ringing={ringing}
+    class:sidebar-call__info--connecting={connecting && !ringing}
+    onclick={onopen}
+  >
     {label}
   </button>
   <button class="sidebar-call__hang-up" aria-label={t("call.hangUp")} title={t("call.hangUp")} onclick={onhangup}>
@@ -87,7 +113,6 @@
     flex-grow: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
     border: 0;
     background: transparent;
     color: var(--success-color);
@@ -100,13 +125,38 @@
     color: var(--subtle-color);
   }
 
+  .sidebar-call__info--connecting {
+    color: var(--warning-color);
+  }
+
   .sidebar-call__signal {
     position: relative;
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
+    margin: -3px -5px -3px -3px;
+    padding: 3px;
     flex: none;
     display: flex;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--success-color);
     transform: translateY(-1px);
+  }
+
+  .sidebar-call__signal--ringing {
+    color: var(--subtle-color);
+  }
+
+  .sidebar-call__signal--connecting {
+    color: var(--warning-color);
+    animation: sidebar-call__pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes sidebar-call__pulse {
+    50% {
+      opacity: 0.4;
+    }
   }
 
   .sidebar-call__signal svg {
@@ -132,7 +182,7 @@
 
   .sidebar-call__latency {
     position: absolute;
-    bottom: calc(100% + 8px);
+    bottom: calc(100% + 5px);
     left: 50%;
     padding: 4px 8px;
     display: none;
