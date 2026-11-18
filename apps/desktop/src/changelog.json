@@ -1,5 +1,26 @@
 [
   {
+    "version": "0.3.2",
+    "notes": {
+      "pt": {
+        "features": [],
+        "fixes": [
+          "A barra lateral voltou ao visual anterior, com as abas Diretas e Grupos, o perfil e a chamada em andamento.",
+          "A barra do canto esquerdo ganhou um visual próprio do Ludra, com o botão Início, que também abre os Amigos. Ela fica reservada para as comunidades, que chegam em breve.",
+          "A tela de Amigos voltou ao visual anterior."
+        ]
+      },
+      "en": {
+        "features": [],
+        "fixes": [
+          "The sidebar is back to its previous look, with the Direct and Groups tabs, your profile and the ongoing call.",
+          "The bar on the left edge got Ludra's own look, with a Home button that also opens Friends. It is reserved for communities, coming soon.",
+          "The Friends screen is back to its previous look."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.3.1",
     "notes": {
       "pt": {

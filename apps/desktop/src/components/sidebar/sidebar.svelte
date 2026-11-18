@@ -1,26 +1,24 @@
 <script lang="ts">
   import { t } from "@/i18n";
   import { calls } from "@/stores/call.svelte";
-  import { chat } from "@/stores/chat.svelte";
+  import { chat, type SidebarTab } from "@/stores/chat.svelte";
   import { groupCall } from "@/stores/group-call.svelte";
   import GroupDialog from "@/pages/group/group-dialog.svelte";
   import SidebarCall from "./sidebar-call.svelte";
   import SidebarConversation from "./sidebar-conversation.svelte";
+  import SidebarGroup from "./sidebar-group.svelte";
   import SidebarProfile from "./sidebar-profile.svelte";
 
   let creating = $state(false);
-  let query = $state("");
 
-  const needle = $derived(query.trim().toLocaleLowerCase());
-  const directs = $derived(
-    needle ? chat.directs.filter(({ peer }) => peer?.username.toLocaleLowerCase().includes(needle)) : chat.directs,
-  );
+  const tabs: { id: SidebarTab; label: string }[] = $derived([
+    { id: "direct", label: t("sidebar.direct") },
+    { id: "group", label: t("sidebar.groups") },
+  ]);
 
-  function onsearchkeydown(event: KeyboardEvent) {
-    if (event.key === "Escape" && query) {
-      event.stopPropagation();
-      query = "";
-    }
+  function unreadIn(tab: SidebarTab): number {
+    const list = tab === "direct" ? chat.directs : chat.groups;
+    return list.reduce((total, { id }) => total + (chat.unread[id] ?? 0), 0);
   }
 
   function openGroup(conversationId: string) {
@@ -31,19 +29,6 @@
 
 <nav class="sidebar" aria-label={t("sidebar.navigation")}>
   <div class="sidebar__top">
-    <input
-      class="sidebar__search"
-      type="text"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder={t("sidebar.search")}
-      aria-label={t("sidebar.search")}
-      bind:value={query}
-      onkeydown={onsearchkeydown}
-    />
-  </div>
-
-  <div class="sidebar__nav">
     <button
       class="sidebar__friends"
       class:sidebar__friends--active={chat.activeId === null && chat.view === "friends"}
@@ -67,43 +52,70 @@
       </svg>
       {t("sidebar.friends")}
       {#if chat.incoming > 0}
-        <span class="sidebar__badge" aria-label={t("sidebar.pendingRequests", { count: chat.incoming })}
-          >{chat.incoming}</span
-        >
+        <span class="sidebar__badge" aria-label={t("sidebar.pendingRequests", { count: chat.incoming })}>
+          {chat.incoming}
+        </span>
       {/if}
     </button>
   </div>
 
   <section class="sidebar__section">
-    <div class="sidebar__heading">
-      <h2 class="sidebar__title">{t("sidebar.directMessages")}</h2>
-      <button
-        class="sidebar__create"
-        aria-label={t("group.create")}
-        data-tooltip={t("group.create")}
-        onclick={() => (creating = true)}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.4"
-          stroke-linecap="round"
-          aria-hidden="true"
+    <div class="sidebar__tabs">
+      <div class="sidebar__tablist" role="tablist" aria-label={t("sidebar.conversations")}>
+        {#each tabs as tab (tab.id)}
+          <button
+            class="sidebar__tab"
+            class:sidebar__tab--active={chat.sidebarTab === tab.id}
+            role="tab"
+            aria-selected={chat.sidebarTab === tab.id}
+            onclick={() => (chat.sidebarTab = tab.id)}
+          >
+            {tab.label}
+            {#if unreadIn(tab.id) > 0 && chat.sidebarTab !== tab.id}
+              <span class="sidebar__tab-dot" aria-label={t("sidebar.unread", { count: unreadIn(tab.id) })}></span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      {#if chat.sidebarTab === "group"}
+        <button
+          class="sidebar__create"
+          aria-label={t("group.create")}
+          data-tooltip={t("group.create")}
+          onclick={() => (creating = true)}
         >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      {/if}
     </div>
 
     <ul class="sidebar__list">
-      {#each directs as conversation (conversation.id)}
-        <li>
-          <SidebarConversation {conversation} active={conversation.id === chat.activeId} />
-        </li>
+      {#if chat.sidebarTab === "direct"}
+        {#each chat.directs as conversation (conversation.id)}
+          <li>
+            <SidebarConversation {conversation} active={conversation.id === chat.activeId} />
+          </li>
+        {:else}
+          <li class="sidebar__empty">{t("sidebar.noConversations")}</li>
+        {/each}
       {:else}
-        <li class="sidebar__empty">{needle ? t("sidebar.noResults") : t("sidebar.noConversations")}</li>
-      {/each}
+        {#each chat.groups as conversation (conversation.id)}
+          <li>
+            <SidebarGroup {conversation} active={conversation.id === chat.activeId} />
+          </li>
+        {:else}
+          <li class="sidebar__empty">{t("sidebar.noGroups")}</li>
+        {/each}
+      {/if}
     </ul>
   </section>
 
@@ -142,76 +154,53 @@
 
 <style>
   .sidebar {
-    width: 240px;
+    width: 250px;
     flex: none;
+    padding-top: 16px;
     display: flex;
     flex-direction: column;
-    --avatar-ring: var(--sidebar-color);
-    background: var(--sidebar-color);
+    gap: 16px;
+    background: var(--dark-background-color);
+    border-right: 1px solid var(--border-color);
     color: var(--muted-color);
   }
 
-  .sidebar__top {
-    height: 48px;
-    padding: 0 10px;
-    flex: none;
+  .sidebar__footer {
+    padding: 0 16px 16px;
     display: flex;
-    align-items: center;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .sidebar__search {
-    width: 100%;
-    height: 28px;
-    padding: 0 8px;
-    border: 0;
-    border-radius: 4px;
-    background: var(--rail-color);
-    font-size: var(--small-font-size);
-    text-overflow: ellipsis;
-    text-align: center;
-  }
-
-  .sidebar__search:focus-visible {
-    outline: 1px solid var(--brand-color);
-    outline-offset: 0;
-    text-align: left;
-  }
-
-  .sidebar__nav {
-    padding: 8px 8px 0;
+  .sidebar__top {
+    padding: 0 16px;
   }
 
   .sidebar__friends {
     width: 100%;
-    height: 42px;
-    padding: 0 12px;
+    padding: 9px 8px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border: 0;
     border-radius: 4px;
     background: transparent;
-    color: var(--subtle-color);
-    font-weight: 500;
-    font-size: 15px;
+    font-weight: 600;
     text-align: left;
     transition: all ease 0.1s;
   }
 
   .sidebar__friends:hover {
-    background: #35373c;
-    color: var(--body-color);
+    background: var(--hover-color);
   }
 
   .sidebar__friends--active,
   .sidebar__friends--active:hover {
     background: var(--active-color);
-    color: #ffffff;
   }
 
   .sidebar__friends-icon {
-    width: 22px;
+    width: 18px;
     flex: none;
   }
 
@@ -222,72 +211,99 @@
     padding: 0 5px 1px;
     display: grid;
     place-items: center;
-    border-radius: 9px;
-    background: var(--error-color);
-    color: #ffffff;
+    border-radius: 6px;
+    background: var(--brand-color);
+    color: var(--dark-background-color);
     font-size: var(--tiny-font-size);
     font-weight: 700;
   }
 
   .sidebar__section {
     min-height: 0;
-    padding: 0 8px;
+    padding: 0 16px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    gap: 2px;
   }
 
-  .sidebar__heading {
-    padding: 18px 8px 4px 10px;
+  .sidebar__tabs {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 16px;
   }
 
-  .sidebar__title {
-    margin: 0;
-    font-family: var(--font-body);
-    font-size: var(--small-font-size);
-    font-weight: 500;
-    color: var(--subtle-color);
+  .sidebar__tablist {
+    flex-grow: 1;
+    display: flex;
+    gap: 16px;
   }
 
-  .sidebar__create {
-    width: 20px;
-    height: 20px;
-    padding: 2px;
-    display: grid;
-    place-items: center;
+  .sidebar__tab {
+    position: relative;
+    padding: 4px 0;
     border: 0;
+    border-bottom: 2px solid transparent;
     background: transparent;
     color: var(--subtle-color);
+    font-size: var(--small-font-size);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     transition: color ease 0.1s;
   }
 
+  .sidebar__tab:hover {
+    color: var(--muted-color);
+  }
+
+  .sidebar__tab--active {
+    color: var(--muted-color);
+    border-bottom-color: var(--brand-color);
+  }
+
+  .sidebar__tab-dot {
+    position: absolute;
+    top: 3px;
+    right: -8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand-color);
+  }
+
+  .sidebar__create {
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--subtle-color);
+    transition: all ease 0.1s;
+  }
+
   .sidebar__create:hover {
+    background: var(--active-color);
     color: var(--muted-color);
   }
 
   .sidebar__list {
-    margin: 0;
+    margin: 4px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
     overflow-y: auto;
     list-style: none;
   }
 
   .sidebar__empty {
-    padding: 8px 10px;
+    padding: 8px 0;
     font-size: var(--small-font-size);
     color: var(--subtle-color);
-  }
-
-  .sidebar__footer {
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    background: #232428;
   }
 </style>

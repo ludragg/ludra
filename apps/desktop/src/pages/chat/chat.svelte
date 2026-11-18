@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { ServerBar, Sidebar } from "@/components";
+  import { Sidebar } from "@/components";
+  import ServerBar from "@/components/server-bar/server-bar.svelte";
   import StreamAudio from "@/components/stream-audio/stream-audio.svelte";
   import { t } from "@/i18n";
   import { ConversationKind } from "@/protocol/ludra/v1/models_pb";
@@ -80,7 +81,6 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    --avatar-ring: var(--background-color);
     background: var(--background-color);
   }
 

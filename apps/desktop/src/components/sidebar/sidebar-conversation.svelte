@@ -3,7 +3,9 @@
   import CallIcon from "@/components/call-icon/call-icon.svelte";
   import Avatar from "@/components/avatar/avatar.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
+  import { callPreview, isCall } from "@/helpers/call-summary";
   import { Elapsed } from "@/helpers/duration.svelte";
+  import { formatRecent, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
@@ -22,8 +24,20 @@
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
 
+  const last = $derived(conversation.lastMessage);
   const callStart = $derived(calls.current?.peer.id === peer.id ? calls.current.startedAt : null);
   const unread = $derived(chat.unread[conversation.id] ?? 0);
+  const preview = $derived(
+    !last
+      ? t("sidebar.noMessages")
+      : isCall(last)
+        ? callPreview(last)
+        : last.senderId === chat.user?.id
+          ? t("sidebar.youSaid", { content: last.content })
+          : chat.isBlocked(last.senderId)
+            ? t("chat.blockedMessage")
+            : last.content,
+  );
 </script>
 
 <button
@@ -34,10 +48,13 @@
   onclick={() => chat.select(conversation.id)}
   oncontextmenu={openMenu}
 >
-  <Avatar user={peer} size="small" presence={peer.presence} />
+  <Avatar user={peer} size="small" />
   <span class="sidebar-conversation__body">
     <span class="sidebar-conversation__row">
       <span class="sidebar-conversation__name">{peer.username}</span>
+      {#if last}
+        <time class="sidebar-conversation__time">{formatRecent(toDate(last.sentAt))}</time>
+      {/if}
     </span>
     <span class="sidebar-conversation__row">
       {#if callStart !== null}
@@ -45,6 +62,8 @@
           <span class="sidebar-conversation__live-icon"><CallIcon name="phone" /></span>
           {elapsed.format(callStart)}
         </span>
+      {:else}
+        <span class="sidebar-conversation__preview">{preview}</span>
       {/if}
       {#if unread > 0}
         <span class="sidebar-conversation__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
@@ -60,45 +79,33 @@
 <style>
   .sidebar-conversation {
     width: 100%;
-    height: 42px;
-    padding: 0 8px;
+    padding: 9px 8px;
     display: flex;
     align-items: center;
     gap: 10px;
     border: 0;
     border-radius: 4px;
     background: transparent;
-    color: var(--subtle-color);
-    font-weight: 500;
+    color: var(--muted-color);
     text-align: left;
     line-height: 1.35;
     transition: all ease 0.1s;
   }
 
   .sidebar-conversation:hover {
-    --avatar-ring: #35373c;
-    background: #35373c;
-    color: var(--body-color);
+    background: var(--hover-color);
   }
 
   .sidebar-conversation--active,
   .sidebar-conversation--active:hover {
-    --avatar-ring: #404249;
     background: var(--active-color);
-    color: #ffffff;
   }
 
   .sidebar-conversation__body {
     min-width: 0;
     flex-grow: 1;
     display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .sidebar-conversation__row:first-child {
-    min-width: 0;
-    flex-grow: 1;
+    flex-direction: column;
   }
 
   .sidebar-conversation__row {
@@ -112,6 +119,13 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 600;
+  }
+
+  .sidebar-conversation__time {
+    margin-left: auto;
+    flex: none;
+    font-size: var(--tiny-font-size);
+    color: var(--subtle-color);
   }
 
   .sidebar-conversation__live {
@@ -131,8 +145,26 @@
     display: flex;
   }
 
-  .sidebar-conversation--unread {
-    color: #ffffff;
+  .sidebar-conversation__preview {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
+  }
+
+  .sidebar-conversation--active .sidebar-conversation__preview {
+    color: var(--body-color);
+  }
+
+  .sidebar-conversation--unread .sidebar-conversation__time {
+    color: var(--muted-color);
+    font-weight: 600;
+  }
+
+  .sidebar-conversation--unread .sidebar-conversation__preview {
+    color: var(--muted-color);
   }
 
   .sidebar-conversation__badge {
@@ -142,9 +174,9 @@
     flex: none;
     display: grid;
     place-items: center;
-    border-radius: 9px;
-    background: var(--error-color);
-    color: var(--on-brand-color);
+    border-radius: 6px;
+    background: var(--brand-color);
+    color: var(--dark-background-color);
     font-size: var(--tiny-font-size);
     font-weight: 700;
   }
