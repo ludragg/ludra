@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.3.1",
+    "notes": {
+      "pt": {
+        "features": [
+          "Novo layout em 4 colunas com barra lateral de grupos à esquerda, lista de mensagens diretas, área de amigos com estado vazio centralizado e painel Ativo agora."
+        ],
+        "fixes": [
+          "Ajuste dos indicadores de status diretamente nos avatares e preservação da paleta de cores escura oficial do Ludra."
+        ]
+      },
+      "en": {
+        "features": [
+          "New 4-column layout with a left group rail, direct messages sidebar, Friends area with centered empty state, and Active now panel."
+        ],
+        "fixes": ["Status indicators placed directly on avatars while preserving Ludra's official dark color palette."]
+      }
+    }
+  },
+  {
     "version": "0.3.0",
     "notes": {
       "pt": {

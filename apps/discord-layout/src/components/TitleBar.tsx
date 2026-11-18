@@ -25,7 +25,7 @@ export const TitleBar: React.FC = () => {
           Ludra
         </span>
         <span className="px-1.5 py-[2px] rounded-[4px] bg-white/[0.04] border border-white/[0.08] text-[10px] font-semibold leading-none text-[#8e919b] translate-y-[1px]">
-          v0.2.3
+          v0.3.1
         </span>
       </div>
 
