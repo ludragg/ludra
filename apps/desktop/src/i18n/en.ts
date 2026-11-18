@@ -333,6 +333,13 @@ export const en: Messages = {
     cannotAddSelf: "You can't add yourself.",
     requestFailed: "Couldn't send the request.",
   },
+  rail: {
+    home: "Home",
+    label: "Communities",
+    create: "Create community",
+    soonTitle: "Communities coming soon",
+    soon: "We are building communities. Soon you will be able to create yours here.",
+  },
   settings: {
     title: "Settings",
     sections: "Sections",

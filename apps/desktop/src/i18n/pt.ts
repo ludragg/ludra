@@ -332,6 +332,13 @@ export const pt = {
     cannotAddSelf: "Você não pode adicionar você mesmo.",
     requestFailed: "Não foi possível enviar o pedido.",
   },
+  rail: {
+    home: "Início",
+    label: "Comunidades",
+    create: "Criar comunidade",
+    soonTitle: "Comunidades em breve",
+    soon: "Estamos desenvolvendo as comunidades. Logo dá para criar a sua por aqui.",
+  },
   settings: {
     title: "Configurações",
     sections: "Seções",

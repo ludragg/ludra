@@ -491,7 +491,7 @@
   .group-call__button--off,
   .group-call__button--off:hover {
     background: var(--muted-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .group-call__button--leave,

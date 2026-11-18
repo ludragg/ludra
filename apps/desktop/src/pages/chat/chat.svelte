@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Sidebar } from "@/components";
+  import ServerBar from "@/components/server-bar/server-bar.svelte";
   import StreamAudio from "@/components/stream-audio/stream-audio.svelte";
   import { t } from "@/i18n";
   import { ConversationKind } from "@/protocol/ludra/v1/models_pb";
@@ -19,6 +20,7 @@
 </script>
 
 <div class="chat">
+  <ServerBar />
   <Sidebar />
 
   <main class="chat__main">
@@ -79,7 +81,7 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(0deg, var(--dark-background-color) 50%, var(--background-color) 100%);
+    background: var(--background-color);
   }
 
   .chat__locked {

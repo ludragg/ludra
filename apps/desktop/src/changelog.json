@@ -1,5 +1,55 @@
 [
   {
+    "version": "0.3.2",
+    "notes": {
+      "pt": {
+        "features": [],
+        "fixes": [
+          "A barra lateral voltou ao visual anterior, com as abas Diretas e Grupos, o perfil e a chamada em andamento.",
+          "A barra do canto esquerdo ganhou um visual próprio do Ludra, com o botão Início, que também abre os Amigos. Ela fica reservada para as comunidades, que chegam em breve.",
+          "A tela de Amigos voltou ao visual anterior."
+        ]
+      },
+      "en": {
+        "features": [],
+        "fixes": [
+          "The sidebar is back to its previous look, with the Direct and Groups tabs, your profile and the ongoing call.",
+          "The bar on the left edge got Ludra's own look, with a Home button that also opens Friends. It is reserved for communities, coming soon.",
+          "The Friends screen is back to its previous look."
+        ]
+      }
+    }
+  },
+  {
+    "version": "0.3.1",
+    "notes": {
+      "pt": {
+        "features": [
+          "Nova barra lateral esquerda de grupos (72px) com o botão inicial do dragão do Ludra, indicador ativo e transição suave dos ícones.",
+          "Barra lateral de mensagens diretas remodelada com campo de busca rápida no topo, botão de Amigos e atalho para criar grupo.",
+          "Novo painel Ativo agora à direita na tela de Amigos, mostrando os grupos que estão em chamada de voz em tempo real.",
+          "Estado vazio centralizado com a logo do Ludra nas abas de Amigos quando não há ninguém online ou pedidos pendentes."
+        ],
+        "fixes": [
+          "Indicador de status (Online, Ocupado e Invisível) agora aparece diretamente no canto da foto dos usuários.",
+          "Ajuste dos espaçamentos, divisórias e botões de ação mantendo a paleta escura e o roxo oficial do Ludra."
+        ]
+      },
+      "en": {
+        "features": [
+          "New left group rail (72px) with the Ludra dragon home button, active pill indicator, and smooth icon transitions.",
+          "Redesigned direct messages sidebar with a quick search input at the top, Friends button, and create group shortcut.",
+          "New Active now panel on the right side of the Friends screen, showing groups currently in a voice call in real time.",
+          "Centered empty state featuring the Ludra logo across Friends tabs when nobody is online or no requests are pending."
+        ],
+        "fixes": [
+          "Status indicators (Online, Busy, and Invisible) now appear directly on the corner of user avatars.",
+          "Refined spacing, dividers, and action buttons while preserving Ludra's official dark palette and purple accent."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.3.0",
     "notes": {
       "pt": {

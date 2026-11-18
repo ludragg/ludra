@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Noto Sans', 'gg sans', 'Inter Variable', Inter, 'Segoe UI', system-ui, sans-serif;
+  --font-display:
+    'Space Grotesk', 'Noto Sans', system-ui, sans-serif;
+  --breakpoint-xl-discord: 1200px;
+
+  /* Paleta oficial do Ludra combinada à arquitetura de 4 colunas estilo Discord */
+  --color-ludra-rail: #09090b;
+  --color-ludra-dark: #0d0d0d;
+  --color-ludra-bg: #121212;
+  --color-ludra-surface: #18181b;
+  --color-ludra-hover: #1f1f24;
+  --color-ludra-active: #26262c;
+  --color-ludra-brand: #c77dff;
+  --color-ludra-brand-hover: #b565f2;
+  --color-ludra-muted: #f0f1f7;
+  --color-ludra-body: #d0d1d7;
+  --color-ludra-subtle: #8e919b;
+  --color-ludra-online: #1c9749;
+  --color-ludra-warning: #ffc107;
+  --color-ludra-error: #e11d48;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    background-color: #0d0d0d;
+    color: #d0d1d7;
+    overflow: hidden;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Custom thin dark scrollbars matching Ludra */
+.discord-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.discord-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.discord-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+}
+
+.discord-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.24);
+}
+
+/* Main list scrollbar */
+.discord-main-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.discord-main-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 9999px;
+  margin-block: 4px;
+}
+
+.discord-main-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  border: 2px solid #121212;
+}
+
+.discord-main-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Hidden scrollbar for server bar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Slide-in animation for notification toast */
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(48px) translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+.animate-toast-in {
+  animation: toastSlideIn 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

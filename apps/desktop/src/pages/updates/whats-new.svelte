@@ -80,7 +80,7 @@
     padding: 2px 8px;
     border-radius: 4px;
     background: var(--brand-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
     font-size: var(--small-font-size);
     font-weight: 700;
   }

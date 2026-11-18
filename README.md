@@ -5,8 +5,8 @@
 
   <p>
     <strong>
-      Ludra is an open-source app for chatting and playing with friends: messages, groups, voice calls and screen
-      sharing, with remote play coming next. The server is written in Go and the desktop app in Tauri and Svelte.
+      Ludra is an open-source app for chatting and playing with friends: messages, groups, voice and video calls and
+      screen sharing, with remote play coming next. The server is written in Go and the desktop app in Tauri and Svelte.
     </strong>
   </p>
 
@@ -23,10 +23,10 @@
 
 ## Features
 
-- [x] Direct messages and groups of up to 10 people
+- [x] Direct messages and groups of up to 10 people, with message editing and deleting
 - [x] Friends, blocking, and Online, Busy and Invisible status
-- [x] Voice calls in direct messages and groups, with noise suppression
-- [x] Screen sharing up to 1440p at 120 FPS, with system audio
+- [x] Voice and video calls in direct messages and groups, with noise suppression
+- [x] Screen sharing up to 1440p at 120 FPS, with system audio, switching screens without stopping
 - [x] Call verification with signed signaling and a safety code
 - [x] Optional direct connection between friends for lower latency
 - [x] Automatic updates
