@@ -342,7 +342,7 @@
   .screen-picker__option--active:hover {
     border-color: var(--brand-color);
     background: var(--brand-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .screen-picker__actions {
@@ -365,7 +365,7 @@
   .screen-picker__button--primary {
     border-color: var(--muted-color);
     background: var(--muted-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .screen-picker__button--primary:disabled {

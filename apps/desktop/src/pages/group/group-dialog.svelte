@@ -237,7 +237,7 @@
     place-items: center;
     border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .group-dialog__box--checked {

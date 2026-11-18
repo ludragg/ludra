@@ -4,6 +4,7 @@ export { default as Checkbox } from "./checkbox/checkbox.svelte";
 export { default as CodeInput } from "./code-input/code-input.svelte";
 export { default as GroupAvatar } from "./group-avatar/group-avatar.svelte";
 export { default as Logo } from "./logo/logo.svelte";
+export { default as ServerBar } from "./server-bar/server-bar.svelte";
 export { default as Select } from "./select/select.svelte";
 export { default as Sidebar } from "./sidebar/sidebar.svelte";
 export { default as Status } from "./status/status.svelte";

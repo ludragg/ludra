@@ -47,7 +47,7 @@
 
   .button--primary {
     background: var(--muted-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .button--primary:hover:not(:disabled) {

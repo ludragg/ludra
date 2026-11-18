@@ -270,7 +270,7 @@
   .sidebar-call__tip-button--primary,
   .sidebar-call__tip-button--primary:hover {
     background: var(--brand-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .sidebar-call__tip-button--primary:hover {

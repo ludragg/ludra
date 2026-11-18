@@ -16,6 +16,10 @@
 
 :root {
   --background-color: #121212;
+  --sidebar-color: #0d0d0d;
+  --rail-color: #09090b;
+  --row-hover-color: rgba(255, 255, 255, 0.05);
+  --on-brand-color: #0d0d0d;
   --dark-background-color: #0d0d0d;
   --muted-color: #f0f1f7;
   --body-color: #d0d1d7;

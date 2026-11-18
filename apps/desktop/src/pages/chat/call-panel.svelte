@@ -370,7 +370,7 @@
   .call-panel__button--off,
   .call-panel__button--off:hover {
     background: var(--muted-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .call-panel__button--hang-up,

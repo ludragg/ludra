@@ -62,7 +62,7 @@
   .checkbox__box--checked {
     background: var(--brand-color);
     border-color: var(--brand-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
   }
 
   .checkbox__box svg {

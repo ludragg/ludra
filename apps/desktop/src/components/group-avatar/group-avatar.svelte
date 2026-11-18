@@ -1,7 +1,11 @@
 <script lang="ts">
   import { groupAvatarUrl } from "@/services/server";
 
-  let { id, avatar = "", size = "small" }: { id: string; avatar?: string; size?: "small" | "ringing" } = $props();
+  let {
+    id,
+    avatar = "",
+    size = "small",
+  }: { id: string; avatar?: string; size?: "small" | "ringing" | "fill" } = $props();
 
   let failed = $state<string | null>(null);
 
@@ -50,6 +54,13 @@
     width: 88px;
     height: 88px;
     padding: 22px;
+  }
+
+  .group-avatar--fill {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    border-radius: 0;
   }
 
   .group-avatar--photo {

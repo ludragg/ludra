@@ -197,7 +197,7 @@
     place-items: center;
     border-radius: 6px;
     background: var(--brand-color);
-    color: var(--dark-background-color);
+    color: var(--on-brand-color);
     font-size: var(--tiny-font-size);
     font-weight: 700;
   }
