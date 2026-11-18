@@ -62,25 +62,21 @@
     "notes": {
       "pt": {
         "features": [
-          "Nova barra lateral esquerda de grupos (72px) com o botão inicial do dragão do Ludra, indicador ativo e transição suave dos ícones.",
-          "Barra lateral de mensagens diretas remodelada com campo de busca rápida no topo, botão de Amigos e atalho para criar grupo.",
-          "Novo painel Ativo agora à direita na tela de Amigos, mostrando os grupos que estão em chamada de voz em tempo real.",
+          "Nova barra lateral esquerda com o botão Início (caixa de entrada roxa), a lista de grupos do usuário e o botão para criar um novo grupo.",
           "Estado vazio centralizado com a logo do Ludra nas abas de Amigos quando não há ninguém online ou pedidos pendentes."
         ],
         "fixes": [
-          "Indicador de status (Online, Ocupado e Invisível) agora aparece diretamente no canto da foto dos usuários.",
-          "Ajuste dos espaçamentos, divisórias e botões de ação mantendo a paleta escura e o roxo oficial do Ludra."
+          "A barra lateral mantém as abas Diretas e Grupos, o perfil e a chamada em andamento.",
+          "Ajuste dos espaçamentos, divisórias e botões mantendo a paleta escura e o roxo oficial do Ludra."
         ]
       },
       "en": {
         "features": [
-          "New left group rail (72px) with the Ludra dragon home button, active pill indicator, and smooth icon transitions.",
-          "Redesigned direct messages sidebar with a quick search input at the top, Friends button, and create group shortcut.",
-          "New Active now panel on the right side of the Friends screen, showing groups currently in a voice call in real time.",
+          "New left bar featuring the Home button (purple inbox), the user's groups list, and the button to create a new group.",
           "Centered empty state featuring the Ludra logo across Friends tabs when nobody is online or no requests are pending."
         ],
         "fixes": [
-          "Status indicators (Online, Busy, and Invisible) now appear directly on the corner of user avatars.",
+          "The sidebar keeps the Direct and Groups tabs, your profile, and the ongoing call.",
           "Refined spacing, dividers, and action buttons while preserving Ludra's official dark palette and purple accent."
         ]
       }
