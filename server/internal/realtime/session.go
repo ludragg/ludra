@@ -256,6 +256,21 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.sendMessage(ctx, payload.SendMessage)
+	case *protocol.ClientFrame_EditMessage:
+		if !s.guard.messages.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.editMessage(ctx, payload.EditMessage)
+	case *protocol.ClientFrame_DeleteMessage:
+		if !s.guard.messages.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.deleteMessage(ctx, payload.DeleteMessage)
+	case *protocol.ClientFrame_SetUsername:
+		if !s.guard.usernameChanges.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.setUsername(ctx, payload.SetUsername)
 	case *protocol.ClientFrame_ListFriends:
 		return s.listFriends(ctx)
 	case *protocol.ClientFrame_ListBlocked:
@@ -397,6 +412,28 @@ func (s *session) sendMessage(ctx context.Context, req *protocol.SendMessage) *p
 
 	frame := messageCreatedFrame(named(toMessage(message), s.user.Username, nil))
 	s.hub.publish(recipients, frame, s)
+	return frame
+}
+
+func (s *session) editMessage(ctx context.Context, req *protocol.EditMessage) *protocol.ServerFrame {
+	message, recipients, err := s.chat.EditMessage(ctx, s.user.Id, req.MessageId, req.Content)
+	if err != nil {
+		return failed(err)
+	}
+
+	frame := messageUpdatedFrame(named(toMessage(message), s.user.Username, nil))
+	s.hub.publish(recipients, frame, s)
+	return frame
+}
+
+func (s *session) deleteMessage(ctx context.Context, req *protocol.DeleteMessage) *protocol.ServerFrame {
+	deletion, err := s.chat.DeleteMessage(ctx, s.user.Id, req.MessageId)
+	if err != nil {
+		return failed(err)
+	}
+
+	frame := messageDeletedFrame(deletion, req.MessageId)
+	s.hub.publish(deletion.Recipients, frame, s)
 	return frame
 }
 

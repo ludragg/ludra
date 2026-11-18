@@ -45,7 +45,7 @@
       class="sidebar-profile__action"
       class:sidebar-profile__action--active={chat.activeId === null && chat.view === "settings"}
       aria-label={t("sidebar.settings")}
-      title={t("sidebar.settings")}
+      data-tooltip={t("sidebar.settings")}
       onclick={() => chat.showSettings()}
     >
       <svg
@@ -66,7 +66,7 @@
     <button
       class="sidebar-profile__action"
       aria-label={t("sidebar.logout")}
-      title={t("sidebar.logout")}
+      data-tooltip={t("sidebar.logout")}
       onclick={() => chat.logout()}
     >
       <svg

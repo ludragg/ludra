@@ -2,16 +2,17 @@ use tauri::webview::{PermissionKind, PermissionResponse};
 use tauri::{Manager, Runtime, Webview, WebviewWindow};
 use webview2_com::Microsoft::Web::WebView2::Win32::{
     COREWEBVIEW2_BROWSING_DATA_KINDS_DISK_CACHE, COREWEBVIEW2_PERMISSION_KIND,
-    COREWEBVIEW2_PERMISSION_KIND_AUTOPLAY, COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ,
-    COREWEBVIEW2_PERMISSION_KIND_MICROPHONE, COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS,
-    COREWEBVIEW2_PERMISSION_STATE_ALLOW, ICoreWebView2_13, ICoreWebView2Profile2,
-    ICoreWebView2Profile4,
+    COREWEBVIEW2_PERMISSION_KIND_AUTOPLAY, COREWEBVIEW2_PERMISSION_KIND_CAMERA,
+    COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ, COREWEBVIEW2_PERMISSION_KIND_MICROPHONE,
+    COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS, COREWEBVIEW2_PERMISSION_STATE_ALLOW,
+    ICoreWebView2_13, ICoreWebView2Profile2, ICoreWebView2Profile4,
 };
 use webview2_com::{ClearBrowsingDataCompletedHandler, SetPermissionStateCompletedHandler};
 use windows::core::{HSTRING, Interface};
 
-const GRANTED: [COREWEBVIEW2_PERMISSION_KIND; 4] = [
+const GRANTED: [COREWEBVIEW2_PERMISSION_KIND; 5] = [
     COREWEBVIEW2_PERMISSION_KIND_MICROPHONE,
+    COREWEBVIEW2_PERMISSION_KIND_CAMERA,
     COREWEBVIEW2_PERMISSION_KIND_AUTOPLAY,
     COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS,
     COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ,
@@ -26,6 +27,7 @@ const ORIGINS: [&str; 3] = [
 pub fn permission<R: Runtime>(_: Webview<R>, kind: PermissionKind) -> PermissionResponse {
     match kind {
         PermissionKind::Microphone
+        | PermissionKind::Camera
         | PermissionKind::Autoplay
         | PermissionKind::Notifications
         | PermissionKind::ClipboardRead => PermissionResponse::Allow,

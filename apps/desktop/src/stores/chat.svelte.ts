@@ -15,9 +15,10 @@ import { Client, ServerError, type Account, type SignIn } from "@/services/clien
 import { isCall } from "@/helpers/call-summary";
 import { maxUploadBytes, toAvatar } from "@/helpers/image";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
-import { notify, playMessageSound, windowFocused } from "@/services/desktop";
+import { playMessageSound, windowFocused } from "@/services/desktop";
 import { serverUrl } from "@/services/server";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
+import { callTarget, friendsTarget, onToastOpen, showToast } from "@/services/toast";
 import { calls } from "@/stores/call.svelte";
 import { focus } from "@/stores/focus";
 import { groupCall } from "@/stores/group-call.svelte";
@@ -38,14 +39,16 @@ export type SidebarTab = "direct" | "group";
 export type Next = { verify: string } | { twoFactor: string } | null;
 
 const retryDelays = [1000, 2000, 4000, 8000, 15_000];
-const maxAttempts = 12;
+const offlineAfter = 15_000;
 
 class ChatStore {
   user = $state<User | null>(null);
   email = $state("");
   twoFactor = $state(false);
+  renamedAt = $state<number | null>(null);
   restoring = $state(true);
   reconnecting = $state(false);
+  offline = $state(false);
   notice = $state("");
   view = $state<View>("friends");
   conversations = $state<Conversation[]>([]);
@@ -67,9 +70,27 @@ class ChatStore {
   #client: Client | null = null;
   #challenge: Client | null = null;
   #photoTimer: number | undefined;
+  #offlineTimer: number | undefined;
+  #generation = 0;
 
   constructor() {
     this.#restore();
+    onToastOpen((target) => this.#openTarget(target));
+  }
+
+  #openTarget(target: string) {
+    if (!this.user || target === callTarget) {
+      return;
+    }
+    if (target === friendsTarget) {
+      this.showFriends();
+      return;
+    }
+    const conversation = this.conversations.find(({ id }) => id === target);
+    if (conversation) {
+      this.sidebarTab = conversation.kind === ConversationKind.GROUP ? "group" : "direct";
+      this.select(conversation.id).catch(() => undefined);
+    }
   }
 
   register(email: string, username: string, password: string) {
@@ -147,11 +168,18 @@ class ChatStore {
     this.restoring = false;
   }
 
-  async #authenticate(start: (client: Client) => Promise<SignIn>, existing?: Client): Promise<Next> {
+  async #authenticate(
+    start: (client: Client) => Promise<SignIn>,
+    existing?: Client,
+    wanted: () => boolean = () => true,
+  ): Promise<Next> {
     const client = existing ?? (await Client.connect(serverUrl));
 
     try {
       const result = await start(client);
+      if (!wanted()) {
+        throw new Error(t("common.connectionLost"));
+      }
       if ("pendingEmail" in result) {
         client.close();
         return { verify: result.pendingEmail };
@@ -182,6 +210,7 @@ class ChatStore {
 
     client.onMessage = (message) => this.#receive(message);
     client.onMessageUpdated = (message) => this.#update(message);
+    client.onMessageDeleted = (conversationId, messageId, last) => this.#deleted(conversationId, messageId, last);
     client.onPresence = (userId, presence) => this.#presence(userId, presence);
     client.onFriend = (friend) => this.#friend(friend, true);
     client.onFriendRemoved = (userId) => this.#unfriend(userId);
@@ -210,6 +239,7 @@ class ChatStore {
     focus.busy = account.user.presence === Presence.BUSY;
     this.email = account.email;
     this.twoFactor = account.twoFactor;
+    this.renamedAt = account.renamedAt;
     this.names = {};
     this.#remember(account.user);
     for (const friend of friends) {
@@ -227,50 +257,59 @@ class ChatStore {
     this.conversations = conversations;
     this.friends = friends;
     this.blocked = blocked;
+    this.threads = {};
     this.view = "friends";
     this.notice = "";
   }
 
   async #reconnect() {
     const token = readSessionToken();
-    const activeId = this.activeId;
-    const sidebarTab = this.sidebarTab;
-    const voice = groupCall.snapshot();
-    this.#reset(token ? "" : t("common.connectionLost"));
     if (!token) {
+      this.#reset(t("common.connectionLost"));
       return;
     }
 
+    const voice = groupCall.snapshot();
+    this.#suspend();
+    const generation = this.#generation;
+    const wanted = () => generation === this.#generation;
     this.reconnecting = true;
-    for (let attempt = 0; this.reconnecting; attempt++) {
-      if (attempt === maxAttempts) {
-        this.reconnecting = false;
-        this.notice = t("common.connectionLost");
-        return;
-      }
+    this.#offlineTimer = window.setTimeout(() => (this.offline = true), offlineAfter);
+
+    let view = this.view;
+    for (let attempt = 0; wanted(); attempt++) {
+      view = this.view;
       try {
-        await this.#authenticate((client) => client.resume(token));
+        await this.#authenticate((client) => client.resume(token), undefined, wanted);
         break;
       } catch (error) {
-        if (error instanceof ServerError && error.code === ErrorCode.UNAUTHENTICATED) {
-          clearSessionToken();
-          this.reconnecting = false;
-          this.notice = t("common.connectionLost");
+        if (!wanted()) {
           return;
         }
-        const delay = retryDelays[Math.min(attempt, retryDelays.length - 1)];
+        if (error instanceof ServerError && error.code === ErrorCode.UNAUTHENTICATED) {
+          clearSessionToken();
+          this.#reset(t("common.connectionLost"));
+          return;
+        }
+        const delay = retryDelays[Math.min(attempt, retryDelays.length - 1)] * (0.75 + Math.random() * 0.5);
         await new Promise((resolve) => window.setTimeout(resolve, delay));
       }
     }
-    this.reconnecting = false;
+    if (!wanted()) {
+      return;
+    }
+    this.#online();
 
     const user = this.user;
     if (!user) {
       return;
     }
-    this.sidebarTab = sidebarTab;
+    this.view = view;
+    const activeId = this.activeId;
     if (activeId && this.conversations.some(({ id }) => id === activeId)) {
       await this.select(activeId).catch(() => undefined);
+    } else {
+      this.activeId = null;
     }
     if (voice && this.conversations.some(({ id, call }) => id === voice.conversationId && call)) {
       await groupCall.restore(voice, user.id);
@@ -417,6 +456,20 @@ class ChatStore {
     this.#userUpdated(await this.#client!.removeAvatar());
   }
 
+  async setUsername(username: string) {
+    this.#userUpdated(await this.#client!.setUsername(username));
+    this.renamedAt = Date.now();
+  }
+
+  async editMessage(messageId: string, content: string) {
+    this.#update(await this.#client!.editMessage(messageId, content));
+  }
+
+  async deleteMessage(messageId: string) {
+    const { conversationId, lastMessage } = await this.#client!.deleteMessage(messageId);
+    this.#deleted(conversationId, messageId, lastMessage);
+  }
+
   async select(conversationId: string) {
     this.activeId = conversationId;
     delete this.unread[conversationId];
@@ -503,9 +556,25 @@ class ChatStore {
       const conversation = this.conversations.find(({ id }) => id === message.conversationId);
       const sender = this.nameOf(message.senderId);
       if (conversation?.kind === ConversationKind.GROUP) {
-        notify(conversation.name, `${sender}: ${message.content}`);
+        showToast({
+          title: conversation.name,
+          body: `${sender}: ${message.content}`,
+          kind: "group",
+          id: conversation.id,
+          name: conversation.name,
+          avatar: conversation.avatar,
+          target: conversation.id,
+        });
       } else {
-        notify(sender, message.content);
+        showToast({
+          title: sender,
+          body: message.content,
+          kind: "user",
+          id: message.senderId,
+          name: sender,
+          avatar: conversation?.peer?.avatar ?? "",
+          target: message.conversationId,
+        });
       }
     }
   }
@@ -527,6 +596,20 @@ class ChatStore {
     const conversation = this.conversations.find(({ id }) => id === message.conversationId);
     if (conversation?.lastMessage?.id === message.id) {
       conversation.lastMessage = message;
+    }
+  }
+
+  #deleted(conversationId: string, messageId: string, last: Message | undefined) {
+    const thread = this.threads[conversationId];
+    if (thread) {
+      thread.messages = thread.messages.filter(({ id }) => id !== messageId);
+    }
+    const conversation = this.conversations.find(({ id }) => id === conversationId);
+    if (conversation?.lastMessage?.id === messageId) {
+      conversation.lastMessage = last;
+    }
+    if (last) {
+      this.#rememberMessage(last);
     }
   }
 
@@ -602,7 +685,15 @@ class ChatStore {
       this.#peerPresence(id, friend.user!.presence);
     }
     if (pushed && !known && !focus.busy && friend.state === FriendState.INCOMING && preferences.values.notifyRequests) {
-      notify("Ludra", t("notifications.friendRequest", { name: friend.user!.username }));
+      showToast({
+        title: friend.user!.username,
+        body: t("notifications.friendRequest", { name: friend.user!.username }),
+        kind: "user",
+        id,
+        name: friend.user!.username,
+        avatar: friend.user!.avatar,
+        target: friendsTarget,
+      });
     }
   }
 
@@ -612,19 +703,19 @@ class ChatStore {
   }
 
   #userUpdated(updated: User) {
-    if (this.user?.id === updated.id) {
-      this.user.avatar = updated.avatar;
-    }
-    for (const { user } of this.friends) {
-      if (user?.id === updated.id) {
-        user.avatar = updated.avatar;
+    const people = [
+      this.user,
+      ...this.friends.map(({ user }) => user),
+      ...this.conversations.flatMap(({ peer, members }) => [peer, ...members]),
+      ...this.blocked,
+    ];
+    for (const person of people) {
+      if (person?.id === updated.id) {
+        person.avatar = updated.avatar;
+        person.username = updated.username || person.username;
       }
     }
-    for (const { peer } of this.conversations) {
-      if (peer?.id === updated.id) {
-        peer.avatar = updated.avatar;
-      }
-    }
+    this.#remember(updated);
   }
 
   #peerPresence(userId: string, presence: Presence) {
@@ -635,7 +726,22 @@ class ChatStore {
     }
   }
 
+  #suspend() {
+    calls.detach();
+    groupCall.detach();
+    trust.detach();
+    this.#client = null;
+  }
+
+  #online() {
+    window.clearTimeout(this.#offlineTimer);
+    this.reconnecting = false;
+    this.offline = false;
+  }
+
   #reset(notice: string) {
+    this.#generation++;
+    this.#online();
     focus.busy = false;
     this.groupPhotoError = null;
     window.clearTimeout(this.#photoTimer);
@@ -646,6 +752,7 @@ class ChatStore {
     this.user = null;
     this.email = "";
     this.twoFactor = false;
+    this.renamedAt = null;
     this.view = "friends";
     this.conversations = [];
     this.friends = [];

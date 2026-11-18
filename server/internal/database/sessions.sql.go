@@ -88,21 +88,23 @@ SELECT
     u.avatar,
     u.invisible,
     u.busy,
-    u.two_factor
+    u.two_factor,
+    u.username_changed_at
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now()
 `
 
 type GetSessionRow struct {
-	SessionID string
-	ID        string
-	Username  string
-	Email     string
-	Avatar    string
-	Invisible bool
-	Busy      bool
-	TwoFactor bool
+	SessionID         string
+	ID                string
+	Username          string
+	Email             string
+	Avatar            string
+	Invisible         bool
+	Busy              bool
+	TwoFactor         bool
+	UsernameChangedAt *time.Time
 }
 
 func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
@@ -117,6 +119,7 @@ func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionR
 		&i.Invisible,
 		&i.Busy,
 		&i.TwoFactor,
+		&i.UsernameChangedAt,
 	)
 	return i, err
 }

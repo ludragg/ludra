@@ -4,7 +4,6 @@ import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
-import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { t } from "@/i18n";
 import { preferences } from "@/stores/preferences.svelte";
 import { updates } from "@/stores/updates.svelte";
@@ -94,20 +93,6 @@ export async function syncTray() {
 
 export function windowFocused(): boolean {
   return !document.hidden && document.hasFocus();
-}
-
-export async function notify(title: string, body: string) {
-  if (!desktop) {
-    return;
-  }
-
-  let granted = await isPermissionGranted();
-  if (!granted) {
-    granted = (await requestPermission()) === "granted";
-  }
-  if (granted) {
-    sendNotification({ title, body });
-  }
 }
 
 export function playMessageSound() {

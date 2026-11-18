@@ -1,5 +1,40 @@
 [
   {
+    "version": "0.3.0",
+    "notes": {
+      "pt": {
+        "features": [
+          "Câmera nas chamadas privadas e em grupo. Ela aparece no lugar da foto, cresce junto com o painel e há botões para já ligar com a câmera ligada.",
+          "Edite e apague suas mensagens passando o mouse em cima delas. O dono do grupo pode apagar a mensagem de qualquer pessoa.",
+          "Agora dá para trocar o nome de usuário em Configurações › Conta, uma vez a cada 30 dias.",
+          "Clicar em compartilhar durante uma transmissão abre as opções da transmissão: troque a tela, a janela ou a qualidade sem parar.",
+          "Notificações e dicas dos botões agora seguem o visual do Ludra.",
+          "Se a conexão cair, o Ludra continua tentando reconectar sozinho e mostra uma tela de carregamento depois de 15 segundos."
+        ],
+        "fixes": [
+          "Remover amigo agora se chama Desfazer amizade.",
+          "Os ícones de transmissões verticais não ficam mais um em cima do outro.",
+          "Uma chamada em grupo com uma pessoa só agora dura 10 minutos antes de encerrar."
+        ]
+      },
+      "en": {
+        "features": [
+          "Camera in direct and group calls. It shows in place of the photo, grows with the panel, and there are buttons to start a call with the camera on.",
+          "Edit and delete your messages by hovering them. The group owner can delete anyone's message.",
+          "You can now change your username in Settings › Account, once every 30 days.",
+          "Clicking share while streaming opens the stream options: switch screen, window or quality without stopping.",
+          "Notifications and button tooltips now follow the Ludra look.",
+          "If the connection drops, Ludra keeps reconnecting on its own and shows a loading screen after 15 seconds."
+        ],
+        "fixes": [
+          "Remove friend is now called Unfriend.",
+          "Icons on vertical streams no longer overlap.",
+          "A group call with only one person now lasts 10 minutes before it ends."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.2.3",
     "notes": {
       "pt": {

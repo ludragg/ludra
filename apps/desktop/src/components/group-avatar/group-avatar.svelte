@@ -5,7 +5,7 @@
     id,
     avatar = "",
     size = "small",
-  }: { id: string; avatar?: string; size?: "small" | "ringing" | "fill" } = $props();
+  }: { id: string; avatar?: string; size?: "small" | "large" | "ringing" | "fill" } = $props();
 
   let failed = $state<string | null>(null);
 
@@ -48,6 +48,12 @@
     place-items: center;
     border-radius: 50%;
     color: var(--dark-background-color);
+  }
+
+  .group-avatar--large {
+    width: 40px;
+    height: 40px;
+    padding: 10px;
   }
 
   .group-avatar--ringing {

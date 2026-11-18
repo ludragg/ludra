@@ -1,5 +1,6 @@
 import type { IceServer } from "@/protocol/ludra/v1/models_pb";
 import { SignalKind } from "@/protocol/ludra/v1/models_pb";
+import { cameraCarrier, cameraEncoding } from "@/services/camera";
 import {
   applyScreenEncoding,
   preferScreenCodecs,
@@ -64,6 +65,7 @@ export class PeerLink {
   onFailed: () => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
   onScreen: (stream: MediaStream | null) => void = () => {};
+  onCamera: (stream: MediaStream | null) => void = () => {};
   onStatus: (connecting: boolean) => void = () => {};
 
   #connection: RTCPeerConnection;
@@ -83,6 +85,11 @@ export class PeerLink {
   #deafened = false;
   #voice: MediaStream | null = null;
   #screen: MediaStream | null = null;
+  #camera: MediaStream | null = null;
+  #streams = new Map<string, MediaStream>();
+  #remoteCamera = "";
+  #cameraIds = new Set<string>();
+  #cameraSender: RTCRtpSender | null = null;
   #screenSenders: RTCRtpSender[] = [];
   #senderKinds = new Map<RTCRtpSender, string>();
   #screenQuality: ScreenQuality | null = null;
@@ -166,6 +173,9 @@ export class PeerLink {
       this.#emitStatus();
       this.onConnected();
       this.#watchLatency();
+      if (this.#connection.getTransceivers().some(({ mid, sender }) => mid === null && sender.track)) {
+        this.#renegotiate();
+      }
       if (this.#restartWanted) {
         this.#scheduleRestart();
       }
@@ -301,6 +311,34 @@ export class PeerLink {
     return this.#screen;
   }
 
+  get camera(): MediaStream | null {
+    return this.#camera;
+  }
+
+  async setCamera(track: MediaStreamTrack | null) {
+    if (this.#cameraSender) {
+      await this.#cameraSender.replaceTrack(track).catch(() => undefined);
+      return;
+    }
+    if (!track || this.#connection.connectionState === "closed") {
+      return;
+    }
+    const transceiver = this.#connection.addTransceiver(track, {
+      direction: "sendrecv",
+      streams: [cameraCarrier],
+      sendEncodings: [{ ...cameraEncoding }],
+    });
+    this.#cameraSender = transceiver.sender;
+  }
+
+  setRemoteCamera(streamId: string) {
+    this.#remoteCamera = streamId;
+    if (streamId) {
+      this.#cameraIds.add(streamId);
+    }
+    this.#classify();
+  }
+
   async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
     this.#screenQuality = stream ? quality : null;
     window.clearInterval(this.#encoderCheck);
@@ -388,10 +426,8 @@ export class PeerLink {
     this.#remote.pause();
     this.#remote.srcObject = null;
     this.#context.close();
-    if (this.#screen) {
-      this.#screen = null;
-      this.onScreen(null);
-    }
+    this.#streams.clear();
+    this.#classify();
   }
 
   async #renegotiate() {
@@ -425,10 +461,23 @@ export class PeerLink {
     if (stream.id === this.#voice?.id) {
       return;
     }
+    this.#streams.set(stream.id, stream);
+    this.#classify();
+  }
 
-    this.#screen = stream;
-    if (track.kind === "video") {
-      this.onScreen(stream);
+  #classify() {
+    const camera = (this.#remoteCamera && this.#streams.get(this.#remoteCamera)) || null;
+    const screen =
+      [...this.#streams.values()].find(
+        (stream) => !this.#cameraIds.has(stream.id) && stream.getVideoTracks().length > 0,
+      ) ?? null;
+    if (camera !== this.#camera) {
+      this.#camera = camera;
+      this.onCamera(camera);
+    }
+    if (screen !== this.#screen) {
+      this.#screen = screen;
+      this.onScreen(screen);
     }
   }
 

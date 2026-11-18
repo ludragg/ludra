@@ -38,6 +38,7 @@ type Session struct {
 	Invisible bool
 	Busy      bool
 	TwoFactor bool
+	Renamed   *time.Time
 }
 
 type Outcome struct {
@@ -233,6 +234,7 @@ func (s *Service) Resume(ctx context.Context, token string) (Outcome, error) {
 		Invisible: row.Invisible,
 		Busy:      row.Busy,
 		TwoFactor: row.TwoFactor,
+		Renamed:   row.UsernameChangedAt,
 	}}, nil
 }
 
@@ -277,6 +279,7 @@ func (s *Service) startSession(ctx context.Context, user database.User) (Outcome
 		Invisible: user.Invisible,
 		Busy:      user.Busy,
 		TwoFactor: user.TwoFactor,
+		Renamed:   user.UsernameChangedAt,
 	}}, nil
 }
 

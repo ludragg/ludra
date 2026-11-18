@@ -55,7 +55,7 @@
   type="button"
   class="resize-handle"
   aria-label={t("screen.resize")}
-  title={t("screen.resize")}
+  data-tooltip={t("screen.resize")}
   {onpointerdown}
   {onpointermove}
   {onpointerup}

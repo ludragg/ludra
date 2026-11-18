@@ -12,6 +12,7 @@ export class VoiceRoom {
   onPeerFailed: (peerId: string) => void = () => {};
   onPeerConnected: (peerId: string) => void = () => {};
   onScreen: (peerId: string, stream: MediaStream | null) => void = () => {};
+  onCamera: (peerId: string, stream: MediaStream | null) => void = () => {};
   onConnecting: (connecting: boolean) => void = () => {};
   directWith: (peerId: string) => boolean = () => false;
 
@@ -21,6 +22,8 @@ export class VoiceRoom {
   #links = new Map<string, PeerLink>();
   #latencies = new Map<string, number>();
   #connecting = new Set<string>();
+  #camera: MediaStreamTrack | null = null;
+  #remoteCameras = new Map<string, string>();
   #meter: number | undefined;
   #muted = false;
   #deafened = false;
@@ -59,6 +62,7 @@ export class VoiceRoom {
   remove(peerId: string) {
     this.#links.get(peerId)?.close();
     this.#links.delete(peerId);
+    this.#remoteCameras.delete(peerId);
     this.#latencies.delete(peerId);
     this.#setConnecting(peerId, false);
     this.onLatency(this.#latencies.size ? Math.max(...this.#latencies.values()) : 0);
@@ -74,6 +78,16 @@ export class VoiceRoom {
 
   async setScreen(peerId: string, stream: MediaStream | null, quality: ScreenQuality | null) {
     await this.#links.get(peerId)?.setScreen(stream, quality);
+  }
+
+  async setCamera(track: MediaStreamTrack | null) {
+    this.#camera = track;
+    await Promise.all([...this.#links.values()].map((link) => link.setCamera(track)));
+  }
+
+  setRemoteCamera(peerId: string, streamId: string) {
+    this.#remoteCameras.set(peerId, streamId);
+    this.#links.get(peerId)?.setRemoteCamera(streamId);
   }
 
   peers(): string[] {
@@ -127,6 +141,11 @@ export class VoiceRoom {
 
     const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#selfId > peerId, this.directWith(peerId));
     link.onScreen = (stream) => this.onScreen(peerId, stream);
+    link.onCamera = (stream) => this.onCamera(peerId, stream);
+    link.setRemoteCamera(this.#remoteCameras.get(peerId) ?? "");
+    if (this.#camera) {
+      link.setCamera(this.#camera);
+    }
     link.onStatus = (connecting) => this.#setConnecting(peerId, connecting);
     link.onSignal = (kind, payload) => this.onSignal(peerId, kind, payload);
     link.onFailed = () => this.onPeerFailed(peerId);

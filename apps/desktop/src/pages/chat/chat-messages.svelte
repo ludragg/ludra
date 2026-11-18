@@ -6,9 +6,16 @@
   import UserMenu from "@/components/user-menu/user-menu.svelte";
   import { callSummary, isCall } from "@/helpers/call-summary";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
+  import { clean } from "@/helpers/text";
   import { formatDay, formatTime, sameDay, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
-  import { CallOutcome, ConversationKind, MessageEvent, type Message } from "@/protocol/ludra/v1/models_pb";
+  import {
+    CallOutcome,
+    ConversationKind,
+    MessageEvent,
+    MessageKind,
+    type Message,
+  } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
   type Group = {
@@ -28,6 +35,8 @@
   let lastSeen: string | undefined;
   let revealed = $state<Record<string, boolean>>({});
   let menu = $state<{ user: { id: string; username: string }; x: number; y: number } | null>(null);
+  let editing = $state<{ id: string; content: string } | null>(null);
+  let armed = $state<string | null>(null);
 
   function openMenu(event: MouseEvent, user: { id: string; username: string }) {
     if (user.id === chat.user?.id || user.username === "?") {
@@ -42,6 +51,51 @@
   const isGroup = $derived(chat.active?.kind === ConversationKind.GROUP);
   const myId = $derived(chat.user?.id ?? "");
   const nameOf = (userId: string) => chat.nameOf(userId);
+  const owner = $derived(isGroup && chat.active?.ownerId === myId);
+
+  function editable(message: Message): boolean {
+    return message.kind === MessageKind.TEXT && message.senderId === myId;
+  }
+
+  function deletable(message: Message): boolean {
+    return message.kind === MessageKind.TEXT && (message.senderId === myId || owner);
+  }
+
+  function edited(message: Message): string {
+    const date = toDate(message.editedAt);
+    return t("chat.editedAt", { day: formatDay(date), time: formatTime(date) });
+  }
+
+  function startEdit(message: Message) {
+    armed = null;
+    editing = { id: message.id, content: message.content };
+  }
+
+  async function saveEdit(event: SubmitEvent, message: Message) {
+    event.preventDefault();
+    const content = clean(editing?.content ?? "");
+    editing = null;
+    if (!content || content === message.content) {
+      return;
+    }
+    await chat.editMessage(message.id, content).catch(() => undefined);
+  }
+
+  function editKey(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      editing = null;
+    }
+  }
+
+  async function remove(message: Message) {
+    if (armed !== message.id) {
+      armed = message.id;
+      return;
+    }
+    armed = null;
+    await chat.deleteMessage(message.id).catch(() => undefined);
+  }
 
   $effect(() => {
     const last = thread?.messages.at(-1);
@@ -176,24 +230,104 @@
             <time class="chat-messages__time">{group.time}</time>
           </header>
           {#each group.messages as message (message.id)}
-            {#if chat.isBlocked(message.senderId)}
-              {@const shown = revealed[message.id] === true}
-              <p class="chat-messages__text chat-messages__text--blocked">
-                {#if shown}
-                  <span>{message.content}</span>
-                {:else}
-                  <span class="chat-messages__censored">{t("chat.blockedMessage")}</span>
-                {/if}
-                <EyeButton
-                  {shown}
-                  show="chat.revealMessage"
-                  hide="chat.hideMessage"
-                  ontoggle={() => (revealed[message.id] = !shown)}
-                />
-              </p>
-            {:else}
-              <p class="chat-messages__text">{message.content}</p>
-            {/if}
+            <div class="chat-messages__message" class:chat-messages__message--editing={editing?.id === message.id}>
+              {#if editing?.id === message.id}
+                <form class="chat-messages__edit" onsubmit={(event) => saveEdit(event, message)}>
+                  <input
+                    class="chat-messages__edit-input"
+                    aria-label={t("chat.editMessage")}
+                    maxlength="4000"
+                    autocomplete="off"
+                    bind:value={editing.content}
+                    onkeydown={editKey}
+                    {@attach (input) => input.focus()}
+                  />
+                  <span class="chat-messages__edit-hint">
+                    {t("chat.escapeTo")}
+                    <button type="button" class="chat-messages__edit-link" onclick={() => (editing = null)}>
+                      {t("chat.cancelEdit")}
+                    </button>
+                    · {t("chat.enterTo")}
+                    <button type="submit" class="chat-messages__edit-link">{t("chat.saveEdit")}</button>
+                  </span>
+                </form>
+              {:else if chat.isBlocked(message.senderId)}
+                {@const shown = revealed[message.id] === true}
+                <p class="chat-messages__text chat-messages__text--blocked">
+                  {#if shown}
+                    <span>{message.content}</span>
+                  {:else}
+                    <span class="chat-messages__censored">{t("chat.blockedMessage")}</span>
+                  {/if}
+                  <EyeButton
+                    {shown}
+                    show="chat.revealMessage"
+                    hide="chat.hideMessage"
+                    ontoggle={() => (revealed[message.id] = !shown)}
+                  />
+                </p>
+              {:else}
+                <p class="chat-messages__text">
+                  {message.content}
+                  {#if message.editedAt}
+                    <span class="chat-messages__edited" data-tooltip={edited(message)}>{t("chat.edited")}</span>
+                  {/if}
+                </p>
+              {/if}
+              {#if editing?.id !== message.id && (editable(message) || deletable(message))}
+                <div class="chat-messages__actions" role="toolbar" aria-label={t("chat.messageActions")}>
+                  {#if editable(message)}
+                    <button
+                      type="button"
+                      class="chat-messages__action"
+                      aria-label={t("chat.editMessage")}
+                      data-tooltip={t("chat.editMessage")}
+                      onclick={() => startEdit(message)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 20h4L19 9l-4-4L4 16z" />
+                        <path d="m13.5 6.5 4 4" />
+                      </svg>
+                    </button>
+                  {/if}
+                  {#if deletable(message)}
+                    <button
+                      type="button"
+                      class="chat-messages__action chat-messages__action--delete"
+                      class:chat-messages__action--armed={armed === message.id}
+                      aria-label={armed === message.id ? t("chat.confirmDelete") : t("chat.deleteMessage")}
+                      data-tooltip={armed === message.id ? t("chat.confirmDelete") : t("chat.deleteMessage")}
+                      onclick={() => remove(message)}
+                      onpointerleave={() => {
+                        if (armed === message.id) {
+                          armed = null;
+                        }
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+                      </svg>
+                    </button>
+                  {/if}
+                </div>
+              {/if}
+            </div>
           {/each}
         </div>
       </article>
@@ -286,6 +420,7 @@
 
   .chat-messages__content {
     min-width: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -310,6 +445,111 @@
   .chat-messages__time {
     font-size: var(--small-font-size);
     color: var(--subtle-color);
+  }
+
+  .chat-messages__message {
+    position: relative;
+    margin: 0 -8px;
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+
+  .chat-messages__message:hover,
+  .chat-messages__message:focus-within {
+    background: var(--surface-color);
+  }
+
+  .chat-messages__message--editing,
+  .chat-messages__message--editing:hover,
+  .chat-messages__message--editing:focus-within {
+    padding: 4px 8px;
+    background: transparent;
+  }
+
+  .chat-messages__actions {
+    position: absolute;
+    top: -16px;
+    right: 8px;
+    z-index: 1;
+    padding: 2px;
+    display: none;
+    gap: 2px;
+    border-radius: 6px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .chat-messages__message:hover .chat-messages__actions,
+  .chat-messages__message:focus-within .chat-messages__actions {
+    display: flex;
+  }
+
+  .chat-messages__action {
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--subtle-color);
+    transition: all ease 0.1s;
+  }
+
+  .chat-messages__action:hover {
+    background: var(--active-color);
+    color: var(--muted-color);
+  }
+
+  .chat-messages__action--delete:hover {
+    color: #f6746b;
+  }
+
+  .chat-messages__action--armed,
+  .chat-messages__action--armed:hover {
+    background: var(--danger-color);
+    color: var(--muted-color);
+  }
+
+  .chat-messages__edited {
+    margin-left: 4px;
+    font-size: var(--tiny-font-size);
+    color: var(--subtle-color);
+  }
+
+  .chat-messages__edit {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .chat-messages__edit-input {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    outline: 0;
+    background: var(--dark-background-color);
+    color: var(--muted-color);
+  }
+
+  .chat-messages__edit-hint {
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
+  }
+
+  .chat-messages__edit-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--brand-color);
+    font-size: inherit;
+  }
+
+  .chat-messages__edit-link:hover {
+    text-decoration: underline;
   }
 
   .chat-messages__text {

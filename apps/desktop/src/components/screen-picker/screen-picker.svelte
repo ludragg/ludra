@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { t } from "@/i18n";
   import { listScreenSources, type ScreenSource } from "@/services/native-screen";
   import { frameRates, resolutions, type FrameRate, type Resolution, type ScreenQuality } from "@/services/screen";
@@ -6,14 +7,29 @@
 
   type Tab = "screen" | "window";
 
-  let { onshare, onclose }: { onshare: (sourceId: string, quality: ScreenQuality) => void; onclose: () => void } =
-    $props();
+  type Current = { sourceId: string; quality: ScreenQuality };
+
+  let {
+    current = null,
+    onshare,
+    onstop,
+    onclose,
+  }: {
+    current?: Current | null;
+    onshare: (sourceId: string, quality: ScreenQuality) => void;
+    onstop?: () => void;
+    onclose: () => void;
+  } = $props();
+
+  const initial = untrack(() => current);
 
   let tab = $state<Tab>("screen");
   let sources = $state<ScreenSource[] | null>(null);
   let selected = $state<string | null>(null);
-  let resolution = $state<Resolution>(pick(resolutions, preferences.values.shareResolution, 1080));
-  let fps = $state<FrameRate>(pick(frameRates, preferences.values.shareFps, 60));
+  let resolution = $state<Resolution>(
+    initial?.quality.resolution ?? pick(resolutions, preferences.values.shareResolution, 1080),
+  );
+  let fps = $state<FrameRate>(initial?.quality.fps ?? pick(frameRates, preferences.values.shareFps, 60));
 
   const visible = $derived((sources ?? []).filter(({ kind }) => kind === tab));
 
@@ -21,7 +37,9 @@
     listScreenSources()
       .then((list) => {
         sources = list;
-        selected = list.find(({ kind }) => kind === "screen")?.id ?? null;
+        const live = list.find(({ id }) => id === initial?.sourceId);
+        tab = live?.kind ?? "screen";
+        selected = live?.id ?? list.find(({ kind }) => kind === "screen")?.id ?? null;
       })
       .catch(() => (sources = []));
   });
@@ -37,7 +55,11 @@
     }
     preferences.set("shareResolution", resolution);
     preferences.set("shareFps", fps);
-    onshare(selected, { resolution, fps });
+    const unchanged =
+      initial?.sourceId === selected && initial.quality.resolution === resolution && initial.quality.fps === fps;
+    if (!unchanged) {
+      onshare(selected, { resolution, fps });
+    }
     onclose();
   }
 
@@ -60,7 +82,9 @@
   <div class="screen-picker__card" role="dialog" aria-modal="true" aria-labelledby="screen-picker-title">
     <form class="screen-picker__form" onsubmit={submit}>
       <div class="screen-picker__header">
-        <h2 id="screen-picker-title" class="screen-picker__title">{t("screen.title")}</h2>
+        <h2 id="screen-picker-title" class="screen-picker__title">
+          {initial ? t("screen.options") : t("screen.title")}
+        </h2>
         <div class="screen-picker__tabs" role="tablist">
           <button
             type="button"
@@ -96,12 +120,15 @@
               class:screen-picker__source--active={selected === source.id}
               role="radio"
               aria-checked={selected === source.id}
-              title={source.name}
+              data-tooltip={source.name}
               onclick={() => (selected = source.id)}
             >
               <span class="screen-picker__preview">
                 {#if source.thumbnail}
                   <img class="screen-picker__thumbnail" src={source.thumbnail} alt="" />
+                {/if}
+                {#if source.id === initial?.sourceId}
+                  <span class="screen-picker__live">{t("screen.live")}</span>
                 {/if}
               </span>
               <span class="screen-picker__name">{source.name}</span>
@@ -150,9 +177,21 @@
       </div>
 
       <div class="screen-picker__actions">
+        {#if initial && onstop}
+          <button
+            type="button"
+            class="screen-picker__button screen-picker__button--danger"
+            onclick={() => {
+              onstop();
+              onclose();
+            }}
+          >
+            {t("screen.stop")}
+          </button>
+        {/if}
         <button type="button" class="screen-picker__button" onclick={onclose}>{t("screen.cancel")}</button>
         <button type="submit" class="screen-picker__button screen-picker__button--primary" disabled={!selected}>
-          {t("screen.start")}
+          {initial ? t("screen.update") : t("screen.start")}
         </button>
       </div>
     </form>
@@ -273,6 +312,7 @@
   }
 
   .screen-picker__preview {
+    position: relative;
     aspect-ratio: 16 / 9;
     display: grid;
     place-items: center;
@@ -285,6 +325,19 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .screen-picker__live {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--error-color);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
   }
 
   .screen-picker__name {
@@ -360,6 +413,12 @@
     color: var(--muted-color);
     font-size: var(--hint-font-size);
     font-weight: 600;
+  }
+
+  .screen-picker__button--danger {
+    margin-right: auto;
+    border-color: transparent;
+    background: var(--danger-color);
   }
 
   .screen-picker__button--primary {

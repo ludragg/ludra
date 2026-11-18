@@ -80,7 +80,7 @@
       <button
         class="sidebar__create"
         aria-label={t("group.create")}
-        title={t("group.create")}
+        data-tooltip={t("group.create")}
         onclick={() => (creating = true)}
       >
         <svg
@@ -135,10 +135,6 @@
     <SidebarProfile />
   </div>
 </nav>
-
-{#if creating}
-  <GroupDialog onclose={() => (creating = false)} />
-{/if}
 
 {#if creating}
   <GroupDialog onclose={() => (creating = false)} />

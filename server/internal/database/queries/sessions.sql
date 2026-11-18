@@ -12,7 +12,8 @@ SELECT
     u.avatar,
     u.invisible,
     u.busy,
-    u.two_factor
+    u.two_factor,
+    u.username_changed_at
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now();

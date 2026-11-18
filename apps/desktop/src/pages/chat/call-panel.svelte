@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { Avatar } from "@/components";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import CallTile from "@/components/call-tile/call-tile.svelte";
   import CallSecurity from "@/components/call-security/call-security.svelte";
   import ScreenPicker from "@/components/screen-picker/screen-picker.svelte";
   import ResizeHandle from "@/components/resize-handle/resize-handle.svelte";
   import ScreenPreview from "@/components/screen-preview/screen-preview.svelte";
   import ScreenView from "@/components/screen-view/screen-view.svelte";
   import { Elapsed } from "@/helpers/duration.svelte";
+  import { fitTiles } from "@/helpers/tiles";
   import { t } from "@/i18n";
   import { calls, type Current } from "@/stores/call.svelte";
   import type { User } from "@/protocol/ludra/v1/models_pb";
@@ -25,14 +26,6 @@
 
   function previewWidth(count: number): number {
     return count <= 1 ? 144 : count === 2 ? 112 : 88;
-  }
-
-  function toggleShare() {
-    if (calls.sharing) {
-      calls.stopShare();
-    } else {
-      picking = !picking;
-    }
   }
 
   function openMenu(event: MouseEvent, user: User) {
@@ -61,12 +54,44 @@
 
   const watchMinimum = 320;
   const watchingNow = $derived(calls.watching);
+  const squares = $derived(!!calls.camera || !!calls.peerCamera);
+  const morphKey = $derived(`${!!calls.camera}${!!calls.peerCamera}`);
+  let morphing = $state(false);
+  let morphTimer: number | undefined;
+
+  $effect.pre(() => {
+    void morphKey;
+    morphing = true;
+    window.clearTimeout(morphTimer);
+    morphTimer = window.setTimeout(() => (morphing = false), 300);
+  });
+
+  $effect(() => () => window.clearTimeout(morphTimer));
   const panelHeight = $derived.by(() => {
     const height = watchingNow ? Math.max(watchMinimum, preferences.values.watchHeight) : preferences.values.callHeight;
     return height ? `${height}px` : undefined;
   });
-  const previewSpace = $derived(!watchingNow && previewCount > 0 ? `${previewWidth(previewCount) + 24}px` : "0px");
+  const previewInset = $derived(!watchingNow && previewCount > 0 ? previewWidth(previewCount) + 24 : 0);
   const sideWidth = $derived(`${Math.max(previewCount > 0 ? previewWidth(previewCount) : 0, 76)}px`);
+
+  const tileBase = 80;
+  const tileMax = 320;
+  const tileGap = 32;
+  const tileRoom = 16;
+
+  let peopleWidth = $state(0);
+  let peopleHeight = $state(0);
+
+  const layout = $derived(
+    fitTiles(
+      call.status === "incoming" ? 1 : 2,
+      peopleWidth - 2 * previewInset,
+      peopleHeight - tileRoom,
+      tileBase,
+      tileMax,
+      tileGap,
+    ),
+  );
 </script>
 
 {#snippet person(
@@ -77,27 +102,29 @@
   adjustable: boolean,
   ringing = false,
   live = false,
+  stream: MediaStream | null = null,
 )}
   <span
     class="call-panel__person"
     class:call-panel__person--speaking={speaking && !muted}
     class:call-panel__person--ringing={ringing}
+    class:call-panel__person--camera={!!stream}
   >
     {#if adjustable}
       <button
         class="call-panel__adjust"
         aria-haspopup="dialog"
         aria-label={live ? t("screen.watch", { name: user.username }) : t("call.userVolume", { name: user.username })}
-        title={live ? t("screen.watch", { name: user.username }) : undefined}
+        data-tooltip={live ? t("screen.watch", { name: user.username }) : undefined}
         class:call-panel__adjust--live={live}
         onclick={() => live && calls.watch()}
         oncontextmenu={(event) => openMenu(event, user)}
         onkeydown={(event) => menuKey(event, user)}
       >
-        <Avatar {user} size="call" />
+        <CallTile {user} {stream} />
       </button>
     {:else}
-      <Avatar {user} size="call" />
+      <CallTile {user} {stream} />
     {/if}
     {#if deafened || muted}
       <span
@@ -108,6 +135,15 @@
           : t("call.peerMuted", { name: user.username })}
       >
         <CallIcon name={deafened ? "headphonesOff" : "micOff"} />
+      </span>
+    {/if}
+    {#if stream}
+      <span
+        class="call-panel__badge call-panel__badge--camera"
+        role="img"
+        aria-label={t("call.peerCamera", { name: user.username })}
+      >
+        <CallIcon name="camera" />
       </span>
     {/if}
     {#if live}
@@ -121,19 +157,26 @@
     class="call-panel"
     class:call-panel--watching={calls.watching}
     style:height={panelHeight}
-    style:--previews-space={previewSpace}
+    style:--previews-space="{previewInset}px"
     style:--side={sideWidth}
     aria-label={t("call.panel")}
   >
     {#if call.status === "incoming"}
-      <div class="call-panel__people">
+      <div
+        class="call-panel__people"
+        bind:clientWidth={peopleWidth}
+        bind:clientHeight={peopleHeight}
+        style:--tile="{layout.tile}px"
+        style:--photo="{layout.photo}px"
+        style:min-height="{layout.minHeight + tileRoom}px"
+      >
         {@render person(call.peer, false, false, false, false)}
       </div>
       <div class="call-panel__controls">
         <button
           class="call-panel__button call-panel__button--hang-up"
           aria-label={t("call.decline")}
-          title={t("call.decline")}
+          data-tooltip={t("call.decline")}
           onclick={() => calls.decline()}
         >
           <CallIcon name="hangUp" />
@@ -142,7 +185,7 @@
           <button
             class="call-panel__button"
             aria-label={t("call.hide")}
-            title={t("call.hide")}
+            data-tooltip={t("call.hide")}
             onclick={() => calls.hide()}
           >
             <CallIcon name="dash" />
@@ -151,7 +194,7 @@
         <button
           class="call-panel__button call-panel__button--join"
           aria-label={t("call.answer")}
-          title={t("call.answer")}
+          data-tooltip={t("call.answer")}
           onclick={() => calls.answer()}
         >
           <CallIcon name="phone" />
@@ -170,8 +213,26 @@
           />
         </div>
       {/if}
-      <div class="call-panel__people">
-        {@render person(chat.user, calls.selfSpeaking, calls.muted, calls.deafened, false, false, calls.sharing)}
+      <div
+        class="call-panel__people"
+        class:call-panel__people--squares={squares}
+        class:call-panel__people--morphing={morphing}
+        bind:clientWidth={peopleWidth}
+        bind:clientHeight={peopleHeight}
+        style:--tile={watchingNow ? undefined : `${layout.tile}px`}
+        style:--photo={watchingNow ? undefined : `${layout.photo}px`}
+        style:min-height={watchingNow ? undefined : `${layout.minHeight + tileRoom}px`}
+      >
+        {@render person(
+          chat.user,
+          calls.selfSpeaking,
+          calls.muted,
+          calls.deafened,
+          false,
+          false,
+          calls.sharing,
+          calls.camera,
+        )}
         {@render person(
           call.peer,
           calls.peerSpeaking,
@@ -180,6 +241,7 @@
           call.status !== "outgoing",
           call.status === "outgoing",
           !!calls.peerSharing,
+          calls.peerCamera,
         )}
       </div>
       {#if previewCount > 0}
@@ -214,7 +276,7 @@
           class="call-panel__button"
           class:call-panel__button--off={calls.muted}
           aria-label={calls.muted ? t("call.unmute") : t("call.mute")}
-          title={calls.muted ? t("call.unmute") : t("call.mute")}
+          data-tooltip={calls.muted ? t("call.unmute") : t("call.mute")}
           aria-pressed={calls.muted}
           onclick={() => calls.toggleMute()}
         >
@@ -224,27 +286,41 @@
           class="call-panel__button"
           class:call-panel__button--off={calls.deafened}
           aria-label={calls.deafened ? t("call.undeafen") : t("call.deafen")}
-          title={calls.deafened ? t("call.undeafen") : t("call.deafen")}
+          data-tooltip={calls.deafened ? t("call.undeafen") : t("call.deafen")}
           aria-pressed={calls.deafened}
           onclick={() => calls.toggleDeafen()}
         >
           <CallIcon name={calls.deafened ? "headphonesOff" : "headphones"} />
         </button>
+        {#if call.status === "active" || call.caller}
+          <button
+            class="call-panel__button"
+            class:call-panel__button--off={!!calls.camera}
+            aria-label={calls.camera ? t("call.cameraOff") : t("call.cameraOn")}
+            data-tooltip={calls.camera ? t("call.cameraOff") : t("call.cameraOn")}
+            aria-pressed={!!calls.camera}
+            onclick={() => calls.toggleCamera()}
+          >
+            <CallIcon name="camera" />
+          </button>
+        {/if}
         {#if call.status === "active"}
           <span class="call-panel__share">
             <button
               class="call-panel__button"
               class:call-panel__button--off={calls.sharing}
-              aria-label={calls.sharing ? t("screen.stop") : t("screen.share")}
-              title={calls.sharing ? t("screen.stop") : t("screen.share")}
+              aria-label={calls.sharing ? t("screen.options") : t("screen.share")}
+              data-tooltip={calls.sharing ? t("screen.options") : t("screen.share")}
               aria-pressed={calls.sharing}
-              onclick={toggleShare}
+              onclick={() => (picking = !picking)}
             >
               <CallIcon name="screen" />
             </button>
             {#if picking}
               <ScreenPicker
+                current={calls.shareSettings}
                 onshare={(sourceId, quality) => calls.startShare(sourceId, quality)}
+                onstop={() => calls.stopShare()}
                 onclose={() => (picking = false)}
               />
             {/if}
@@ -253,7 +329,7 @@
         <button
           class="call-panel__button call-panel__button--hang-up"
           aria-label={t("call.hangUp")}
-          title={t("call.hangUp")}
+          data-tooltip={t("call.hangUp")}
           onclick={() => calls.hangUp()}
         >
           <CallIcon name="hangUp" />
@@ -283,19 +359,49 @@
   }
 
   .call-panel__people {
+    align-self: stretch;
+    flex: 1 1 0;
+    padding: 0 var(--previews-space);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    align-content: center;
+    justify-content: center;
     gap: 32px;
+    contain: size;
   }
 
   .call-panel__person {
+    --size: var(--photo);
     position: relative;
+    width: var(--size);
+    height: var(--size);
+    flex: none;
     display: flex;
     border-radius: 50%;
     box-shadow:
       0 0 0 3px #090909,
       0 0 0 6px transparent;
-    transition: box-shadow ease 0.15s;
+    transition:
+      box-shadow ease 0.15s,
+      border-radius ease 0.25s;
+  }
+
+  .call-panel__person :global(.avatar) {
+    border-radius: inherit;
+  }
+
+  .call-panel__people--squares .call-panel__person {
+    --size: var(--tile);
+    border-radius: 14px;
+  }
+
+  .call-panel__people--morphing .call-panel__person {
+    transition:
+      box-shadow ease 0.15s,
+      border-radius ease 0.25s,
+      width ease 0.25s,
+      height ease 0.25s;
   }
 
   .call-panel__person--speaking {
@@ -304,11 +410,18 @@
       0 0 0 6px var(--success-color);
   }
 
+  .call-panel__people .call-panel__person--camera {
+    --size: var(--tile);
+    border-radius: 14px;
+  }
+
   .call-panel__adjust {
+    width: 100%;
+    height: 100%;
     padding: 0;
     display: flex;
     border: 0;
-    border-radius: 50%;
+    border-radius: inherit;
     background: transparent;
     cursor: context-menu;
   }
@@ -330,6 +443,12 @@
     background: var(--dark-background-color);
     border: 2px solid #090909;
     color: #f6746b;
+  }
+
+  .call-panel__badge--camera {
+    left: -4px;
+    right: auto;
+    color: var(--muted-color);
   }
 
   .call-panel__status {
@@ -487,9 +606,16 @@
     overflow-y: auto;
   }
 
-  .call-panel--watching :global(.avatar) {
-    width: 52px;
-    height: 52px;
-    font-size: 20px;
+  .call-panel--watching .call-panel__people {
+    --photo: 52px;
+    --tile: calc(var(--side) - 12px);
+  }
+
+  .call-panel--watching .call-panel__person--camera {
+    border-radius: 12px;
+  }
+
+  .call-panel--watching .call-panel__people--squares .call-panel__person {
+    border-radius: 12px;
   }
 </style>

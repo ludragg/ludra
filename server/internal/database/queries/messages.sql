@@ -36,3 +36,18 @@ WHERE call_outcome = 'ongoing';
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
 VALUES (sqlc.arg(conversation_id), sqlc.arg(sender_id), '', 'event', sqlc.arg(event), sqlc.arg(target_id))
 RETURNING *;
+
+-- name: GetMessageTarget :one
+SELECT m.id, m.conversation_id, m.sender_id, m.kind, c.kind AS conversation_kind, c.owner_id
+FROM messages m
+JOIN conversations c ON c.id = m.conversation_id
+WHERE m.id = $1;
+
+-- name: EditMessage :one
+UPDATE messages SET content = sqlc.arg(content), edited_at = now()
+WHERE id = sqlc.arg(id) AND kind = 'text'
+RETURNING *;
+
+-- name: DeleteMessage :exec
+DELETE FROM messages
+WHERE id = $1;

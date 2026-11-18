@@ -1,4 +1,5 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
+import { timestampMs } from "@bufbuild/protobuf/wkt";
 import { t } from "@/i18n";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import type {
@@ -34,6 +35,7 @@ export type Account = {
   token: string;
   email: string;
   twoFactor: boolean;
+  renamedAt: number | null;
 };
 
 export type SignIn = { account: Account } | { pendingEmail: string } | { twoFactorEmail: string };
@@ -50,6 +52,7 @@ export class ServerError extends Error {
 export class Client {
   onMessage: (message: Message) => void = () => {};
   onMessageUpdated: (message: Message) => void = () => {};
+  onMessageDeleted: (conversationId: string, messageId: string, last: Message | undefined) => void = () => {};
   onPresence: (userId: string, presence: Presence) => void = () => {};
   onFriend: (friend: Friend) => void = () => {};
   onFriendRemoved: (userId: string) => void = () => {};
@@ -150,6 +153,20 @@ export class Client {
       "messageCreated",
     );
     return message!;
+  }
+
+  async editMessage(messageId: string, content: string): Promise<Message> {
+    const { message } = await this.#request({ case: "editMessage", value: { messageId, content } }, "messageUpdated");
+    return message!;
+  }
+
+  deleteMessage(messageId: string) {
+    return this.#request({ case: "deleteMessage", value: { messageId } }, "messageDeleted");
+  }
+
+  async setUsername(username: string): Promise<User> {
+    const { user } = await this.#request({ case: "setUsername", value: { username } }, "userUpdated");
+    return user!;
   }
 
   async listFriends(): Promise<Friend[]> {
@@ -324,8 +341,9 @@ export class Client {
 
     switch (reply.case) {
       case "loggedIn": {
-        const { user, token, email, twoFactor } = reply.value;
-        return { account: { user: user!, token, email, twoFactor } };
+        const { user, token, email, twoFactor, usernameChangedAt } = reply.value;
+        const renamedAt = usernameChangedAt ? timestampMs(usernameChangedAt) : null;
+        return { account: { user: user!, token, email, twoFactor, renamedAt } };
       }
       case "verificationRequired":
         return { pendingEmail: reply.value.email };
@@ -385,6 +403,9 @@ export class Client {
         if (payload.value.message) {
           this.onMessageUpdated(payload.value.message);
         }
+        break;
+      case "messageDeleted":
+        this.onMessageDeleted(payload.value.conversationId, payload.value.messageId, payload.value.lastMessage);
         break;
       case "presenceChanged":
         this.onPresence(payload.value.userId, payload.value.presence);

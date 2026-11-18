@@ -18,16 +18,16 @@ func errorFrame(code protocol.ErrorCode, message string) *protocol.ServerFrame {
 }
 
 func loggedInFrame(user *protocol.User, session account.Session) *protocol.ServerFrame {
-	return &protocol.ServerFrame{
-		Payload: &protocol.ServerFrame_LoggedIn{
-			LoggedIn: &protocol.LoggedIn{
-				User:      user,
-				Token:     session.Token,
-				Email:     session.Email,
-				TwoFactor: session.TwoFactor,
-			},
-		},
+	loggedIn := &protocol.LoggedIn{
+		User:      user,
+		Token:     session.Token,
+		Email:     session.Email,
+		TwoFactor: session.TwoFactor,
 	}
+	if session.Renamed != nil {
+		loggedIn.UsernameChangedAt = timestamppb.New(*session.Renamed)
+	}
+	return &protocol.ServerFrame{Payload: &protocol.ServerFrame_LoggedIn{LoggedIn: loggedIn}}
 }
 
 func twoFactorRequiredFrame(email string) *protocol.ServerFrame {
@@ -194,6 +194,14 @@ func messageUpdatedFrame(message *protocol.Message) *protocol.ServerFrame {
 	}
 }
 
+func messageDeletedFrame(deletion chat.Deletion, messageID string) *protocol.ServerFrame {
+	deleted := &protocol.MessageDeleted{ConversationId: deletion.ConversationID, MessageId: messageID}
+	if deletion.Last != nil {
+		deleted.LastMessage = named(toMessage(deletion.Last.Message), deletion.Last.SenderName, deletion.Last.TargetName)
+	}
+	return &protocol.ServerFrame{Payload: &protocol.ServerFrame_MessageDeleted{MessageDeleted: deleted}}
+}
+
 func conversationUpdatedFrame(conversation *protocol.Conversation) *protocol.ServerFrame {
 	return &protocol.ServerFrame{
 		Payload: &protocol.ServerFrame_ConversationUpdated{
@@ -318,6 +326,9 @@ func toMessage(message database.Message) *protocol.Message {
 		Content:        message.Content,
 		SentAt:         timestamppb.New(message.CreatedAt),
 		Kind:           protocol.MessageKind_MESSAGE_KIND_TEXT,
+	}
+	if message.EditedAt != nil {
+		result.EditedAt = timestamppb.New(*message.EditedAt)
 	}
 
 	if message.Kind == "event" {

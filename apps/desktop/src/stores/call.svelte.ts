@@ -2,8 +2,10 @@ import { t } from "@/i18n";
 import { SignalKind, type Call, type CallSignal, type IceServer, type User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
-import { notify, windowFocused } from "@/services/desktop";
+import { windowFocused } from "@/services/desktop";
 import { playCue, setRingtone } from "@/services/ringtone";
+import { cameraCarrier, cameraError, openCamera } from "@/services/camera";
+import { callTarget, showToast } from "@/services/toast";
 import { VoiceSession } from "@/services/voice";
 import { captureScreen, hintScreenTracks, qualityLabel, type ScreenQuality } from "@/services/screen";
 import type { NativeScreen } from "@/services/native-screen";
@@ -24,6 +26,7 @@ export type Current = {
   quiet?: boolean;
   direct?: boolean;
   hidden?: boolean;
+  caller?: boolean;
 };
 
 class CallStore {
@@ -36,6 +39,7 @@ class CallStore {
   peerMuted = $state(false);
   peerDeafened = $state(false);
   sharing = $state(false);
+  shareSettings = $state<{ sourceId: string; quality: ScreenQuality } | null>(null);
   peerSharing = $state<string | null>(null);
   peerPreview = $state<string | null>(null);
   ownPreview = $state<string | null>(null);
@@ -43,6 +47,8 @@ class CallStore {
   peerWatching = $state(false);
   connecting = $state(false);
   screen = $state.raw<MediaStream | null>(null);
+  camera = $state.raw<MediaStream | null>(null);
+  peerCamera = $state.raw<MediaStream | null>(null);
   latency = $state<number | null>(null);
   error = $state("");
   onBeforeAnswer: () => Promise<void> = async () => {};
@@ -63,6 +69,7 @@ class CallStore {
   #capture: NativeScreen | null = null;
   #shareQuality: ScreenQuality | null = null;
   #shareBusy = false;
+  #cameraBusy = false;
   #signalsOut: Promise<void> = Promise.resolve();
   #signalsIn: Promise<void> = Promise.resolve();
 
@@ -93,7 +100,7 @@ class CallStore {
     return true;
   }
 
-  async start(peer: User) {
+  async start(peer: User, camera = false) {
     if (this.#callsBack(peer)) {
       await this.answer();
       return;
@@ -117,9 +124,12 @@ class CallStore {
         .finally(() => (this.#nextStart = Date.now() + callInterval));
       mine = call.id;
       this.#iceServers = call.iceServers;
-      this.current = { id: call.id, peer: call.peer ?? peer, status: "outgoing", startedAt: null };
+      this.current = { id: call.id, peer: call.peer ?? peer, status: "outgoing", startedAt: null, caller: true };
       this.#syncRing();
       this.#ready = this.#prepare();
+      if (camera) {
+        this.toggleCamera();
+      }
       await this.#ready;
     } catch (cause) {
       if (mine && this.current?.id !== mine) {
@@ -132,6 +142,10 @@ class CallStore {
     } finally {
       this.#starting = false;
     }
+  }
+
+  ringing(peer: User): boolean {
+    return this.#callsBack(peer);
   }
 
   #callsBack(peer: User): boolean {
@@ -259,8 +273,58 @@ class CallStore {
       return;
     }
     const sharing = this.#shareQuality ? qualityLabel(this.#shareQuality) : null;
-    const payload = stateMessage({ muted: this.muted, deafened: this.deafened, sharing, direct: this.#direct });
+    const payload = stateMessage({
+      muted: this.muted,
+      deafened: this.deafened,
+      sharing,
+      direct: this.#direct,
+      camera: this.camera ? cameraCarrier.id : "",
+    });
     this.#client?.sendSignal(current.id, SignalKind.STATE, payload).catch(() => undefined);
+  }
+
+  async toggleCamera() {
+    if (this.camera) {
+      this.#stopCamera();
+      this.#shareState();
+      return;
+    }
+    const call = this.current;
+    if (!call || call.status === "incoming" || !this.#voice || this.#cameraBusy) {
+      return;
+    }
+    this.#cameraBusy = true;
+    try {
+      const stream = await openCamera();
+      if (this.current !== call) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      const [track] = stream.getVideoTracks();
+      track.onended = () => {
+        if (this.camera === stream) {
+          this.#stopCamera();
+          this.#shareState();
+        }
+      };
+      this.camera = stream;
+      await this.#voice?.setCamera(track);
+      this.#shareState();
+    } catch (cause) {
+      this.#showError(cameraError(cause));
+    } finally {
+      this.#cameraBusy = false;
+    }
+  }
+
+  #stopCamera() {
+    const stream = this.camera;
+    if (!stream) {
+      return;
+    }
+    this.camera = null;
+    stream.getTracks().forEach((track) => track.stop());
+    this.#voice?.setCamera(null).catch(() => undefined);
   }
 
   async startShare(sourceId: string, quality: ScreenQuality) {
@@ -284,6 +348,7 @@ class CallStore {
       this.#capture = capture;
       this.#share = stream;
       this.#shareQuality = quality;
+      this.shareSettings = { sourceId, quality };
       this.sharing = true;
       capture.onPreview = (image) => {
         this.ownPreview = image;
@@ -313,6 +378,7 @@ class CallStore {
     }
     this.#share = null;
     this.#shareQuality = null;
+    this.shareSettings = null;
     this.sharing = false;
     this.ownPreview = null;
     this.peerWatching = false;
@@ -415,6 +481,7 @@ class CallStore {
     this.connecting = true;
     voice.onLatency = (milliseconds) => (this.latency = milliseconds);
     voice.onScreen = (stream) => (this.screen = this.watching ? stream : null);
+    voice.onCamera = (stream) => (this.peerCamera = stream);
 
     await trust.prepare([current.peer.id]);
     await voice.start(preferences.values.outputDevice, preferences.values.outputVolume);
@@ -444,7 +511,15 @@ class CallStore {
     }
     this.#syncRing();
     if (!quiet && !windowFocused()) {
-      notify("Ludra", t("call.notification", { name: call.peer.username }));
+      showToast({
+        title: call.peer.username,
+        body: t("call.notification", { name: call.peer.username }),
+        kind: "user",
+        id: call.peer.id,
+        name: call.peer.username,
+        avatar: call.peer.avatar,
+        target: callTarget,
+      });
     }
   }
 
@@ -501,6 +576,7 @@ class CallStore {
       if (!!message.sharing !== !!this.peerSharing) {
         playCue(message.sharing ? "streamStart" : "streamEnd");
       }
+      this.#voice.setRemoteCamera(message.camera ?? "");
       this.peerMuted = message.muted;
       this.peerDeafened = message.deafened;
       this.peerSharing = message.sharing;
@@ -531,6 +607,8 @@ class CallStore {
   #finish() {
     this.#beforeTest = null;
     this.stopShare(false);
+    this.#stopCamera();
+    this.peerCamera = null;
     this.peerWatching = false;
     this.peerSharing = null;
     this.peerPreview = null;

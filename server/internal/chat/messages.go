@@ -57,6 +57,96 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 	return message, recipients, nil
 }
 
+func (s *Service) EditMessage(ctx context.Context, userID, messageID, content string) (database.Message, []string, error) {
+	content = strings.TrimFunc(content, invisible)
+	if content == "" {
+		return database.Message{}, nil, ErrEmptyMessage
+	}
+	if utf8.RuneCountInString(content) > maxMessageLength {
+		return database.Message{}, nil, ErrMessageTooLong
+	}
+
+	target, err := s.messageTarget(ctx, messageID)
+	if err != nil {
+		return database.Message{}, nil, err
+	}
+	if target.SenderID != userID || target.Kind != "text" {
+		return database.Message{}, nil, ErrMessageForbidden
+	}
+	if err := s.canSend(ctx, userID, target.ConversationID); err != nil {
+		return database.Message{}, nil, err
+	}
+
+	message, err := s.queries.EditMessage(ctx, database.EditMessageParams{ID: messageID, Content: content})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return database.Message{}, nil, ErrMessageNotFound
+	}
+	if err != nil {
+		return database.Message{}, nil, err
+	}
+
+	recipients, err := s.queries.ListParticipantIDs(ctx, target.ConversationID)
+	if err != nil {
+		return database.Message{}, nil, err
+	}
+	return message, recipients, nil
+}
+
+type Deletion struct {
+	ConversationID string
+	Recipients     []string
+	Last           *database.ListMessagesRow
+}
+
+func (s *Service) DeleteMessage(ctx context.Context, userID, messageID string) (Deletion, error) {
+	target, err := s.messageTarget(ctx, messageID)
+	if err != nil {
+		return Deletion{}, err
+	}
+
+	member, err := s.queries.IsParticipant(ctx, database.IsParticipantParams{ConversationID: target.ConversationID, UserID: userID})
+	if err != nil {
+		return Deletion{}, err
+	}
+	if !member {
+		return Deletion{}, ErrMessageNotFound
+	}
+	owner := target.ConversationKind == "group" && target.OwnerID != nil && *target.OwnerID == userID
+	if target.Kind != "text" || (target.SenderID != userID && !owner) {
+		return Deletion{}, ErrMessageForbidden
+	}
+
+	if err := s.queries.DeleteMessage(ctx, messageID); err != nil {
+		return Deletion{}, err
+	}
+
+	recipients, err := s.queries.ListParticipantIDs(ctx, target.ConversationID)
+	if err != nil {
+		return Deletion{}, err
+	}
+	latest, err := s.queries.ListMessages(ctx, database.ListMessagesParams{ConversationID: target.ConversationID, RowLimit: 1})
+	if err != nil {
+		return Deletion{}, err
+	}
+
+	deletion := Deletion{ConversationID: target.ConversationID, Recipients: recipients}
+	if len(latest) > 0 {
+		deletion.Last = &latest[0]
+	}
+	return deletion, nil
+}
+
+func (s *Service) messageTarget(ctx context.Context, messageID string) (database.GetMessageTargetRow, error) {
+	if !ids.Valid(messageID) {
+		return database.GetMessageTargetRow{}, ErrMessageNotFound
+	}
+	target, err := s.queries.GetMessageTarget(ctx, messageID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return database.GetMessageTargetRow{}, ErrMessageNotFound
+	}
+	return target, err
+}
+
 func (s *Service) canSend(ctx context.Context, senderID, conversationID string) error {
 	conversation, err := s.queries.GetConversation(ctx, conversationID)
 	if errors.Is(err, pgx.ErrNoRows) {

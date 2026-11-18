@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ludra.v1;
 
+import "google/protobuf/timestamp.proto";
 import "ludra/v1/models.proto";
 
 message ServerFrame {
@@ -41,6 +42,7 @@ message ServerFrame {
     IdentityKeys identity_keys = 32;
     UpdateAvailable update_available = 33;
     StreamPreview stream_preview = 34;
+    MessageDeleted message_deleted = 35;
   }
 }
 
@@ -68,6 +70,7 @@ message LoggedIn {
   string token = 2;
   string email = 3;
   bool two_factor = 4;
+  google.protobuf.Timestamp username_changed_at = 5;
 }
 
 message LoggedOut {}
@@ -166,6 +169,12 @@ message Ack {}
 
 message MessageUpdated {
   Message message = 1;
+}
+
+message MessageDeleted {
+  string conversation_id = 1;
+  string message_id = 2;
+  Message last_message = 3;
 }
 
 message ConversationUpdated {

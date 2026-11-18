@@ -8,7 +8,7 @@
   type="button"
   class="eye-button"
   aria-label={shown ? t(hide) : t(show)}
-  title={shown ? t(hide) : t(show)}
+  data-tooltip={shown ? t(hide) : t(show)}
   aria-pressed={shown}
   onclick={ontoggle}
 >

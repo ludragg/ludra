@@ -57,6 +57,7 @@ message GroupCall {
   repeated string deafened_ids = 7;
   repeated string sharing_ids = 8;
   repeated string direct_ids = 9;
+  repeated string camera_ids = 10;
 }
 
 enum CallOutcome {
@@ -80,6 +81,7 @@ message Message {
   string target_id = 10;
   string sender_name = 11;
   string target_name = 12;
+  google.protobuf.Timestamp edited_at = 13;
 }
 
 message Friend {

@@ -59,6 +59,7 @@ type Message struct {
 	CallDuration   *int32
 	Event          *string
 	TargetID       *string
+	EditedAt       *time.Time
 }
 
 type Participant struct {
@@ -76,17 +77,18 @@ type Session struct {
 }
 
 type User struct {
-	ID              string
-	Username        string
-	CreatedAt       time.Time
-	Email           string
-	PasswordHash    string
-	EmailVerifiedAt *time.Time
-	Invisible       bool
-	Avatar          string
-	TwoFactor       bool
-	Busy            bool
-	IdentityKey     string
+	ID                string
+	Username          string
+	CreatedAt         time.Time
+	Email             string
+	PasswordHash      string
+	EmailVerifiedAt   *time.Time
+	Invisible         bool
+	Avatar            string
+	TwoFactor         bool
+	Busy              bool
+	IdentityKey       string
+	UsernameChangedAt *time.Time
 }
 
 type VerificationCode struct {
