@@ -1,6 +1,6 @@
 <script lang="ts">
   import { TitleBar } from "@/components";
-  import { t } from "@/i18n";
+  import Tooltip from "@/components/tooltip/tooltip.svelte";
   import ForgotPassword from "@/pages/auth/forgot-password.svelte";
   import Login from "@/pages/auth/login.svelte";
   import Register from "@/pages/auth/register.svelte";
@@ -9,6 +9,7 @@
   import TwoFactor from "@/pages/auth/two-factor.svelte";
   import VerifyEmail from "@/pages/auth/verify-email.svelte";
   import Chat from "@/pages/chat/chat.svelte";
+  import Reconnecting from "@/pages/reconnecting/reconnecting.svelte";
   import UpdateGate from "@/pages/updates/update-gate.svelte";
   import WhatsNew from "@/pages/updates/whats-new.svelte";
   import { chat } from "@/stores/chat.svelte";
@@ -41,10 +42,6 @@
       <Chat />
     {:else if chat.restoring}
       <div class="app__loading"></div>
-    {:else if chat.reconnecting}
-      <div class="app__loading">
-        <span class="app__status" role="status">{t("common.reconnecting")}</span>
-      </div>
     {:else if screen.name === "register"}
       <Register {navigate} />
     {:else if screen.name === "verify"}
@@ -58,8 +55,13 @@
     {:else}
       <Login {navigate} />
     {/if}
+    {#if chat.offline}
+      <Reconnecting />
+    {/if}
   </div>
 </div>
+
+<Tooltip />
 
 {#if gated}
   <UpdateGate />
@@ -75,6 +77,7 @@
   }
 
   .app__content {
+    position: relative;
     min-height: 0;
     flex-grow: 1;
   }
@@ -84,10 +87,5 @@
     display: grid;
     place-items: center;
     background: linear-gradient(0deg, var(--dark-background-color) 50%, var(--background-color) 100%);
-  }
-
-  .app__status {
-    font-size: var(--small-font-size);
-    color: var(--subtle-color);
   }
 </style>

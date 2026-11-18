@@ -2,7 +2,9 @@ import { t } from "@/i18n";
 import { SignalKind, type CallSignal, type GroupCall, type User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
-import { notify, windowFocused } from "@/services/desktop";
+import { windowFocused } from "@/services/desktop";
+import { cameraCarrier, cameraError, openCamera } from "@/services/camera";
+import { showToast } from "@/services/toast";
 import { playCue, setRingtone } from "@/services/ringtone";
 import { VoiceRoom } from "@/services/voice-room";
 import { captureScreen, hintScreenTracks, qualityLabel, type ScreenQuality } from "@/services/screen";
@@ -52,6 +54,7 @@ class GroupCallStore {
   speaking = $state<Set<string>>(new Set());
   states = $state<Record<string, VoiceState>>({});
   sharing = $state(false);
+  shareSettings = $state<{ sourceId: string; quality: ScreenQuality } | null>(null);
   watchingId = $state<string | null>(null);
   previews = $state<Record<string, string>>({});
   outsidePreviews = $state<Record<string, Record<string, string>>>({});
@@ -59,6 +62,8 @@ class GroupCallStore {
   viewers = $state<string[]>([]);
   connecting = $state(false);
   screen = $state.raw<MediaStream | null>(null);
+  camera = $state.raw<MediaStream | null>(null);
+  cameras = $state.raw<Record<string, MediaStream>>({});
   latency = $state<number | null>(null);
   error = $state("");
   friendly: (userId: string) => boolean = () => false;
@@ -80,6 +85,7 @@ class GroupCallStore {
   #pendingWatch: string | null = null;
   #linked = new Set<string>();
   #shareBusy = false;
+  #cameraBusy = false;
   #outgoing = new Map<string, Promise<void>>();
   #incoming = new Map<string, Promise<void>>();
   #latest = new Map<string, GroupCall>();
@@ -142,7 +148,7 @@ class GroupCallStore {
     }
   }
 
-  async join(conversationId: string, selfId: string) {
+  async join(conversationId: string, selfId: string, camera = false) {
     if (!this.#client || this.joining || this.current?.conversationId === conversationId) {
       return;
     }
@@ -178,6 +184,9 @@ class GroupCallStore {
       await this.#started;
       room.setMuted(this.muted);
       room.setDeafened(this.deafened);
+      if (camera) {
+        await this.toggleCamera();
+      }
       const alone = this.current?.participantIds.length === 1;
       if (alone && this.#latest.get(conversationId)?.ringingIds.length) {
         this.#startCalling();
@@ -225,7 +234,15 @@ class GroupCallStore {
     window.clearTimeout(this.#ringTimer);
     this.#ringTimer = window.setTimeout(() => this.#dismiss(), ringTimeout);
     if (!windowFocused()) {
-      notify("Ludra", t("group.ringNotification", { name: starter.username }));
+      showToast({
+        title: starter.username,
+        body: t("group.ringNotification", { name: starter.username }),
+        kind: "user",
+        id: starter.id,
+        name: starter.username,
+        avatar: starter.avatar,
+        target: conversationId,
+      });
     }
   }
 
@@ -407,6 +424,14 @@ class GroupCallStore {
       room.remove(peerId);
       this.#forget(peerId);
     };
+    room.onCamera = (peerId, stream) => {
+      const next = { ...this.cameras };
+      delete next[peerId];
+      if (stream) {
+        next[peerId] = stream;
+      }
+      this.cameras = next;
+    };
     room.onScreen = (peerId, stream) => {
       if (this.watchingId === peerId) {
         this.screen = stream;
@@ -439,11 +464,13 @@ class GroupCallStore {
         this.#peerDirect.set(signal.peerId, message.direct);
         room.refreshDirect(signal.peerId, false);
       }
+      room.setRemoteCamera(signal.peerId, message.camera ?? "");
       this.states[signal.peerId] = {
         muted: message.muted,
         deafened: message.deafened,
         sharing: message.sharing,
         viewers: message.viewers,
+        camera: message.camera,
       };
       if (!message.sharing) {
         delete this.previews[signal.peerId];
@@ -497,8 +524,53 @@ class GroupCallStore {
       sharing,
       direct: this.#direct,
       viewers,
+      camera: this.camera ? cameraCarrier.id : "",
     });
     this.#client?.sendSignal(current.id, SignalKind.STATE, payload, "*").catch(() => undefined);
+  }
+
+  async toggleCamera() {
+    if (this.camera) {
+      this.#stopCamera();
+      this.#shareState();
+      return;
+    }
+    const room = this.#room;
+    if (!this.current || !room || this.#cameraBusy) {
+      return;
+    }
+    this.#cameraBusy = true;
+    try {
+      const stream = await openCamera();
+      if (this.#room !== room) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+      const [track] = stream.getVideoTracks();
+      track.onended = () => {
+        if (this.camera === stream) {
+          this.#stopCamera();
+          this.#shareState();
+        }
+      };
+      this.camera = stream;
+      await room.setCamera(track);
+      this.#shareState();
+    } catch (cause) {
+      this.#showError(cameraError(cause));
+    } finally {
+      this.#cameraBusy = false;
+    }
+  }
+
+  #stopCamera() {
+    const stream = this.camera;
+    if (!stream) {
+      return;
+    }
+    this.camera = null;
+    stream.getTracks().forEach((track) => track.stop());
+    this.#room?.setCamera(null).catch(() => undefined);
   }
 
   async startShare(sourceId: string, quality: ScreenQuality) {
@@ -522,6 +594,7 @@ class GroupCallStore {
       this.#capture = capture;
       this.#share = stream;
       this.#shareQuality = quality;
+      this.shareSettings = { sourceId, quality };
       this.sharing = true;
       capture.onPreview = (image) => {
         this.#preview = image;
@@ -552,6 +625,7 @@ class GroupCallStore {
     }
     this.#share = null;
     this.#shareQuality = null;
+    this.shareSettings = null;
     this.sharing = false;
     this.#preview = null;
     this.ownPreview = null;
@@ -692,6 +766,8 @@ class GroupCallStore {
     this.#beforeTest = null;
     this.#stopCalling();
     this.stopShare(false);
+    this.#stopCamera();
+    this.cameras = {};
     this.#pendingWatch = null;
     this.#linked.clear();
     this.watchingId = null;

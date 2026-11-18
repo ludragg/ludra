@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { Avatar } from "@/components";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import CallTile from "@/components/call-tile/call-tile.svelte";
   import CallSecurity from "@/components/call-security/call-security.svelte";
   import ScreenPicker from "@/components/screen-picker/screen-picker.svelte";
   import ResizeHandle from "@/components/resize-handle/resize-handle.svelte";
   import ScreenPreview from "@/components/screen-preview/screen-preview.svelte";
   import ScreenView from "@/components/screen-view/screen-view.svelte";
   import { Elapsed } from "@/helpers/duration.svelte";
+  import { fitTiles } from "@/helpers/tiles";
   import { toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import type { Conversation, User } from "@/protocol/ludra/v1/models_pb";
@@ -20,14 +21,6 @@
 
   let menu = $state<{ user: User; x: number; y: number } | null>(null);
   let picking = $state(false);
-
-  function toggleShare() {
-    if (groupCall.sharing) {
-      groupCall.stopShare();
-    } else {
-      picking = !picking;
-    }
-  }
 
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
@@ -49,6 +42,8 @@
         ringing: ringingIds.includes(id),
         live: call && self ? groupCall.sharing : state ? !!state.sharing : !!group.call?.sharingIds.includes(id),
         quality: state?.sharing ?? "",
+        camera: !call ? null : self ? groupCall.camera : (groupCall.cameras[id] ?? null),
+        cameraOn: call ? (self ? !!groupCall.camera : !!state?.camera) : !!group.call?.cameraIds.includes(id),
       };
     });
   });
@@ -100,19 +95,44 @@
 
   const watchMinimum = 320;
   const watchingNow = $derived(!!(call && watched));
+  const squares = $derived(people.some(({ camera }) => !!camera));
+  const morphKey = $derived(people.map(({ id, camera }) => `${id}${camera ? "+" : ""}`).join());
+  let morphing = $state(false);
+  let morphTimer: number | undefined;
+
+  $effect.pre(() => {
+    void morphKey;
+    morphing = true;
+    window.clearTimeout(morphTimer);
+    morphTimer = window.setTimeout(() => (morphing = false), 300);
+  });
+
+  $effect(() => () => window.clearTimeout(morphTimer));
   const panelHeight = $derived.by(() => {
     const height = watchingNow ? Math.max(watchMinimum, preferences.values.watchHeight) : preferences.values.callHeight;
     return height ? `${height}px` : undefined;
   });
-  const previewSpace = $derived(!watchingNow && previewCount > 0 ? `${previewWidth(previewCount) + 24}px` : "0px");
+  const previewInset = $derived(!watchingNow && previewCount > 0 ? previewWidth(previewCount) + 24 : 0);
   const sideWidth = $derived(`${Math.max(previewCount > 0 ? previewWidth(previewCount) : 0, 76)}px`);
+
+  const tileBase = 64;
+  const tileMax = 240;
+  const tileGap = 20;
+  const tileRoom = 16;
+
+  let peopleWidth = $state(0);
+  let peopleHeight = $state(0);
+
+  const layout = $derived(
+    fitTiles(people.length, peopleWidth - 2 * previewInset, peopleHeight - tileRoom, tileBase, tileMax, tileGap),
+  );
 </script>
 
 <section
   class="group-call"
   class:group-call--watching={!!(call && watched)}
   style:height={panelHeight}
-  style:--previews-space={previewSpace}
+  style:--previews-space="{previewInset}px"
   style:--side={sideWidth}
   aria-label={t("group.callPanel")}
 >
@@ -128,16 +148,26 @@
       />
     </div>
   {/if}
-  <div class="group-call__people">
+  <div
+    class="group-call__people"
+    class:group-call__people--squares={squares}
+    class:group-call__people--morphing={morphing}
+    bind:clientWidth={peopleWidth}
+    bind:clientHeight={peopleHeight}
+    style:--tile={watchingNow ? undefined : `${layout.tile}px`}
+    style:--photo={watchingNow ? undefined : `${layout.photo}px`}
+    style:min-height={watchingNow ? undefined : `${layout.minHeight + tileRoom}px`}
+  >
     {#each people as person (person.id)}
       <div class="group-call__person">
         <span
           class="group-call__avatar"
           class:group-call__avatar--speaking={person.speaking && !person.muted}
           class:group-call__avatar--ringing={person.ringing}
+          class:group-call__avatar--camera={!!person.camera}
         >
           {#if person.self || person.ringing || !call}
-            <Avatar user={person.user} size="group" />
+            <CallTile user={person.user} stream={person.camera} />
           {:else}
             <button
               class="group-call__adjust"
@@ -145,13 +175,13 @@
               aria-label={person.live
                 ? t("screen.watch", { name: person.user.username })
                 : t("call.userVolume", { name: person.user.username })}
-              title={person.live ? t("screen.watch", { name: person.user.username }) : undefined}
+              data-tooltip={person.live ? t("screen.watch", { name: person.user.username }) : undefined}
               class:group-call__adjust--live={person.live}
               onclick={() => person.live && groupCall.watch(person.id)}
               oncontextmenu={(event) => openMenu(event, person.user)}
               onkeydown={(event) => menuKey(event, person.user)}
             >
-              <Avatar user={person.user} size="group" />
+              <CallTile user={person.user} stream={person.camera} />
             </button>
           {/if}
           {#if person.deafened || person.muted}
@@ -163,6 +193,15 @@
                 : t("call.peerMuted", { name: person.user.username })}
             >
               <CallIcon name={person.deafened ? "headphonesOff" : "micOff"} />
+            </span>
+          {/if}
+          {#if person.cameraOn}
+            <span
+              class="group-call__badge group-call__badge--camera"
+              role="img"
+              aria-label={t("call.peerCamera", { name: person.user.username })}
+            >
+              <CallIcon name="camera" />
             </span>
           {/if}
           {#if person.live}
@@ -210,7 +249,7 @@
         <button
           class="group-call__button group-call__button--leave"
           aria-label={t("call.decline")}
-          title={t("call.decline")}
+          data-tooltip={t("call.decline")}
           onclick={() => groupCall.decline()}
         >
           <CallIcon name="hangUp" />
@@ -219,7 +258,7 @@
           <button
             class="group-call__button"
             aria-label={t("call.hide")}
-            title={t("call.hide")}
+            data-tooltip={t("call.hide")}
             onclick={() => groupCall.hide()}
           >
             <CallIcon name="dash" />
@@ -229,7 +268,7 @@
       <button
         class="group-call__button group-call__button--join"
         aria-label={t("group.joinCallShort")}
-        title={t("group.joinCallShort")}
+        data-tooltip={t("group.joinCallShort")}
         disabled={groupCall.joining}
         onclick={join}
       >
@@ -242,7 +281,7 @@
         class="group-call__button"
         class:group-call__button--off={groupCall.muted}
         aria-label={groupCall.muted ? t("call.unmute") : t("call.mute")}
-        title={groupCall.muted ? t("call.unmute") : t("call.mute")}
+        data-tooltip={groupCall.muted ? t("call.unmute") : t("call.mute")}
         aria-pressed={groupCall.muted}
         onclick={() => groupCall.toggleMute()}
       >
@@ -252,26 +291,38 @@
         class="group-call__button"
         class:group-call__button--off={groupCall.deafened}
         aria-label={groupCall.deafened ? t("call.undeafen") : t("call.deafen")}
-        title={groupCall.deafened ? t("call.undeafen") : t("call.deafen")}
+        data-tooltip={groupCall.deafened ? t("call.undeafen") : t("call.deafen")}
         aria-pressed={groupCall.deafened}
         onclick={() => groupCall.toggleDeafen()}
       >
         <CallIcon name={groupCall.deafened ? "headphonesOff" : "headphones"} />
       </button>
+      <button
+        class="group-call__button"
+        class:group-call__button--off={!!groupCall.camera}
+        aria-label={groupCall.camera ? t("call.cameraOff") : t("call.cameraOn")}
+        data-tooltip={groupCall.camera ? t("call.cameraOff") : t("call.cameraOn")}
+        aria-pressed={!!groupCall.camera}
+        onclick={() => groupCall.toggleCamera()}
+      >
+        <CallIcon name="camera" />
+      </button>
       <span class="group-call__share">
         <button
           class="group-call__button"
           class:group-call__button--off={groupCall.sharing}
-          aria-label={groupCall.sharing ? t("screen.stop") : t("screen.share")}
-          title={groupCall.sharing ? t("screen.stop") : t("screen.share")}
+          aria-label={groupCall.sharing ? t("screen.options") : t("screen.share")}
+          data-tooltip={groupCall.sharing ? t("screen.options") : t("screen.share")}
           aria-pressed={groupCall.sharing}
-          onclick={toggleShare}
+          onclick={() => (picking = !picking)}
         >
           <CallIcon name="screen" />
         </button>
         {#if picking}
           <ScreenPicker
+            current={groupCall.shareSettings}
             onshare={(sourceId, quality) => groupCall.startShare(sourceId, quality)}
+            onstop={() => groupCall.stopShare()}
             onclose={() => (picking = false)}
           />
         {/if}
@@ -279,7 +330,7 @@
       <button
         class="group-call__button group-call__button--leave"
         aria-label={t("group.leaveCall")}
-        title={t("group.leaveCall")}
+        data-tooltip={t("group.leaveCall")}
         onclick={() => groupCall.leave()}
       >
         <CallIcon name="hangUp" />
@@ -308,10 +359,16 @@
   }
 
   .group-call__people {
+    align-self: stretch;
+    flex: 1 1 0;
+    padding: 0 var(--previews-space);
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
     justify-content: center;
     gap: 20px;
+    contain: size;
   }
 
   .group-call__person {
@@ -322,13 +379,36 @@
   }
 
   .group-call__avatar {
+    --size: var(--photo);
     position: relative;
+    width: var(--size);
+    height: var(--size);
+    flex: none;
     display: flex;
     border-radius: 50%;
     box-shadow:
       0 0 0 3px #090909,
       0 0 0 6px transparent;
-    transition: box-shadow ease 0.15s;
+    transition:
+      box-shadow ease 0.15s,
+      border-radius ease 0.25s;
+  }
+
+  .group-call__avatar :global(.avatar) {
+    border-radius: inherit;
+  }
+
+  .group-call__people--squares .group-call__avatar {
+    --size: var(--tile);
+    border-radius: 14px;
+  }
+
+  .group-call__people--morphing .group-call__avatar {
+    transition:
+      box-shadow ease 0.15s,
+      border-radius ease 0.25s,
+      width ease 0.25s,
+      height ease 0.25s;
   }
 
   .group-call__avatar--speaking {
@@ -337,11 +417,18 @@
       0 0 0 6px var(--success-color);
   }
 
+  .group-call__people .group-call__avatar--camera {
+    --size: var(--tile);
+    border-radius: 14px;
+  }
+
   .group-call__adjust {
+    width: 100%;
+    height: 100%;
     padding: 0;
     display: flex;
     border: 0;
-    border-radius: 50%;
+    border-radius: inherit;
     background: transparent;
     cursor: context-menu;
   }
@@ -359,6 +446,12 @@
     background: var(--dark-background-color);
     border: 2px solid #090909;
     color: #f6746b;
+  }
+
+  .group-call__badge--camera {
+    left: -4px;
+    right: auto;
+    color: var(--muted-color);
   }
 
   .group-call__status {
@@ -524,9 +617,16 @@
     overflow-y: auto;
   }
 
-  .group-call--watching :global(.avatar) {
-    width: 52px;
-    height: 52px;
-    font-size: 20px;
+  .group-call--watching .group-call__people {
+    --photo: 52px;
+    --tile: calc(var(--side) - 12px);
+  }
+
+  .group-call--watching .group-call__avatar--camera {
+    border-radius: 12px;
+  }
+
+  .group-call--watching .group-call__people--squares .group-call__avatar {
+    border-radius: 12px;
   }
 </style>

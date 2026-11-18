@@ -22,7 +22,7 @@ func (q *Queries) CloseStaleCalls(ctx context.Context) error {
 const createCallMessage = `-- name: CreateCallMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, call_outcome, call_duration)
 VALUES ($1, $2, '', 'call', 'ongoing', 0)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
 `
 
 type CreateCallMessageParams struct {
@@ -44,6 +44,7 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 		&i.CallDuration,
 		&i.Event,
 		&i.TargetID,
+		&i.EditedAt,
 	)
 	return i, err
 }
@@ -51,7 +52,7 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 const createEventMessage = `-- name: CreateEventMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
 VALUES ($1, $2, '', 'event', $3, $4)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
 `
 
 type CreateEventMessageParams struct {
@@ -80,6 +81,7 @@ func (q *Queries) CreateEventMessage(ctx context.Context, arg CreateEventMessage
 		&i.CallDuration,
 		&i.Event,
 		&i.TargetID,
+		&i.EditedAt,
 	)
 	return i, err
 }
@@ -92,7 +94,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
 `
 
 type CreateMessageParams struct {
@@ -115,6 +117,47 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.CallDuration,
 		&i.Event,
 		&i.TargetID,
+		&i.EditedAt,
+	)
+	return i, err
+}
+
+const deleteMessage = `-- name: DeleteMessage :exec
+DELETE FROM messages
+WHERE id = $1
+`
+
+func (q *Queries) DeleteMessage(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, deleteMessage, id)
+	return err
+}
+
+const editMessage = `-- name: EditMessage :one
+UPDATE messages SET content = $1, edited_at = now()
+WHERE id = $2 AND kind = 'text'
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+`
+
+type EditMessageParams struct {
+	Content string
+	ID      string
+}
+
+func (q *Queries) EditMessage(ctx context.Context, arg EditMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, editMessage, arg.Content, arg.ID)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.ConversationID,
+		&i.SenderID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.Kind,
+		&i.CallOutcome,
+		&i.CallDuration,
+		&i.Event,
+		&i.TargetID,
+		&i.EditedAt,
 	)
 	return i, err
 }
@@ -122,7 +165,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 const finishCallMessage = `-- name: FinishCallMessage :one
 UPDATE messages SET call_outcome = $1, call_duration = $2
 WHERE id = $3 AND kind = 'call'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
 `
 
 type FinishCallMessageParams struct {
@@ -145,12 +188,43 @@ func (q *Queries) FinishCallMessage(ctx context.Context, arg FinishCallMessagePa
 		&i.CallDuration,
 		&i.Event,
 		&i.TargetID,
+		&i.EditedAt,
+	)
+	return i, err
+}
+
+const getMessageTarget = `-- name: GetMessageTarget :one
+SELECT m.id, m.conversation_id, m.sender_id, m.kind, c.kind AS conversation_kind, c.owner_id
+FROM messages m
+JOIN conversations c ON c.id = m.conversation_id
+WHERE m.id = $1
+`
+
+type GetMessageTargetRow struct {
+	ID               string
+	ConversationID   string
+	SenderID         string
+	Kind             string
+	ConversationKind string
+	OwnerID          *string
+}
+
+func (q *Queries) GetMessageTarget(ctx context.Context, id string) (GetMessageTargetRow, error) {
+	row := q.db.QueryRow(ctx, getMessageTarget, id)
+	var i GetMessageTargetRow
+	err := row.Scan(
+		&i.ID,
+		&i.ConversationID,
+		&i.SenderID,
+		&i.Kind,
+		&i.ConversationKind,
+		&i.OwnerID,
 	)
 	return i, err
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, sender.username AS sender_name, target.username AS target_name
+SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, m.edited_at, sender.username AS sender_name, target.username AS target_name
 FROM messages m
 JOIN users sender ON sender.id = m.sender_id
 LEFT JOIN users target ON target.id = m.target_id
@@ -192,6 +266,7 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]L
 			&i.Message.CallDuration,
 			&i.Message.Event,
 			&i.Message.TargetID,
+			&i.Message.EditedAt,
 			&i.SenderName,
 			&i.TargetName,
 		); err != nil {

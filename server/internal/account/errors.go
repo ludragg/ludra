@@ -17,4 +17,6 @@ var (
 	ErrInvalidAvatar      = failure.New(failure.Invalid, "invalid avatar")
 	ErrInvalidIdentityKey = failure.New(failure.Invalid, "invalid identity key")
 	ErrAvatarNotFound     = failure.New(failure.NotFound, "avatar not found")
+	ErrSameUsername       = failure.New(failure.Invalid, "new username must be different")
+	ErrUsernameCooldown   = failure.New(failure.Forbidden, "username can be changed once every 30 days")
 )

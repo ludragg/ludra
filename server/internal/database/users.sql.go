@@ -12,7 +12,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key
+RETURNING id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key, username_changed_at
 `
 
 type CreateUserParams struct {
@@ -36,12 +36,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.TwoFactor,
 		&i.Busy,
 		&i.IdentityKey,
+		&i.UsernameChangedAt,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key, username_changed_at FROM users
 WHERE id = $1
 `
 
@@ -60,12 +61,13 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.TwoFactor,
 		&i.Busy,
 		&i.IdentityKey,
+		&i.UsernameChangedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key, username_changed_at FROM users
 WHERE lower(email) = lower($1)
 `
 
@@ -84,12 +86,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error
 		&i.TwoFactor,
 		&i.Busy,
 		&i.IdentityKey,
+		&i.UsernameChangedAt,
 	)
 	return i, err
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key, username_changed_at FROM users
 WHERE lower(username) = lower($1) OR lower(email) = lower($1)
 `
 
@@ -108,12 +111,13 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 		&i.TwoFactor,
 		&i.Busy,
 		&i.IdentityKey,
+		&i.UsernameChangedAt,
 	)
 	return i, err
 }
 
 const getVerifiedUserByUsername = `-- name: GetVerifiedUserByUsername :one
-SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key FROM users
+SELECT id, username, created_at, email, password_hash, email_verified_at, invisible, avatar, two_factor, busy, identity_key, username_changed_at FROM users
 WHERE lower(username) = lower($1) AND email_verified_at IS NOT NULL
 `
 
@@ -132,8 +136,41 @@ func (q *Queries) GetVerifiedUserByUsername(ctx context.Context, lower string) (
 		&i.TwoFactor,
 		&i.Busy,
 		&i.IdentityKey,
+		&i.UsernameChangedAt,
 	)
 	return i, err
+}
+
+const listContactIDs = `-- name: ListContactIDs :many
+SELECT other.user_id FROM participants me
+JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
+WHERE me.user_id = $1
+UNION
+SELECT friend_id FROM friendships WHERE user_id = $1
+UNION
+SELECT recipient_id FROM friend_requests WHERE sender_id = $1
+UNION
+SELECT sender_id FROM friend_requests WHERE recipient_id = $1
+`
+
+func (q *Queries) ListContactIDs(ctx context.Context, userID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listContactIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_id string
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listIdentityKeys = `-- name: ListIdentityKeys :many
@@ -235,6 +272,25 @@ type SetTwoFactorParams struct {
 func (q *Queries) SetTwoFactor(ctx context.Context, arg SetTwoFactorParams) error {
 	_, err := q.db.Exec(ctx, setTwoFactor, arg.ID, arg.TwoFactor)
 	return err
+}
+
+const setUsername = `-- name: SetUsername :one
+UPDATE users SET username = $1, username_changed_at = now()
+WHERE id = $2
+  AND (username_changed_at IS NULL OR username_changed_at <= now() - interval '30 days')
+RETURNING avatar
+`
+
+type SetUsernameParams struct {
+	Username string
+	ID       string
+}
+
+func (q *Queries) SetUsername(ctx context.Context, arg SetUsernameParams) (string, error) {
+	row := q.db.QueryRow(ctx, setUsername, arg.Username, arg.ID)
+	var avatar string
+	err := row.Scan(&avatar)
+	return avatar, err
 }
 
 const updatePassword = `-- name: UpdatePassword :exec

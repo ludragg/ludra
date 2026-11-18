@@ -50,6 +50,9 @@ message ClientFrame {
     SetIdentityKey set_identity_key = 41;
     ListIdentityKeys list_identity_keys = 42;
     Ping ping = 43;
+    EditMessage edit_message = 44;
+    DeleteMessage delete_message = 45;
+    SetUsername set_username = 46;
   }
 }
 
@@ -154,6 +157,19 @@ message LoadMessages {
 message SendMessage {
   string conversation_id = 1;
   string content = 2;
+}
+
+message EditMessage {
+  string message_id = 1;
+  string content = 2;
+}
+
+message DeleteMessage {
+  string message_id = 1;
+}
+
+message SetUsername {
+  string username = 1;
 }
 
 message StartCall {

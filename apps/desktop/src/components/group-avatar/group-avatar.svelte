@@ -1,7 +1,11 @@
 <script lang="ts">
   import { groupAvatarUrl } from "@/services/server";
 
-  let { id, avatar = "", size = "small" }: { id: string; avatar?: string; size?: "small" | "ringing" } = $props();
+  let {
+    id,
+    avatar = "",
+    size = "small",
+  }: { id: string; avatar?: string; size?: "small" | "large" | "ringing" } = $props();
 
   let failed = $state<string | null>(null);
 
@@ -44,6 +48,12 @@
     place-items: center;
     border-radius: 50%;
     color: var(--dark-background-color);
+  }
+
+  .group-avatar--large {
+    width: 40px;
+    height: 40px;
+    padding: 10px;
   }
 
   .group-avatar--ringing {

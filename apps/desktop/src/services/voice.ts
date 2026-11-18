@@ -17,6 +17,7 @@ export class VoiceSession {
   onFailed: () => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
   onScreen: (stream: MediaStream | null) => void = () => {};
+  onCamera: (stream: MediaStream | null) => void = () => {};
   onStatus: (connecting: boolean) => void = () => {};
 
   #iceServers: IceServer[];
@@ -24,6 +25,7 @@ export class VoiceSession {
   #direct: boolean;
   #microphone: Microphone | null = null;
   #link: PeerLink | null = null;
+  #camera: MediaStreamTrack | null = null;
   #meter: number | undefined;
   #muted = false;
   #closed = false;
@@ -43,6 +45,7 @@ export class VoiceSession {
     this.#microphone = microphone;
     const link = new PeerLink(this.#iceServers, this.#microphone.track, this.#polite, this.#direct);
     link.onScreen = (stream) => this.onScreen(stream);
+    link.onCamera = (stream) => this.onCamera(stream);
     link.onStatus = (connecting) => this.onStatus(connecting);
     link.onSignal = (kind, payload) => this.onSignal(kind, payload);
     link.onConnected = () => this.onConnected();
@@ -50,6 +53,9 @@ export class VoiceSession {
     link.onLatency = (milliseconds) => this.onLatency(milliseconds);
     link.setOutputVolume(outputVolume);
     this.#link = link;
+    if (this.#camera) {
+      await link.setCamera(this.#camera);
+    }
     await link.setOutputDevice(outputDevice);
     this.#watchSpeaking();
   }
@@ -68,6 +74,15 @@ export class VoiceSession {
 
   async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
     await this.#link?.setScreen(stream, quality);
+  }
+
+  async setCamera(track: MediaStreamTrack | null) {
+    this.#camera = track;
+    await this.#link?.setCamera(track);
+  }
+
+  setRemoteCamera(streamId: string) {
+    this.#link?.setRemoteCamera(streamId);
   }
 
   get screen(): MediaStream | null {

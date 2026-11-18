@@ -46,3 +46,20 @@ WHERE id = $1;
 -- name: ListIdentityKeys :many
 SELECT id, identity_key FROM users
 WHERE id = ANY(sqlc.arg(user_ids)::uuid[]);
+
+-- name: SetUsername :one
+UPDATE users SET username = sqlc.arg(username), username_changed_at = now()
+WHERE id = sqlc.arg(id)
+  AND (username_changed_at IS NULL OR username_changed_at <= now() - interval '30 days')
+RETURNING avatar;
+
+-- name: ListContactIDs :many
+SELECT other.user_id FROM participants me
+JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
+WHERE me.user_id = sqlc.arg(user_id)
+UNION
+SELECT friend_id FROM friendships WHERE user_id = sqlc.arg(user_id)
+UNION
+SELECT recipient_id FROM friend_requests WHERE sender_id = sqlc.arg(user_id)
+UNION
+SELECT sender_id FROM friend_requests WHERE recipient_id = sqlc.arg(user_id);

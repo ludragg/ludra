@@ -38,7 +38,7 @@
 <button
   class="call-security"
   class:call-security--warning={changed.length > 0}
-  title={t("security.title")}
+  data-tooltip={t("security.title")}
   onclick={() => (open = true)}
 >
   <svg

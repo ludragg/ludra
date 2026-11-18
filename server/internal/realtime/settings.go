@@ -124,3 +124,22 @@ func (s *session) updateAvatar(avatar string) *protocol.ServerFrame {
 	s.hub.publish(append(recipients, s.user.Id), reply, s)
 	return reply
 }
+
+func (s *session) setUsername(ctx context.Context, req *protocol.SetUsername) *protocol.ServerFrame {
+	user, err := s.account.SetUsername(ctx, s.user.Id, s.user.Username, req.Username)
+	if err != nil {
+		return failed(err)
+	}
+
+	s.user.Username = user.Username
+	s.user.Avatar = user.Avatar
+	reply := userUpdatedFrame(toUser(user))
+
+	contacts, err := s.account.ContactIDs(ctx, s.user.Id)
+	if err != nil {
+		contacts = nil
+	}
+	s.hub.publish(contacts, reply, nil)
+	s.hub.disconnect(s.user.Id, s)
+	return reply
+}

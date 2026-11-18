@@ -91,7 +91,12 @@
   >
     {label}
   </button>
-  <button class="sidebar-call__hang-up" aria-label={t("call.hangUp")} title={t("call.hangUp")} onclick={onhangup}>
+  <button
+    class="sidebar-call__hang-up"
+    aria-label={t("call.hangUp")}
+    data-tooltip={t("call.hangUp")}
+    onclick={onhangup}
+  >
     <CallIcon name="hangUp" />
   </button>
 </div>

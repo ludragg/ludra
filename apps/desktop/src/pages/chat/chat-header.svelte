@@ -9,12 +9,12 @@
 
   let { peer }: { peer: User } = $props();
 
-  async function call() {
+  async function call(camera: boolean) {
     if (calls.coolingDown(peer)) {
       return;
     }
     await groupCall.leave();
-    await calls.start(peer);
+    await calls.start(peer, camera);
   }
 
   const canCall = $derived(calls.current?.peer.id !== peer.id && !groupCall.joining && chat.isFriend(peer.id));
@@ -30,9 +30,24 @@
     <span class="chat-header__error" role="alert">{calls.error}</span>
   {/if}
   {#if canCall}
-    <button class="chat-header__call" aria-label={t("call.start")} title={t("call.start")} onclick={call}>
+    <button
+      class="chat-header__call"
+      aria-label={t("call.start")}
+      data-tooltip={t("call.start")}
+      onclick={() => call(false)}
+    >
       <CallIcon name="phone" />
     </button>
+    {#if !calls.ringing(peer)}
+      <button
+        class="chat-header__call"
+        aria-label={t("call.startVideo")}
+        data-tooltip={t("call.startVideo")}
+        onclick={() => call(true)}
+      >
+        <CallIcon name="camera" />
+      </button>
+    {/if}
   {/if}
 </header>
 
@@ -63,6 +78,10 @@
   .chat-header__error {
     font-size: var(--small-font-size);
     color: #f6746b;
+  }
+
+  .chat-header__call + .chat-header__call {
+    margin-left: -8px;
   }
 
   .chat-header__call {

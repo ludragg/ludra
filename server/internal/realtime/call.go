@@ -142,6 +142,7 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 			Sharing  bool    `json:"sharing"`
 			Direct   *bool   `json:"direct"`
 			Preview  *string `json:"preview"`
+			Camera   string  `json:"camera"`
 		}
 		if json.Unmarshal([]byte(req.Payload), &state) != nil {
 			return ackFrame()
@@ -150,7 +151,7 @@ func (s *session) relaySignal(req *protocol.CallSignal) *protocol.ServerFrame {
 			s.sharePreview(req.CallId, *state.Preview)
 		}
 		if state.Muted != nil {
-			voice := voiceState{muted: *state.Muted, deafened: state.Deafened, sharing: state.Sharing}
+			voice := voiceState{muted: *state.Muted, deafened: state.Deafened, sharing: state.Sharing, camera: state.Camera != ""}
 			conversationID, changed := s.rooms.setVoice(req.CallId, s, voice, state.Direct)
 			if changed && s.guard.voiceChanges.Allow(s.user.Id) {
 				s.announceRoom(conversationID)

@@ -36,7 +36,7 @@
       <button
         class="group-ringing__button group-ringing__button--decline"
         aria-label={t("call.decline")}
-        title={t("call.decline")}
+        data-tooltip={t("call.decline")}
         onclick={() => groupCall.decline()}
       >
         <CallIcon name="hangUp" />
@@ -44,7 +44,7 @@
       <button
         class="group-ringing__button group-ringing__button--hide"
         aria-label={t("call.hide")}
-        title={t("call.hide")}
+        data-tooltip={t("call.hide")}
         onclick={() => groupCall.hide()}
       >
         <CallIcon name="dash" />
@@ -52,7 +52,7 @@
       <button
         class="group-ringing__button group-ringing__button--answer"
         aria-label={t("group.joinCallShort")}
-        title={t("group.joinCallShort")}
+        data-tooltip={t("group.joinCallShort")}
         onclick={answer}
         {@attach (button) => button.focus()}
       >

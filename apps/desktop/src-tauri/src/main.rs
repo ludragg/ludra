@@ -2,6 +2,7 @@
 
 #[cfg(windows)]
 mod screen;
+mod toast;
 #[cfg(windows)]
 mod webview;
 
@@ -25,7 +26,6 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_autostart::init(
@@ -34,13 +34,21 @@ fn main() {
         ))
         .on_permission_request(webview::permission)
         .manage(screen::ScreenState::default())
+        .manage(toast::ToastState::default())
         .setup(|app| {
             #[cfg(windows)]
             webview::setup(app);
             Ok(())
         })
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.app_handle().exit(0);
+            }
+        })
         .on_page_load(|webview, payload| {
-            if payload.event() == tauri::webview::PageLoadEvent::Started {
+            if webview.label() == "main"
+                && payload.event() == tauri::webview::PageLoadEvent::Started
+            {
                 screen::reset(webview.app_handle());
             }
         })
@@ -50,7 +58,11 @@ fn main() {
             screen::screen_sources,
             screen::screen_start,
             screen::screen_stop,
-            screen::screen_watched
+            screen::screen_watched,
+            toast::toast_push,
+            toast::toast_take,
+            toast::toast_layout,
+            toast::toast_open
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Ludra");

@@ -24,7 +24,7 @@
   class="friend-action friend-action--{tone}"
   class:friend-action--armed={armed}
   aria-label={label}
-  title={label}
+  data-tooltip={label}
   {onclick}
 >
   <svg

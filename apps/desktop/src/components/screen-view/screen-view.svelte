@@ -133,7 +133,7 @@
     <button
       class="screen-view__button"
       aria-label={fullscreen ? t("screen.exitFullscreen") : t("screen.fullscreen")}
-      title={fullscreen ? t("screen.exitFullscreen") : t("screen.fullscreen")}
+      data-tooltip={fullscreen ? t("screen.exitFullscreen") : t("screen.fullscreen")}
       onclick={toggleFullscreen}
     >
       <svg
@@ -155,7 +155,7 @@
     <button
       class="screen-view__button"
       aria-label={t("screen.stopWatching")}
-      title={t("screen.stopWatching")}
+      data-tooltip={t("screen.stopWatching")}
       onclick={onclose}
     >
       <svg
@@ -312,8 +312,21 @@
     }
   }
 
-  @container (max-width: 180px) {
+  @container (max-width: 260px) {
     .screen-view__labels {
+      top: 50px;
+      right: 10px;
+    }
+  }
+
+  @container (max-width: 140px) {
+    .screen-view__labels {
+      display: none;
+    }
+  }
+
+  @container (max-width: 96px) {
+    .screen-view__actions {
       display: none;
     }
   }

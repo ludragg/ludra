@@ -4,6 +4,7 @@ export type VoiceState = {
   sharing: string | null;
   direct?: boolean;
   viewers?: string[];
+  camera?: string;
 };
 
 export type VoiceMessage =
@@ -21,6 +22,7 @@ export function stateMessage(state: VoiceState): string {
     quality: state.sharing,
     direct: state.direct,
     viewers: state.viewers,
+    camera: state.camera ?? "",
   });
 }
 
@@ -59,6 +61,7 @@ export function parseVoiceMessage(payload: string): VoiceMessage {
       viewers: Array.isArray(data?.viewers)
         ? data.viewers.filter((id: unknown) => typeof id === "string").slice(0, maxViewers)
         : [],
+      camera: typeof data?.camera === "string" ? data.camera.slice(0, 64) : "",
     };
   } catch {
     return { kind: "state", muted: false, deafened: false, sharing: null };

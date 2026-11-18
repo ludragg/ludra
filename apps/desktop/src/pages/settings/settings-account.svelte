@@ -2,15 +2,19 @@
   import { Avatar, Button, Checkbox, TextField } from "@/components";
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import { maskEmail } from "@/helpers/email";
+  import { applyMask } from "@/helpers/mask";
   import { maxUploadBytes, toAvatar } from "@/helpers/image";
   import { validPassword } from "@/helpers/password";
-  import { t } from "@/i18n";
+  import { localeTag, t } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
   import { chat } from "@/stores/chat.svelte";
   import SettingsGroup from "./settings-group.svelte";
 
   type PasswordField = "current" | "next";
+
+  const usernamePattern = /^[a-zA-Z0-9_.]{3,32}$/;
+  const renameInterval = 30 * 24 * 60 * 60 * 1000;
 
   let picker = $state<HTMLInputElement>();
   let emailShown = $state(false);
@@ -22,6 +26,15 @@
   let passwordErrors = $state<Partial<Record<PasswordField, string>>>({});
   let passwordSaved = $state(false);
   let savingPassword = $state(false);
+
+  let renaming = $state(false);
+  let newUsername = $state("");
+  let usernameError = $state("");
+  let savingUsername = $state(false);
+
+  const renameAt = $derived(chat.renamedAt ? chat.renamedAt + renameInterval : 0);
+  const renameLocked = $derived(renameAt > Date.now());
+  const renameDate = $derived(new Date(renameAt).toLocaleDateString(localeTag()));
 
   let confirmingDisable = $state(false);
   let disablePassword = $state("");
@@ -68,6 +81,61 @@
       photoError = t("settings.photoFailed");
     } finally {
       uploading = false;
+    }
+  }
+
+  function startRename() {
+    newUsername = chat.user?.username ?? "";
+    usernameError = "";
+    renaming = true;
+  }
+
+  function typeUsername(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const masked = applyMask(input.value, "username");
+    input.value = masked;
+    newUsername = masked;
+    usernameError = "";
+  }
+
+  async function saveUsername(event: SubmitEvent) {
+    event.preventDefault();
+    const username = newUsername.trim();
+    if (!usernamePattern.test(username)) {
+      usernameError = t("register.usernameRule");
+      return;
+    }
+    if (username === chat.user?.username) {
+      renaming = false;
+      return;
+    }
+
+    savingUsername = true;
+    try {
+      await chat.setUsername(username);
+      renaming = false;
+    } catch (cause) {
+      usernameError = describeUsername(cause);
+    } finally {
+      savingUsername = false;
+    }
+  }
+
+  function describeUsername(cause: unknown): string {
+    if (!(cause instanceof ServerError)) {
+      return t("common.connectionFailed");
+    }
+    switch (cause.code) {
+      case ErrorCode.ALREADY_EXISTS:
+        return t("register.usernameTaken");
+      case ErrorCode.INVALID_REQUEST:
+        return t("register.usernameRule");
+      case ErrorCode.FORBIDDEN:
+        return t("settings.usernameLocked", { date: renameDate });
+      case ErrorCode.TOO_MANY_REQUESTS:
+        return t("common.tooManyRequests");
+      default:
+        return t("settings.usernameFailed");
     }
   }
 
@@ -179,7 +247,103 @@
           <Avatar user={chat.user} size="huge" />
           <div class="settings-account__identity">
             <div class="settings-account__names">
-              <span class="settings-account__username">{chat.user.username}</span>
+              {#if renaming}
+                <form class="settings-account__rename-form" onsubmit={saveUsername} novalidate>
+                  <div class="settings-account__rename-row">
+                    <label for="new-username" class="sr-only">{t("settings.newUsername")}</label>
+                    <input
+                      id="new-username"
+                      class="settings-account__rename-input"
+                      class:settings-account__rename-input--error={!!usernameError}
+                      maxlength="32"
+                      autocomplete="off"
+                      spellcheck="false"
+                      aria-invalid={!!usernameError}
+                      aria-describedby="new-username-hint"
+                      value={newUsername}
+                      oninput={typeUsername}
+                      onkeydown={(event) => event.key === "Escape" && (renaming = false)}
+                      {@attach (input) => input.select()}
+                    />
+                    <button
+                      type="submit"
+                      class="settings-account__icon settings-account__icon--save"
+                      aria-label={t("settings.saveUsername")}
+                      data-tooltip={t("settings.saveUsername")}
+                      disabled={savingUsername}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12l5 5L20 7" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="settings-account__icon"
+                      aria-label={t("settings.cancel")}
+                      data-tooltip={t("settings.cancel")}
+                      onclick={() => (renaming = false)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
+                    </button>
+                    <span
+                      id="new-username-hint"
+                      class="settings-account__message settings-account__rename-hint"
+                      class:settings-account__message--error={!!usernameError}
+                      role={usernameError ? "alert" : undefined}
+                    >
+                      {usernameError || t("settings.usernameHint")}
+                    </span>
+                  </div>
+                </form>
+              {:else}
+                <span class="settings-account__username">
+                  {chat.user.username}
+                  <span
+                    class="settings-account__rename"
+                    data-tooltip={renameLocked
+                      ? t("settings.usernameLocked", { date: renameDate })
+                      : t("settings.changeUsername")}
+                  >
+                    <button
+                      type="button"
+                      class="settings-account__icon"
+                      aria-label={t("settings.changeUsername")}
+                      disabled={renameLocked}
+                      onclick={startRename}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M4 20h4L19 9l-4-4L4 16z" />
+                        <path d="m13.5 6.5 4 4" />
+                      </svg>
+                    </button>
+                  </span>
+                </span>
+              {/if}
               <span class="settings-account__email">
                 <span class="settings-account__email-text">{emailShown ? chat.email : maskEmail(chat.email)}</span>
                 <EyeButton
@@ -349,8 +513,78 @@
   }
 
   .settings-account__username {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
     color: var(--muted-color);
+  }
+
+  .settings-account__rename {
+    display: flex;
+  }
+
+  .settings-account__icon {
+    width: 26px;
+    height: 26px;
+    padding: 5px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--subtle-color);
+    transition: all ease 0.1s;
+  }
+
+  .settings-account__icon:hover:not(:disabled) {
+    background: var(--active-color);
+    color: var(--muted-color);
+  }
+
+  .settings-account__icon:disabled {
+    opacity: var(--disabled-opacity);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .settings-account__icon--save:hover:not(:disabled) {
+    color: var(--success-color);
+  }
+
+  .settings-account__rename-form {
+    display: flex;
+  }
+
+  .settings-account__rename-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .settings-account__rename-hint {
+    min-width: 0;
+    margin-left: 4px;
+    line-height: 15px;
+  }
+
+  .settings-account__rename-input {
+    width: 200px;
+    flex: none;
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    outline: 0;
+    background: var(--dark-background-color);
+    color: var(--muted-color);
+    font-weight: 600;
+  }
+
+  .settings-account__rename-input--error {
+    border-color: var(--error-color);
   }
 
   .settings-account__email {

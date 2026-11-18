@@ -30,9 +30,10 @@ type voiceState struct {
 	muted    bool
 	deafened bool
 	sharing  bool
+	camera   bool
 }
 
-const aloneTimeout = 5 * time.Minute
+const aloneTimeout = 10 * time.Minute
 
 type roomFinisher func(conversationID, messageID string, duration time.Duration)
 
@@ -421,7 +422,7 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 		ringing = append(ringing, id)
 	}
 	sort.Strings(ringing)
-	var muted, deafened, sharing, direct []string
+	var muted, deafened, sharing, direct, camera []string
 	for _, id := range participants {
 		if current.direct[id] {
 			direct = append(direct, id)
@@ -436,6 +437,9 @@ func (r *rooms) state(conversationID string) *protocol.GroupCall {
 		if state.sharing {
 			sharing = append(sharing, id)
 		}
+		if state.camera {
+			camera = append(camera, id)
+		}
 	}
-	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened, SharingIds: sharing, DirectIds: direct}
+	return &protocol.GroupCall{Id: current.id, ParticipantIds: participants, StartedAt: timestamppb.New(current.startedAt), RingingIds: ringing, MutedIds: muted, DeafenedIds: deafened, SharingIds: sharing, DirectIds: direct, CameraIds: camera}
 }

@@ -17,4 +17,6 @@ var (
 	ErrNoMembers            = failure.New(failure.Invalid, "choose at least one friend")
 	ErrGroupFull            = failure.New(failure.Invalid, "group is full")
 	ErrNotGroupOwner        = failure.New(failure.Forbidden, "only the owner can remove members")
+	ErrMessageNotFound      = failure.New(failure.NotFound, "message not found")
+	ErrMessageForbidden     = failure.New(failure.Forbidden, "cannot change this message")
 )

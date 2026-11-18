@@ -473,6 +473,7 @@ type GroupCall struct {
 	DeafenedIds    []string               `protobuf:"bytes,7,rep,name=deafened_ids,json=deafenedIds,proto3" json:"deafened_ids,omitempty"`
 	SharingIds     []string               `protobuf:"bytes,8,rep,name=sharing_ids,json=sharingIds,proto3" json:"sharing_ids,omitempty"`
 	DirectIds      []string               `protobuf:"bytes,9,rep,name=direct_ids,json=directIds,proto3" json:"direct_ids,omitempty"`
+	CameraIds      []string               `protobuf:"bytes,10,rep,name=camera_ids,json=cameraIds,proto3" json:"camera_ids,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -563,6 +564,13 @@ func (x *GroupCall) GetDirectIds() []string {
 	return nil
 }
 
+func (x *GroupCall) GetCameraIds() []string {
+	if x != nil {
+		return x.CameraIds
+	}
+	return nil
+}
+
 type Message struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -577,6 +585,7 @@ type Message struct {
 	TargetId       string                 `protobuf:"bytes,10,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
 	SenderName     string                 `protobuf:"bytes,11,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
 	TargetName     string                 `protobuf:"bytes,12,opt,name=target_name,json=targetName,proto3" json:"target_name,omitempty"`
+	EditedAt       *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=edited_at,json=editedAt,proto3" json:"edited_at,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -693,6 +702,13 @@ func (x *Message) GetTargetName() string {
 		return x.TargetName
 	}
 	return ""
+}
+
+func (x *Message) GetEditedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EditedAt
+	}
+	return nil
 }
 
 type Friend struct {
@@ -1060,7 +1076,7 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12.\n" +
 	"\bpresence\x18\x03 \x01(\x0e2\x12.ludra.v1.PresenceR\bpresence\x12\x16\n" +
-	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xa6\x02\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\"\xc5\x02\n" +
 	"\tGroupCall\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fparticipant_ids\x18\x02 \x03(\tR\x0eparticipantIds\x129\n" +
@@ -1073,7 +1089,10 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\vsharing_ids\x18\b \x03(\tR\n" +
 	"sharingIds\x12\x1d\n" +
 	"\n" +
-	"direct_ids\x18\t \x03(\tR\tdirectIdsJ\x04\b\x04\x10\x05\"\xc5\x03\n" +
+	"direct_ids\x18\t \x03(\tR\tdirectIds\x12\x1d\n" +
+	"\n" +
+	"camera_ids\x18\n" +
+	" \x03(\tR\tcameraIdsJ\x04\b\x04\x10\x05\"\xfe\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -1089,7 +1108,8 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\vsender_name\x18\v \x01(\tR\n" +
 	"senderName\x12\x1f\n" +
 	"\vtarget_name\x18\f \x01(\tR\n" +
-	"targetName\"Y\n" +
+	"targetName\x127\n" +
+	"\tedited_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\beditedAt\"Y\n" +
 	"\x06Friend\x12\"\n" +
 	"\x04user\x18\x01 \x01(\v2\x0e.ludra.v1.UserR\x04user\x12+\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x15.ludra.v1.FriendStateR\x05state\"\xc2\x02\n" +
@@ -1201,21 +1221,22 @@ var file_ludra_v1_models_proto_depIdxs = []int32{
 	2,  // 3: ludra.v1.Message.kind:type_name -> ludra.v1.MessageKind
 	5,  // 4: ludra.v1.Message.call_outcome:type_name -> ludra.v1.CallOutcome
 	3,  // 5: ludra.v1.Message.event:type_name -> ludra.v1.MessageEvent
-	7,  // 6: ludra.v1.Friend.user:type_name -> ludra.v1.User
-	1,  // 7: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
-	7,  // 8: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
-	9,  // 9: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
-	4,  // 10: ludra.v1.Conversation.kind:type_name -> ludra.v1.ConversationKind
-	7,  // 11: ludra.v1.Conversation.members:type_name -> ludra.v1.User
-	8,  // 12: ludra.v1.Conversation.call:type_name -> ludra.v1.GroupCall
-	7,  // 13: ludra.v1.Call.peer:type_name -> ludra.v1.User
-	12, // 14: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
-	6,  // 15: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	15, // 6: ludra.v1.Message.edited_at:type_name -> google.protobuf.Timestamp
+	7,  // 7: ludra.v1.Friend.user:type_name -> ludra.v1.User
+	1,  // 8: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
+	7,  // 9: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
+	9,  // 10: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
+	4,  // 11: ludra.v1.Conversation.kind:type_name -> ludra.v1.ConversationKind
+	7,  // 12: ludra.v1.Conversation.members:type_name -> ludra.v1.User
+	8,  // 13: ludra.v1.Conversation.call:type_name -> ludra.v1.GroupCall
+	7,  // 14: ludra.v1.Call.peer:type_name -> ludra.v1.User
+	12, // 15: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
+	6,  // 16: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_models_proto_init() }

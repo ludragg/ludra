@@ -39,6 +39,7 @@ type guard struct {
 	largeSignals    *limit.Limiter
 	identityChanges *limit.Limiter
 	identityLookups *limit.Limiter
+	usernameChanges *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -66,6 +67,7 @@ func newGuard() *guard {
 		largeSignals:    limit.New(6, 10*time.Second),
 		identityChanges: limit.New(20, time.Hour),
 		identityLookups: limit.New(60, time.Minute),
+		usernameChanges: limit.New(10, time.Hour),
 	}
 }
 

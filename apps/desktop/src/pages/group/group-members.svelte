@@ -98,7 +98,7 @@
           <button
             class="group-members__remove"
             aria-label={t("group.removeMember", { name: member.username })}
-            title={t("group.remove")}
+            data-tooltip={t("group.remove")}
             disabled={pending}
             onclick={() => remove(member)}
           >

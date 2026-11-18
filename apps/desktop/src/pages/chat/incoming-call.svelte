@@ -20,7 +20,7 @@
       <button
         class="incoming-call__button incoming-call__button--decline"
         aria-label={t("call.decline")}
-        title={t("call.decline")}
+        data-tooltip={t("call.decline")}
         onclick={() => calls.decline()}
       >
         <CallIcon name="hangUp" />
@@ -28,7 +28,7 @@
       <button
         class="incoming-call__button incoming-call__button--hide"
         aria-label={t("call.hide")}
-        title={t("call.hide")}
+        data-tooltip={t("call.hide")}
         onclick={() => calls.hide()}
       >
         <CallIcon name="dash" />
@@ -36,7 +36,7 @@
       <button
         class="incoming-call__button incoming-call__button--answer"
         aria-label={t("call.answer")}
-        title={t("call.answer")}
+        data-tooltip={t("call.answer")}
         onclick={() => calls.answer()}
         {@attach (button) => button.focus()}
       >

@@ -12,9 +12,9 @@
   const busy = $derived(groupCall.joining);
   const full = $derived(group.members.length >= maxGroupMembers);
 
-  function join() {
+  function join(camera: boolean) {
     if (chat.user) {
-      groupCall.join(group.id, chat.user.id);
+      groupCall.join(group.id, chat.user.id, camera);
     }
   }
 </script>
@@ -31,12 +31,30 @@
     <span class="group-header__error" role="alert">{groupCall.error}</span>
   {/if}
   {#if !busy && !group.call}
-    <button class="group-header__action" aria-label={t("group.startCall")} title={t("group.startCall")} onclick={join}>
+    <button
+      class="group-header__action"
+      aria-label={t("group.startCall")}
+      data-tooltip={t("group.startCall")}
+      onclick={() => join(false)}
+    >
       <CallIcon name="phone" />
+    </button>
+    <button
+      class="group-header__action"
+      aria-label={t("group.startVideoCall")}
+      data-tooltip={t("group.startVideoCall")}
+      onclick={() => join(true)}
+    >
+      <CallIcon name="camera" />
     </button>
   {/if}
   {#if !full}
-    <button class="group-header__action" aria-label={t("group.addPeople")} title={t("group.addPeople")} onclick={onadd}>
+    <button
+      class="group-header__action"
+      aria-label={t("group.addPeople")}
+      data-tooltip={t("group.addPeople")}
+      onclick={onadd}
+    >
       <svg
         viewBox="0 0 24 24"
         fill="none"

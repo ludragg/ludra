@@ -81,7 +81,7 @@
         <button
           class="sidebar__create"
           aria-label={t("group.create")}
-          title={t("group.create")}
+          data-tooltip={t("group.create")}
           onclick={() => (creating = true)}
         >
           <svg
