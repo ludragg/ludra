@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.3.4",
+    "notes": {
+      "pt": {
+        "features": [
+          "Os seus grupos agora aparecem direto na barra lateral esquerda, junto com o botão para criar um novo grupo.",
+          "A tela de Amigos voltou a exibir a logo do Ludra centralizada quando não há amigos online ou pedidos pendentes."
+        ],
+        "fixes": []
+      },
+      "en": {
+        "features": [
+          "Your groups now appear directly in the left bar, along with the button to create a new group.",
+          "The Friends screen once again shows the centered Ludra logo when there are no online friends or pending requests."
+        ],
+        "fixes": []
+      }
+    }
+  },
+  {
     "version": "0.3.3",
     "notes": {
       "pt": {
