@@ -84,8 +84,7 @@ pub async fn screen_start(
             height,
             fps,
         };
-        let interval =
-            MinimumUpdateIntervalSettings::Custom(Duration::from_secs_f64(1.0 / f64::from(fps)));
+        let interval = MinimumUpdateIntervalSettings::Custom(Duration::from_millis(1));
         let control = match target {
             Target::Monitor(monitor) => {
                 Capture::start_free_threaded(settings(monitor, interval, flags))

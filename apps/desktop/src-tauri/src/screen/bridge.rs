@@ -119,6 +119,12 @@ impl Bridge {
         self.size
     }
 
+    pub fn ready(&self) -> bool {
+        self.slots
+            .iter()
+            .any(|slot| state(slot.pointer).load(Ordering::Acquire) == FREE)
+    }
+
     pub fn send(
         &self,
         width: u32,

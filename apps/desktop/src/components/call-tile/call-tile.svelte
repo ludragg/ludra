@@ -6,8 +6,10 @@
     $props();
 
   function play(video: HTMLVideoElement) {
-    video.srcObject = stream;
-    video.play().catch(() => undefined);
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+      video.play().catch(() => undefined);
+    }
   }
 </script>
 

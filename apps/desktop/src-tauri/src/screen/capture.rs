@@ -46,13 +46,33 @@ pub struct Capture {
     max_width: u32,
     max_height: u32,
     interval: Duration,
-    last: Option<Instant>,
+    pace: Duration,
+    next: Option<Instant>,
     started: Instant,
     scaler: Option<Scaler>,
     software: bool,
 }
 
 impl Capture {
+    fn due(&mut self, now: Instant) -> bool {
+        let interval = if self.watched.load(Ordering::Relaxed) {
+            self.interval
+        } else {
+            IDLE_INTERVAL
+        };
+        if self.pace != interval {
+            self.pace = interval;
+            self.next = None;
+        }
+        let next = match self.next {
+            Some(next) if now + interval / 4 < next => return false,
+            Some(next) if now < next + interval => next + interval,
+            _ => now + interval,
+        };
+        self.next = Some(next);
+        true
+    }
+
     fn scale_on_gpu(
         &mut self,
         frame: &Frame,
@@ -127,8 +147,9 @@ impl GraphicsCaptureApiHandler for Capture {
             context: ctx.device_context,
             max_width: flags.width,
             max_height: flags.height,
-            interval: Duration::from_secs_f64(1.0 / f64::from(flags.fps.max(1)) * 0.92),
-            last: None,
+            interval: Duration::from_secs_f64(1.0 / f64::from(flags.fps.max(1))),
+            pace: Duration::ZERO,
+            next: None,
             started: Instant::now(),
             scaler: None,
             software: false,
@@ -141,18 +162,9 @@ impl GraphicsCaptureApiHandler for Capture {
         _control: InternalCaptureControl,
     ) -> Result<(), Self::Error> {
         let now = Instant::now();
-        let interval = if self.watched.load(Ordering::Relaxed) {
-            self.interval
-        } else {
-            IDLE_INTERVAL
-        };
-        if self
-            .last
-            .is_some_and(|last| now.duration_since(last) < interval)
-        {
+        if !self.bridge.ready() || !self.due(now) {
             return Ok(());
         }
-        self.last = Some(now);
 
         let (input_width, input_height) = (frame.width(), frame.height());
         if input_width == 0 || input_height == 0 {

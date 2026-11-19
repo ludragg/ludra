@@ -339,6 +339,17 @@ class GroupCallStore {
     this.#shareState();
   }
 
+  cycleVoice() {
+    if (!this.muted) {
+      this.toggleMute();
+    } else if (!this.deafened) {
+      this.toggleDeafen();
+    } else {
+      this.#mutedBeforeDeafen = false;
+      this.toggleDeafen();
+    }
+  }
+
   beginVoiceTest() {
     if (!this.current || this.#beforeTest) {
       return;
@@ -587,7 +598,7 @@ class GroupCallStore {
       }
       this.#capture?.stop(false);
       const stream = capture.stream;
-      hintScreenTracks(stream);
+      hintScreenTracks(stream, quality);
       if (!this.sharing) {
         playCue("streamStart");
       }

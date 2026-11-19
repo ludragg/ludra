@@ -5,6 +5,15 @@
   let notice = $state(false);
 
   const home = $derived(chat.activeId !== null || chat.view === "friends");
+  const unread = $derived(Object.values(chat.unread).reduce((total, count) => total + count, 0));
+  const alert = $derived(
+    [
+      unread > 0 ? t("sidebar.unread", { count: unread }) : "",
+      chat.incoming > 0 ? t("sidebar.pendingRequests", { count: chat.incoming }) : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  );
 </script>
 
 <nav class="rail" aria-label={t("rail.label")}>
@@ -14,7 +23,7 @@
       class:rail__button--active={home}
       aria-label={t("rail.home")}
       aria-current={home ? "page" : undefined}
-      data-tooltip={t("rail.home")}
+      data-tooltip={alert ? `${t("rail.home")} · ${alert}` : t("rail.home")}
       onclick={() => chat.showFriends()}
     >
       <svg
@@ -32,13 +41,8 @@
         />
       </svg>
     </button>
-    {#if chat.incoming > 0}
-      <span
-        class="rail__dot"
-        role="img"
-        aria-label={t("sidebar.pendingRequests", { count: chat.incoming })}
-        data-tooltip={t("sidebar.pendingRequests", { count: chat.incoming })}
-      ></span>
+    {#if alert}
+      <span class="rail__dot" class:rail__dot--active={home} role="img" aria-label={alert}></span>
     {/if}
   </span>
 
@@ -115,7 +119,10 @@
   }
 
   .rail__button--add {
-    padding: 11px;
+    width: 32px;
+    height: 32px;
+    padding: 8px;
+    border-radius: 8px;
     border: 1px dashed rgba(255, 255, 255, 0.16);
   }
 
@@ -127,13 +134,17 @@
 
   .rail__dot {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 8px;
-    height: 8px;
+    top: 10px;
+    right: 12px;
+    pointer-events: none;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--brand-color);
-    box-shadow: 0 0 0 2px var(--dark-background-color);
+  }
+
+  .rail__dot--active {
+    box-shadow: 0 0 0 1px #18111c;
   }
 
   .rail__notice {

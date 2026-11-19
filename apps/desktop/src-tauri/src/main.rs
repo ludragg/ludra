@@ -3,6 +3,7 @@
 #[cfg(windows)]
 mod screen;
 mod toast;
+mod tray;
 #[cfg(windows)]
 mod webview;
 
@@ -35,6 +36,7 @@ fn main() {
         .on_permission_request(webview::permission)
         .manage(screen::ScreenState::default())
         .manage(toast::ToastState::default())
+        .manage(tray::TrayState::default())
         .setup(|app| {
             #[cfg(windows)]
             webview::setup(app);
@@ -62,7 +64,12 @@ fn main() {
             toast::toast_push,
             toast::toast_take,
             toast::toast_layout,
-            toast::toast_open
+            toast::toast_open,
+            tray::tray_menu,
+            tray::tray_layout,
+            tray::tray_close,
+            tray::tray_open,
+            tray::tray_quit
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Ludra");

@@ -109,10 +109,18 @@ func (s *Service) Group(ctx context.Context, userID, groupID string) (Group, err
 	return group, nil
 }
 
-func (s *Service) CreateGroup(ctx context.Context, ownerID, name string, memberIDs []string) (Group, error) {
+func groupName(name string) (string, error) {
 	name = strings.TrimFunc(name, invisible)
 	if name == "" || utf8.RuneCountInString(name) > maxGroupName || !groupNamePattern.MatchString(name) {
-		return Group{}, ErrInvalidGroupName
+		return "", ErrInvalidGroupName
+	}
+	return name, nil
+}
+
+func (s *Service) CreateGroup(ctx context.Context, ownerID, name string, memberIDs []string) (Group, error) {
+	name, err := groupName(name)
+	if err != nil {
+		return Group{}, err
 	}
 
 	invited := unique(memberIDs, ownerID)
@@ -127,7 +135,7 @@ func (s *Service) CreateGroup(ctx context.Context, ownerID, name string, memberI
 	}
 
 	var groupID string
-	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
 
 		var err error
@@ -291,24 +299,72 @@ func (s *Service) TransferOwner(ctx context.Context, actorID, groupID, userID st
 	return group, event, err
 }
 
-func (s *Service) SetGroupAvatar(ctx context.Context, actorID, groupID string, image []byte) (Group, error) {
-	if image != nil && !imaging.ValidAvatar(image) {
-		return Group{}, ErrInvalidGroupAvatar
+func (s *Service) RenameGroup(ctx context.Context, actorID, groupID, name string) (Group, *database.Message, error) {
+	name, err := groupName(name)
+	if err != nil {
+		return Group{}, nil, err
 	}
 	group, err := s.Group(ctx, actorID, groupID)
 	if err != nil {
-		return Group{}, err
+		return Group{}, nil, err
 	}
 	if group.OwnerID != actorID {
-		return Group{}, ErrNotGroupOwner
+		return Group{}, nil, ErrNotGroupOwner
+	}
+	if name == group.Name {
+		return group, nil, nil
+	}
+
+	var event database.Message
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		owner, err := q.LockConversation(ctx, groupID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrGroupNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if owner == nil || *owner != actorID {
+			return ErrNotGroupOwner
+		}
+		if err := q.SetGroupName(ctx, database.SetGroupNameParams{ID: groupID, Name: &name}); err != nil {
+			return err
+		}
+		event, err = q.CreateEventMessage(ctx, changeParams(groupID, actorID, "group_renamed", name))
+		return err
+	})
+	if err != nil {
+		return Group{}, nil, err
+	}
+	group.Name = name
+	return group, &event, nil
+}
+
+func (s *Service) SetGroupAvatar(ctx context.Context, actorID, groupID string, image []byte) (Group, *database.Message, error) {
+	if image != nil && !imaging.ValidAvatar(image) {
+		return Group{}, nil, ErrInvalidGroupAvatar
+	}
+	group, err := s.Group(ctx, actorID, groupID)
+	if err != nil {
+		return Group{}, nil, err
+	}
+	if group.OwnerID != actorID {
+		return Group{}, nil, ErrNotGroupOwner
+	}
+	if image == nil && group.Avatar == "" {
+		return group, nil, nil
 	}
 
 	avatar := ""
+	change := "photo_removed"
 	if image != nil {
 		if avatar, err = imaging.Version(); err != nil {
-			return Group{}, err
+			return Group{}, nil, err
 		}
+		change = "photo_changed"
 	}
+	var event database.Message
 	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		q := s.queries.WithTx(tx)
 		owner, err := q.LockConversation(ctx, groupID)
@@ -328,13 +384,17 @@ func (s *Service) SetGroupAvatar(ctx context.Context, actorID, groupID string, i
 		} else if err := q.SaveGroupAvatar(ctx, database.SaveGroupAvatarParams{ConversationID: groupID, Image: image}); err != nil {
 			return err
 		}
-		return q.SetGroupAvatar(ctx, database.SetGroupAvatarParams{ID: groupID, Avatar: avatar})
+		if err := q.SetGroupAvatar(ctx, database.SetGroupAvatarParams{ID: groupID, Avatar: avatar}); err != nil {
+			return err
+		}
+		event, err = q.CreateEventMessage(ctx, changeParams(groupID, actorID, change, ""))
+		return err
 	})
 	if err != nil {
-		return Group{}, err
+		return Group{}, nil, err
 	}
 	group.Avatar = avatar
-	return group, nil
+	return group, &event, nil
 }
 
 func (s *Service) GroupAvatar(ctx context.Context, groupID string) ([]byte, error) {
@@ -474,6 +534,15 @@ func (s *Service) requireFriends(ctx context.Context, userID string, others []st
 		}
 	}
 	return nil
+}
+
+func changeParams(groupID, senderID, event, content string) database.CreateEventMessageParams {
+	return database.CreateEventMessageParams{
+		ConversationID: groupID,
+		SenderID:       senderID,
+		Content:        content,
+		Event:          &event,
+	}
 }
 
 func eventParams(groupID, senderID, event, targetID string) database.CreateEventMessageParams {

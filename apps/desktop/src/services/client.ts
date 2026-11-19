@@ -291,6 +291,14 @@ export class Client {
     return conversation!;
   }
 
+  async renameGroup(conversationId: string, name: string): Promise<Conversation> {
+    const { conversation } = await this.#request(
+      { case: "renameGroup", value: { conversationId, name } },
+      "conversationUpdated",
+    );
+    return conversation!;
+  }
+
   async setGroupAvatar(conversationId: string, image: Uint8Array): Promise<Conversation> {
     const { conversation } = await this.#request(
       { case: "setGroupAvatar", value: { conversationId, image } },

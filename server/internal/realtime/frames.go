@@ -316,6 +316,9 @@ var messageEvents = map[string]protocol.MessageEvent{
 	"member_removed": protocol.MessageEvent_MESSAGE_EVENT_MEMBER_REMOVED,
 	"member_left":    protocol.MessageEvent_MESSAGE_EVENT_MEMBER_LEFT,
 	"owner_changed":  protocol.MessageEvent_MESSAGE_EVENT_OWNER_CHANGED,
+	"group_renamed":  protocol.MessageEvent_MESSAGE_EVENT_GROUP_RENAMED,
+	"photo_changed":  protocol.MessageEvent_MESSAGE_EVENT_PHOTO_CHANGED,
+	"photo_removed":  protocol.MessageEvent_MESSAGE_EVENT_PHOTO_REMOVED,
 }
 
 func toMessage(message database.Message) *protocol.Message {

@@ -127,6 +127,10 @@ WHERE conversation_id = $1
 ORDER BY joined_at, user_id
 LIMIT 1;
 
+-- name: SetGroupName :exec
+UPDATE conversations SET name = $2
+WHERE id = $1;
+
 -- name: SetOwner :exec
 UPDATE conversations SET owner_id = $2
 WHERE id = $1;

@@ -279,6 +279,8 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 		return s.setIdentityKey(ctx, payload.SetIdentityKey)
 	case *protocol.ClientFrame_ListIdentityKeys:
 		return s.listIdentityKeys(ctx, payload.ListIdentityKeys)
+	case *protocol.ClientFrame_RenameGroup:
+		return s.renameGroup(ctx, payload.RenameGroup)
 	case *protocol.ClientFrame_SetGroupAvatar:
 		return s.setGroupAvatar(ctx, payload.SetGroupAvatar)
 	case *protocol.ClientFrame_BlockUser:

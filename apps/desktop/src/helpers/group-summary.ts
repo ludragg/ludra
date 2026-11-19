@@ -21,6 +21,12 @@ export function eventSummary(message: Message, myId: string, nameOf: Names): str
       return t("group.memberRemoved", { actor, target });
     case MessageEvent.OWNER_CHANGED:
       return t("group.ownerChanged", { actor, target });
+    case MessageEvent.GROUP_RENAMED:
+      return t("group.renamed", { actor, name: message.content });
+    case MessageEvent.PHOTO_CHANGED:
+      return t("group.photoChanged", { actor });
+    case MessageEvent.PHOTO_REMOVED:
+      return t("group.photoRemoved", { actor });
     default:
       return t("group.memberLeft", { actor });
   }

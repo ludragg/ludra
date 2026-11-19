@@ -33,15 +33,51 @@
 
   const visible = $derived((sources ?? []).filter(({ kind }) => kind === tab));
 
-  $effect(() => {
+  const refreshEvery = 3000;
+  let loading = false;
+
+  function keepOrder(previous: ScreenSource[], next: ScreenSource[]): ScreenSource[] {
+    const known = new Map(previous.map(({ id }, index) => [id, index]));
+    const rank = (source: ScreenSource) => known.get(source.id) ?? previous.length + next.indexOf(source);
+    return [...next].sort((a, b) => rank(a) - rank(b));
+  }
+
+  function load() {
+    if (loading) {
+      return;
+    }
+    loading = true;
+    const first = sources === null;
     listScreenSources()
       .then((list) => {
-        sources = list;
-        const live = list.find(({ id }) => id === initial?.sourceId);
-        tab = live?.kind ?? "screen";
-        selected = live?.id ?? list.find(({ kind }) => kind === "screen")?.id ?? null;
+        if (first) {
+          sources = list;
+          const live = list.find(({ id }) => id === initial?.sourceId);
+          tab = live?.kind ?? "screen";
+          selected = live?.id ?? list.find(({ kind }) => kind === "screen")?.id ?? null;
+          return;
+        }
+        sources = keepOrder(sources ?? [], list);
+        if (!list.some(({ id }) => id === selected)) {
+          selected = list.find(({ kind }) => kind === "screen")?.id ?? null;
+        }
       })
-      .catch(() => (sources = []));
+      .catch(() => {
+        if (first) {
+          sources = [];
+        }
+      })
+      .finally(() => (loading = false));
+  }
+
+  $effect(() => {
+    untrack(load);
+    const timer = window.setInterval(load, refreshEvery);
+    window.addEventListener("focus", load);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", load);
+    };
   });
 
   function pick<T extends number>(options: readonly T[], value: number, fallback: T): T {

@@ -344,6 +344,10 @@ class ChatStore {
     this.#upsert(await this.#client!.transferGroup(conversationId, userId));
   }
 
+  async renameGroup(conversationId: string, name: string) {
+    this.#upsert(await this.#client!.renameGroup(conversationId, name));
+  }
+
   async setGroupPhoto(conversationId: string, file: File) {
     this.groupPhotoError = null;
     try {

@@ -5,6 +5,8 @@
   import { isCall } from "@/helpers/call-summary";
   import { Elapsed } from "@/helpers/duration.svelte";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
+  import { applyMask } from "@/helpers/mask";
+  import { clean } from "@/helpers/text";
   import { formatRecent, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
@@ -15,6 +17,47 @@
 
   let menu = $state<{ x: number; y: number } | null>(null);
   let picker = $state<HTMLInputElement>();
+  let renaming = $state(false);
+  let draft = $state("");
+  let renameError = $state(false);
+  let saving = false;
+
+  function startRename() {
+    draft = conversation.name;
+    renameError = false;
+    renaming = true;
+  }
+
+  async function saveRename(event?: FocusEvent) {
+    const name = clean(draft);
+    if (saving || !renaming) {
+      return;
+    }
+    if (!name || name === conversation.name) {
+      renaming = false;
+      return;
+    }
+    saving = true;
+    try {
+      await chat.renameGroup(conversation.id, name);
+      renaming = false;
+    } catch {
+      renameError = true;
+      renaming = !event;
+    } finally {
+      saving = false;
+    }
+  }
+
+  function renameKey(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      saveRename();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      renaming = false;
+    }
+  }
 
   function pick(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
@@ -54,37 +97,64 @@
   );
 </script>
 
-<button
-  class="sidebar-group"
-  class:sidebar-group--active={active}
-  class:sidebar-group--unread={unread > 0}
-  aria-current={active}
-  onclick={() => chat.select(conversation.id)}
-  oncontextmenu={openMenu}
->
-  <GroupAvatar id={conversation.id} avatar={conversation.avatar} />
-  <span class="sidebar-group__body">
-    <span class="sidebar-group__row">
-      <span class="sidebar-group__name">{conversation.name}</span>
-      {#if last}
-        <time class="sidebar-group__time">{formatRecent(toDate(last.sentAt))}</time>
-      {/if}
+{#if renaming}
+  <div class="sidebar-group sidebar-group--renaming" class:sidebar-group--active={active}>
+    <GroupAvatar id={conversation.id} avatar={conversation.avatar} />
+    <input
+      class="sidebar-group__input"
+      class:sidebar-group__input--error={renameError}
+      aria-label={t("group.name")}
+      aria-invalid={renameError}
+      data-tooltip={renameError ? t("group.renameFailed") : undefined}
+      maxlength={50}
+      value={draft}
+      oninput={(event) => {
+        const input = event.currentTarget;
+        draft = applyMask(input.value, "groupName");
+        input.value = draft;
+        renameError = false;
+      }}
+      onkeydown={renameKey}
+      onblur={saveRename}
+      {@attach (input) => {
+        input.focus();
+        input.select();
+      }}
+    />
+  </div>
+{:else}
+  <button
+    class="sidebar-group"
+    class:sidebar-group--active={active}
+    class:sidebar-group--unread={unread > 0}
+    aria-current={active}
+    onclick={() => chat.select(conversation.id)}
+    oncontextmenu={openMenu}
+  >
+    <GroupAvatar id={conversation.id} avatar={conversation.avatar} />
+    <span class="sidebar-group__body">
+      <span class="sidebar-group__row">
+        <span class="sidebar-group__name">{conversation.name}</span>
+        {#if last}
+          <time class="sidebar-group__time">{formatRecent(toDate(last.sentAt))}</time>
+        {/if}
+      </span>
+      <span class="sidebar-group__row">
+        {#if callStart !== null}
+          <span class="sidebar-group__live">
+            <span class="sidebar-group__live-icon"><CallIcon name="phone" /></span>
+            {elapsed.format(callStart)}
+          </span>
+        {:else}
+          <span class="sidebar-group__preview">{preview}</span>
+        {/if}
+        {#if unread > 0}
+          <span class="sidebar-group__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
+        {/if}
+      </span>
     </span>
-    <span class="sidebar-group__row">
-      {#if callStart !== null}
-        <span class="sidebar-group__live">
-          <span class="sidebar-group__live-icon"><CallIcon name="phone" /></span>
-          {elapsed.format(callStart)}
-        </span>
-      {:else}
-        <span class="sidebar-group__preview">{preview}</span>
-      {/if}
-      {#if unread > 0}
-        <span class="sidebar-group__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
-      {/if}
-    </span>
-  </span>
-</button>
+  </button>
+{/if}
 
 {#if menu}
   <SidebarGroupMenu
@@ -92,6 +162,7 @@
     x={menu.x}
     y={menu.y}
     onphoto={() => picker?.click()}
+    onrename={startRename}
     onclose={() => (menu = null)}
   />
 {/if}
@@ -120,6 +191,33 @@
   .sidebar-group--active,
   .sidebar-group--active:hover {
     background: var(--active-color);
+  }
+
+  .sidebar-group--renaming,
+  .sidebar-group--renaming:hover {
+    background: var(--active-color);
+  }
+
+  .sidebar-group__input {
+    min-width: 0;
+    flex-grow: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--dark-background-color);
+    color: var(--muted-color);
+    font: inherit;
+    font-weight: 600;
+    outline: none;
+  }
+
+  .sidebar-group__input:focus {
+    border-color: var(--brand-color);
+  }
+
+  .sidebar-group__input--error,
+  .sidebar-group__input--error:focus {
+    border-color: var(--error-color);
   }
 
   .sidebar-group__body {

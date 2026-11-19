@@ -4,6 +4,7 @@ use image::codecs::jpeg::JpegEncoder;
 use image::{ExtendedColorType, ImageEncoder};
 use serde::Serialize;
 use windows::Win32::Foundation::{HWND, RECT};
+use windows::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
 use windows::Win32::Graphics::Gdi::{
     BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BitBlt, CreateCompatibleBitmap, CreateCompatibleDC,
     DIB_RGB_COLORS, DeleteDC, DeleteObject, GetDC, GetDIBits, GetMonitorInfoW, HALFTONE, HDC,
@@ -61,6 +62,7 @@ pub fn list() -> Vec<Source> {
         if title.trim().is_empty()
             || window_process(hwnd) == own
             || unsafe { IsIconic(hwnd).as_bool() }
+            || cloaked(hwnd)
         {
             continue;
         }
@@ -92,6 +94,19 @@ pub fn resolve(id: &str) -> Option<Target> {
         }
         _ => None,
     }
+}
+
+fn cloaked(hwnd: HWND) -> bool {
+    let mut value = 0u32;
+    let result = unsafe {
+        DwmGetWindowAttribute(
+            hwnd,
+            DWMWA_CLOAKED,
+            (&raw mut value).cast(),
+            size_of::<u32>() as u32,
+        )
+    };
+    result.is_ok() && value != 0
 }
 
 fn window_process(hwnd: HWND) -> u32 {

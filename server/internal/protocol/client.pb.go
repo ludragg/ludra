@@ -120,6 +120,7 @@ type ClientFrame struct {
 	//	*ClientFrame_EditMessage
 	//	*ClientFrame_DeleteMessage
 	//	*ClientFrame_SetUsername
+	//	*ClientFrame_RenameGroup
 	Payload       isClientFrame_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -574,6 +575,15 @@ func (x *ClientFrame) GetSetUsername() *SetUsername {
 	return nil
 }
 
+func (x *ClientFrame) GetRenameGroup() *RenameGroup {
+	if x != nil {
+		if x, ok := x.Payload.(*ClientFrame_RenameGroup); ok {
+			return x.RenameGroup
+		}
+	}
+	return nil
+}
+
 type isClientFrame_Payload interface {
 	isClientFrame_Payload()
 }
@@ -758,6 +768,10 @@ type ClientFrame_SetUsername struct {
 	SetUsername *SetUsername `protobuf:"bytes,46,opt,name=set_username,json=setUsername,proto3,oneof"`
 }
 
+type ClientFrame_RenameGroup struct {
+	RenameGroup *RenameGroup `protobuf:"bytes,47,opt,name=rename_group,json=renameGroup,proto3,oneof"`
+}
+
 func (*ClientFrame_Login) isClientFrame_Payload() {}
 
 func (*ClientFrame_ListConversations) isClientFrame_Payload() {}
@@ -847,6 +861,8 @@ func (*ClientFrame_EditMessage) isClientFrame_Payload() {}
 func (*ClientFrame_DeleteMessage) isClientFrame_Payload() {}
 
 func (*ClientFrame_SetUsername) isClientFrame_Payload() {}
+
+func (*ClientFrame_RenameGroup) isClientFrame_Payload() {}
 
 type Ping struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2876,6 +2892,58 @@ func (x *SetGroupAvatar) GetImage() []byte {
 	return nil
 }
 
+type RenameGroup struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RenameGroup) Reset() {
+	*x = RenameGroup{}
+	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameGroup) ProtoMessage() {}
+
+func (x *RenameGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameGroup.ProtoReflect.Descriptor instead.
+func (*RenameGroup) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *RenameGroup) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *RenameGroup) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 type TransferGroup struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
@@ -2886,7 +2954,7 @@ type TransferGroup struct {
 
 func (x *TransferGroup) Reset() {
 	*x = TransferGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	mi := &file_ludra_v1_client_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2898,7 +2966,7 @@ func (x *TransferGroup) String() string {
 func (*TransferGroup) ProtoMessage() {}
 
 func (x *TransferGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	mi := &file_ludra_v1_client_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2911,7 +2979,7 @@ func (x *TransferGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransferGroup.ProtoReflect.Descriptor instead.
 func (*TransferGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{44}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *TransferGroup) GetConversationId() string {
@@ -2932,7 +3000,7 @@ var File_ludra_v1_client_proto protoreflect.FileDescriptor
 
 const file_ludra_v1_client_proto_rawDesc = "" +
 	"\n" +
-	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\x85\x16\n" +
+	"\x15ludra/v1/client.proto\x12\bludra.v1\x1a\x15ludra/v1/models.proto\"\xc1\x16\n" +
 	"\vClientFrame\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\rR\trequestId\x12'\n" +
@@ -2988,7 +3056,8 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"\x04ping\x18+ \x01(\v2\x0e.ludra.v1.PingH\x00R\x04ping\x12:\n" +
 	"\fedit_message\x18, \x01(\v2\x15.ludra.v1.EditMessageH\x00R\veditMessage\x12@\n" +
 	"\x0edelete_message\x18- \x01(\v2\x17.ludra.v1.DeleteMessageH\x00R\rdeleteMessage\x12:\n" +
-	"\fset_username\x18. \x01(\v2\x15.ludra.v1.SetUsernameH\x00R\vsetUsernameB\t\n" +
+	"\fset_username\x18. \x01(\v2\x15.ludra.v1.SetUsernameH\x00R\vsetUsername\x12:\n" +
+	"\frename_group\x18/ \x01(\v2\x15.ludra.v1.RenameGroupH\x00R\vrenameGroupB\t\n" +
 	"\apayload\"\x06\n" +
 	"\x04Ping\"p\n" +
 	"\bRegister\x12\x14\n" +
@@ -3097,7 +3166,10 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"\buser_ids\x18\x01 \x03(\tR\auserIds\"O\n" +
 	"\x0eSetGroupAvatar\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x14\n" +
-	"\x05image\x18\x02 \x01(\fR\x05image\"Q\n" +
+	"\x05image\x18\x02 \x01(\fR\x05image\"J\n" +
+	"\vRenameGroup\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"Q\n" +
 	"\rTransferGroup\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId*k\n" +
@@ -3120,7 +3192,7 @@ func file_ludra_v1_client_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_ludra_v1_client_proto_goTypes = []any{
 	(CodePurpose)(0),          // 0: ludra.v1.CodePurpose
 	(*ClientFrame)(nil),       // 1: ludra.v1.ClientFrame
@@ -3167,9 +3239,10 @@ var file_ludra_v1_client_proto_goTypes = []any{
 	(*SetIdentityKey)(nil),    // 42: ludra.v1.SetIdentityKey
 	(*ListIdentityKeys)(nil),  // 43: ludra.v1.ListIdentityKeys
 	(*SetGroupAvatar)(nil),    // 44: ludra.v1.SetGroupAvatar
-	(*TransferGroup)(nil),     // 45: ludra.v1.TransferGroup
-	(*CallSignal)(nil),        // 46: ludra.v1.CallSignal
-	(Presence)(0),             // 47: ludra.v1.Presence
+	(*RenameGroup)(nil),       // 45: ludra.v1.RenameGroup
+	(*TransferGroup)(nil),     // 46: ludra.v1.TransferGroup
+	(*CallSignal)(nil),        // 47: ludra.v1.CallSignal
+	(Presence)(0),             // 48: ludra.v1.Presence
 }
 var file_ludra_v1_client_proto_depIdxs = []int32{
 	4,  // 0: ludra.v1.ClientFrame.login:type_name -> ludra.v1.Login
@@ -3197,7 +3270,7 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	28, // 22: ludra.v1.ClientFrame.start_call:type_name -> ludra.v1.StartCall
 	29, // 23: ludra.v1.ClientFrame.answer_call:type_name -> ludra.v1.AnswerCall
 	30, // 24: ludra.v1.ClientFrame.end_call:type_name -> ludra.v1.EndCall
-	46, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
+	47, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
 	31, // 26: ludra.v1.ClientFrame.create_group:type_name -> ludra.v1.CreateGroup
 	32, // 27: ludra.v1.ClientFrame.add_group_members:type_name -> ludra.v1.AddGroupMembers
 	33, // 28: ludra.v1.ClientFrame.remove_group_member:type_name -> ludra.v1.RemoveGroupMember
@@ -3206,7 +3279,7 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	36, // 31: ludra.v1.ClientFrame.leave_group_call:type_name -> ludra.v1.LeaveGroupCall
 	37, // 32: ludra.v1.ClientFrame.decline_group_call:type_name -> ludra.v1.DeclineGroupCall
 	38, // 33: ludra.v1.ClientFrame.delete_group:type_name -> ludra.v1.DeleteGroup
-	45, // 34: ludra.v1.ClientFrame.transfer_group:type_name -> ludra.v1.TransferGroup
+	46, // 34: ludra.v1.ClientFrame.transfer_group:type_name -> ludra.v1.TransferGroup
 	39, // 35: ludra.v1.ClientFrame.block_user:type_name -> ludra.v1.BlockUser
 	40, // 36: ludra.v1.ClientFrame.unblock_user:type_name -> ludra.v1.UnblockUser
 	41, // 37: ludra.v1.ClientFrame.list_blocked:type_name -> ludra.v1.ListBlocked
@@ -3217,13 +3290,14 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	25, // 42: ludra.v1.ClientFrame.edit_message:type_name -> ludra.v1.EditMessage
 	26, // 43: ludra.v1.ClientFrame.delete_message:type_name -> ludra.v1.DeleteMessage
 	27, // 44: ludra.v1.ClientFrame.set_username:type_name -> ludra.v1.SetUsername
-	0,  // 45: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
-	47, // 46: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
-	47, // [47:47] is the sub-list for method output_type
-	47, // [47:47] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
+	45, // 45: ludra.v1.ClientFrame.rename_group:type_name -> ludra.v1.RenameGroup
+	0,  // 46: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
+	48, // 47: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_client_proto_init() }
@@ -3278,6 +3352,7 @@ func file_ludra_v1_client_proto_init() {
 		(*ClientFrame_EditMessage)(nil),
 		(*ClientFrame_DeleteMessage)(nil),
 		(*ClientFrame_SetUsername)(nil),
+		(*ClientFrame_RenameGroup)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -3285,7 +3360,7 @@ func file_ludra_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_client_proto_rawDesc), len(file_ludra_v1_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   45,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

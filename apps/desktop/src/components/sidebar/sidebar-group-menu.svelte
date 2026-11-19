@@ -10,8 +10,16 @@
     x,
     y,
     onphoto,
+    onrename,
     onclose,
-  }: { group: Conversation; x: number; y: number; onphoto: () => void; onclose: () => void } = $props();
+  }: {
+    group: Conversation;
+    x: number;
+    y: number;
+    onphoto: () => void;
+    onrename: () => void;
+    onclose: () => void;
+  } = $props();
 
   let menu = $state<HTMLElement>();
   let confirming = $state<Action | null>(null);
@@ -19,11 +27,16 @@
   const owner = $derived(group.ownerId === chat.user?.id);
   const width = 200;
   const left = $derived(Math.min(x, window.innerWidth - width - 8));
-  const count = $derived(owner ? (group.avatar ? 4 : 3) : 1);
+  const count = $derived(owner ? (group.avatar ? 5 : 4) : 1);
   const top = $derived(Math.min(y, window.innerHeight - count * 36 - 20));
 
   function photo() {
     onphoto();
+    onclose();
+  }
+
+  function rename() {
+    onrename();
     onclose();
   }
 
@@ -70,9 +83,24 @@
     <button
       class="sidebar-group-menu__item sidebar-group-menu__item--neutral"
       role="menuitem"
-      onclick={photo}
+      onclick={rename}
       {@attach (button) => button.focus()}
     >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+      </svg>
+      {t("group.rename")}
+    </button>
+    <button class="sidebar-group-menu__item sidebar-group-menu__item--neutral" role="menuitem" onclick={photo}>
       <svg
         viewBox="0 0 24 24"
         fill="none"

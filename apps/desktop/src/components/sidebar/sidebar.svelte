@@ -125,21 +125,27 @@
       {@const connecting = call.status === "connecting" || calls.connecting}
       <SidebarCall
         label={call.status === "outgoing" ? t("call.calling") : connecting ? t("call.connecting") : t("call.inCall")}
+        detail={call.peer.username}
         ringing={call.status === "outgoing"}
         {connecting}
         latency={calls.latency}
+        muted={calls.muted}
+        deafened={calls.deafened}
+        onvoice={() => calls.cycleVoice()}
         onopen={() => chat.start(call.peer.username).catch(() => undefined)}
         onhangup={() => calls.hangUp()}
       />
     {:else if groupCall.current}
       {@const call = groupCall.current}
       <SidebarCall
-        label={groupCall.connecting
-          ? t("call.connecting")
-          : t("group.inCall", { name: chat.conversations.find(({ id }) => id === call.conversationId)?.name ?? "" })}
+        label={groupCall.connecting ? t("call.connecting") : t("call.inCall")}
+        detail={chat.conversations.find(({ id }) => id === call.conversationId)?.name ?? ""}
         ringing={false}
         connecting={groupCall.connecting}
         latency={groupCall.latency}
+        muted={groupCall.muted}
+        deafened={groupCall.deafened}
+        onvoice={() => groupCall.cycleVoice()}
         onopen={() => openGroup(call.conversationId)}
         onhangup={() => groupCall.leave()}
       />

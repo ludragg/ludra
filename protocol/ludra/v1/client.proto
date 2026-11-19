@@ -53,6 +53,7 @@ message ClientFrame {
     EditMessage edit_message = 44;
     DeleteMessage delete_message = 45;
     SetUsername set_username = 46;
+    RenameGroup rename_group = 47;
   }
 }
 
@@ -243,6 +244,11 @@ message ListIdentityKeys {
 message SetGroupAvatar {
   string conversation_id = 1;
   bytes image = 2;
+}
+
+message RenameGroup {
+  string conversation_id = 1;
+  string name = 2;
 }
 
 message TransferGroup {

@@ -1,5 +1,42 @@
 [
   {
+    "version": "0.3.3",
+    "notes": {
+      "pt": {
+        "features": [
+          "O dono do grupo pode renomeá-lo pelo botão direito no grupo, direto na lista.",
+          "Trocar o nome ou a foto do grupo agora aparece como mensagem no chat, para todos os membros.",
+          "Botão de microfone ao lado do desligar: um clique silencia, o segundo também desliga o áudio e o terceiro liga tudo de novo.",
+          "O nome da chamada aparece embaixo de \"Em chamada\".",
+          "A caixa de entrada mostra uma bolinha quando há mensagens não lidas.",
+          "O menu do ícone na bandeja ganhou o visual do Ludra."
+        ],
+        "fixes": [
+          "Transmissão de tela mais lisa: ritmo de quadros estável em monitores de 144 Hz ou mais, prioridade para a fluidez em 60 e 120 FPS e escolha automática do codificador mais leve, o que ajuda principalmente em PCs mais fracos.",
+          "A câmera não pisca mais em preto quando alguém começa ou para de falar.",
+          "A lista do que transmitir se atualiza sozinha, sem precisar fechar e abrir de novo, e não mostra mais a \"Experiência de Entrada do Windows\".",
+          "O botão de criar comunidade ficou um pouco menor."
+        ]
+      },
+      "en": {
+        "features": [
+          "Group owners can rename the group by right-clicking it, right in the list.",
+          "Changing the group name or photo now shows up as a message in the chat for every member.",
+          "Microphone button next to hang up: one click mutes, the second also deafens and the third turns everything back on.",
+          "The call name shows up below \"In call\".",
+          "The inbox shows a dot when there are unread messages.",
+          "The tray icon menu got Ludra's look."
+        ],
+        "fixes": [
+          "Smoother screen sharing: steady frame pacing on 144 Hz and faster monitors, smoothness first at 60 and 120 FPS, and automatic choice of the lightest encoder, which helps weaker PCs the most.",
+          "The camera no longer flashes black when someone starts or stops talking.",
+          "The list of what to share refreshes on its own, without closing and reopening it, and no longer shows \"Windows Input Experience\".",
+          "The create community button is a little smaller."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.3.2",
     "notes": {
       "pt": {

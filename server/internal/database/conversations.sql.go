@@ -420,6 +420,21 @@ func (q *Queries) RemoveParticipant(ctx context.Context, arg RemoveParticipantPa
 	return result.RowsAffected(), nil
 }
 
+const setGroupName = `-- name: SetGroupName :exec
+UPDATE conversations SET name = $2
+WHERE id = $1
+`
+
+type SetGroupNameParams struct {
+	ID   string
+	Name *string
+}
+
+func (q *Queries) SetGroupName(ctx context.Context, arg SetGroupNameParams) error {
+	_, err := q.db.Exec(ctx, setGroupName, arg.ID, arg.Name)
+	return err
+}
+
 const setOwner = `-- name: SetOwner :exec
 UPDATE conversations SET owner_id = $2
 WHERE id = $1

@@ -1,10 +1,8 @@
 import { defaultWindowIcon } from "@tauri-apps/api/app";
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { Menu } from "@tauri-apps/api/menu";
 import { TrayIcon } from "@tauri-apps/api/tray";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
-import { t } from "@/i18n";
 import { preferences } from "@/stores/preferences.svelte";
 import { updates } from "@/stores/updates.svelte";
 
@@ -70,22 +68,18 @@ export async function syncTray() {
     return;
   }
 
-  const menu = await Menu.new({
-    items: [
-      { id: "open", text: t("tray.open"), action: showWindow },
-      { id: "quit", text: t("tray.quit"), action: () => appWindow.destroy() },
-    ],
-  });
-
   tray = await TrayIcon.new({
     id: trayId,
     icon: (await defaultWindowIcon()) ?? undefined,
     tooltip: "Ludra",
-    menu,
-    showMenuOnLeftClick: false,
     action: (event) => {
-      if (event.type === "Click" && event.button === "Left" && event.buttonState === "Up") {
+      if (event.type !== "Click" || event.buttonState !== "Up") {
+        return;
+      }
+      if (event.button === "Left") {
         showWindow();
+      } else if (event.button === "Right") {
+        invoke("tray_menu", { x: event.position.x, y: event.position.y }).catch(() => undefined);
       }
     },
   });

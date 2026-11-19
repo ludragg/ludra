@@ -367,8 +367,8 @@ export class PeerLink {
     }
     this.#encoderCheck = window.setInterval(() => {
       for (const sender of this.#screenSenders) {
-        if (this.#senderKinds.get(sender) === "video") {
-          verifyScreenEncoder(sender);
+        if (this.#senderKinds.get(sender) === "video" && this.#screenQuality) {
+          verifyScreenEncoder(sender, this.#screenQuality);
         }
       }
     }, encoderCheckEvery);

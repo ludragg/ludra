@@ -51,13 +51,14 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 
 const createEventMessage = `-- name: CreateEventMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
-VALUES ($1, $2, '', 'event', $3, $4)
+VALUES ($1, $2, $3, 'event', $4, $5)
 RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
 `
 
 type CreateEventMessageParams struct {
 	ConversationID string
 	SenderID       string
+	Content        string
 	Event          *string
 	TargetID       *string
 }
@@ -66,6 +67,7 @@ func (q *Queries) CreateEventMessage(ctx context.Context, arg CreateEventMessage
 	row := q.db.QueryRow(ctx, createEventMessage,
 		arg.ConversationID,
 		arg.SenderID,
+		arg.Content,
 		arg.Event,
 		arg.TargetID,
 	)

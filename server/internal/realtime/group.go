@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"ludra/internal/chat"
+	"ludra/internal/database"
 	"ludra/internal/protocol"
 )
 
@@ -108,6 +109,19 @@ func (s *session) transferGroup(ctx context.Context, req *protocol.TransferGroup
 	return reply
 }
 
+func (s *session) renameGroup(ctx context.Context, req *protocol.RenameGroup) *protocol.ServerFrame {
+	if !s.guard.groupChanges.Allow(s.user.Id) {
+		return tooManyRequests()
+	}
+
+	group, event, err := s.chat.RenameGroup(ctx, s.user.Id, req.ConversationId, req.Name)
+	if err != nil {
+		return failed(err)
+	}
+
+	return s.groupChanged(group, event)
+}
+
 func (s *session) setGroupAvatar(ctx context.Context, req *protocol.SetGroupAvatar) *protocol.ServerFrame {
 	if !s.guard.avatarChanges.Allow(s.user.Id) {
 		return tooManyRequests()
@@ -117,13 +131,20 @@ func (s *session) setGroupAvatar(ctx context.Context, req *protocol.SetGroupAvat
 	if len(req.Image) > 0 {
 		image = req.Image
 	}
-	group, err := s.chat.SetGroupAvatar(ctx, s.user.Id, req.ConversationId, image)
+	group, event, err := s.chat.SetGroupAvatar(ctx, s.user.Id, req.ConversationId, image)
 	if err != nil {
 		return failed(err)
 	}
 
+	return s.groupChanged(group, event)
+}
+
+func (s *session) groupChanged(group chat.Group, event *database.Message) *protocol.ServerFrame {
 	reply := conversationUpdatedFrame(s.groupConversation(group))
 	s.hub.publish(group.MemberIDs(), reply, s)
+	if event != nil {
+		s.hub.publish(group.MemberIDs(), messageCreatedFrame(named(toMessage(*event), s.user.Username, nil)), nil)
+	}
 	return reply
 }
 

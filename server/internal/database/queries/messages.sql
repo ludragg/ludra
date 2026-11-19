@@ -34,7 +34,7 @@ WHERE call_outcome = 'ongoing';
 
 -- name: CreateEventMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
-VALUES (sqlc.arg(conversation_id), sqlc.arg(sender_id), '', 'event', sqlc.arg(event), sqlc.arg(target_id))
+VALUES (sqlc.arg(conversation_id), sqlc.arg(sender_id), sqlc.arg(content), 'event', sqlc.arg(event), sqlc.narg(target_id))
 RETURNING *;
 
 -- name: GetMessageTarget :one

@@ -8,17 +8,25 @@
 
   let {
     label,
+    detail = "",
     ringing,
     connecting,
     latency,
+    muted,
+    deafened,
     onopen,
+    onvoice,
     onhangup,
   }: {
     label: string;
+    detail?: string;
     ringing: boolean;
     connecting: boolean;
     latency: number | null;
+    muted: boolean;
+    deafened: boolean;
     onopen: () => void;
+    onvoice: () => void;
     onhangup: () => void;
   } = $props();
 
@@ -26,6 +34,8 @@
   const filled: Record<Quality, number> = { unknown: 3, good: 3, fair: 2, poor: 1 };
 
   let dismissed = $state(false);
+
+  const voiceLabel = $derived(deafened ? t("call.undeafen") : muted ? t("call.deafen") : t("call.mute"));
 
   const quality = $derived<Quality>(
     latency === null ? "unknown" : latency < 100 ? "good" : latency <= 250 ? "fair" : "poor",
@@ -89,7 +99,19 @@
     class:sidebar-call__info--connecting={connecting && !ringing}
     onclick={onopen}
   >
-    {label}
+    <span class="sidebar-call__label">{label}</span>
+    {#if detail}
+      <span class="sidebar-call__detail">{detail}</span>
+    {/if}
+  </button>
+  <button
+    class="sidebar-call__voice"
+    class:sidebar-call__voice--off={muted || deafened}
+    aria-label={voiceLabel}
+    data-tooltip={voiceLabel}
+    onclick={onvoice}
+  >
+    <CallIcon name={deafened ? "headphonesOff" : muted ? "micOff" : "mic"} />
   </button>
   <button
     class="sidebar-call__hang-up"
@@ -117,13 +139,29 @@
     padding: 0;
     flex-grow: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     border: 0;
     background: transparent;
     color: var(--success-color);
     font-size: var(--hint-font-size);
     font-weight: 600;
+    line-height: 1.3;
     text-align: left;
+  }
+
+  .sidebar-call__label,
+  .sidebar-call__detail {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-call__detail {
+    color: var(--subtle-color);
+    font-size: var(--tiny-font-size);
+    font-weight: 400;
   }
 
   .sidebar-call__info--ringing {
@@ -289,6 +327,7 @@
     }
   }
 
+  .sidebar-call__voice,
   .sidebar-call__hang-up {
     width: 32px;
     height: 32px;
@@ -301,6 +340,20 @@
     background: transparent;
     color: var(--subtle-color);
     transition: all ease 0.1s;
+  }
+
+  .sidebar-call__voice {
+    margin-right: -6px;
+  }
+
+  .sidebar-call__voice:hover {
+    background: var(--hover-color);
+    color: var(--muted-color);
+  }
+
+  .sidebar-call__voice--off,
+  .sidebar-call__voice--off:hover {
+    color: #f6746b;
   }
 
   .sidebar-call__hang-up:hover {
