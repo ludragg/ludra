@@ -14,6 +14,7 @@ jobs:
   desktop:
     name: Desktop
     runs-on: windows-latest
+    environment: release
     env:
       LUDRA_SERVER: ${{ vars.LUDRA_SERVER }}
     steps:
