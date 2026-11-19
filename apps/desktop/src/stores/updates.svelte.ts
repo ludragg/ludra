@@ -15,9 +15,11 @@ class UpdateStore {
   progress = $state(0);
   release = $state<Release | null>(null);
   stuck = $state(false);
+  critical = $state(false);
   readonly resumed = takeAttempt();
 
   #update: Update | null = null;
+  #current = "";
   #started = false;
   #checking: Promise<void> | null = null;
 
@@ -47,6 +49,8 @@ class UpdateStore {
       if (update) {
         this.#update = update;
         this.version = update.version;
+        this.#current ||= await getVersion().catch(() => "");
+        this.critical = breaksCalls(this.#current, update.version);
         this.phase = "available";
       }
     } catch {
@@ -91,6 +95,7 @@ class UpdateStore {
     if (!current) {
       return;
     }
+    this.#current = current;
     this.stuck = this.resumed !== null && this.resumed !== current;
     let previous: string | null = null;
     try {
@@ -103,6 +108,20 @@ class UpdateStore {
       this.release = releases.find(({ version }) => version === current) ?? null;
     }
   }
+}
+
+function breaksCalls(current: string, target: string): boolean {
+  const a = parseVersion(current);
+  const b = parseVersion(target);
+  if (!a || !b) {
+    return false;
+  }
+  return b[0] > a[0] || (b[0] === a[0] && b[1] > a[1]);
+}
+
+function parseVersion(value: string): [number, number, number] | null {
+  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(value.trim());
+  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
 }
 
 function rememberAttempt(version: string) {

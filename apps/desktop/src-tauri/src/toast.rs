@@ -26,12 +26,29 @@ pub struct ToastState {
     queue: Mutex<Vec<Toast>>,
 }
 
+#[cfg(windows)]
+fn suppressed() -> bool {
+    use windows::Win32::UI::Shell::{QUNS_ACCEPTS_NOTIFICATIONS, SHQueryUserNotificationState};
+    match unsafe { SHQueryUserNotificationState() } {
+        Ok(state) => state != QUNS_ACCEPTS_NOTIFICATIONS,
+        Err(_) => false,
+    }
+}
+
+#[cfg(not(windows))]
+fn suppressed() -> bool {
+    false
+}
+
 #[tauri::command]
 pub async fn toast_push<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, ToastState>,
     toast: Toast,
 ) -> Result<(), String> {
+    if suppressed() {
+        return Ok(());
+    }
     let mut queue = state.queue.lock().map_err(|error| error.to_string())?;
     queue.push(toast);
     match app.get_webview_window(LABEL) {
