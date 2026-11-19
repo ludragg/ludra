@@ -5,8 +5,9 @@
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
   import { callSummary, isCall } from "@/helpers/call-summary";
+  import { openExternal } from "@/helpers/external";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
-  import { clean } from "@/helpers/text";
+  import { clean, linkify } from "@/helpers/text";
   import { formatDay, formatTime, sameDay, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import {
@@ -167,6 +168,18 @@
   }
 </script>
 
+{#snippet body(content: string)}
+  {#each linkify(content) as span}
+    {#if span.href}
+      <a class="chat-messages__link" href={span.href} target="_blank" rel="noreferrer" onclick={openExternal}>
+        {span.text}
+      </a>
+    {:else}
+      {span.text}
+    {/if}
+  {/each}
+{/snippet}
+
 <section class="chat-messages" aria-label={t("chat.messages")} bind:this={list} {onscroll}>
   {#if thread && !thread.loading && thread.messages.length === 0}
     <p class="chat-messages__empty">{t("chat.empty")}</p>
@@ -261,7 +274,7 @@
                 {@const shown = revealed[message.id] === true}
                 <p class="chat-messages__text chat-messages__text--blocked">
                   {#if shown}
-                    <span>{message.content}</span>
+                    <span>{@render body(message.content)}</span>
                   {:else}
                     <span class="chat-messages__censored">{t("chat.blockedMessage")}</span>
                   {/if}
@@ -274,7 +287,7 @@
                 </p>
               {:else}
                 <p class="chat-messages__text">
-                  {message.content}
+                  {@render body(message.content)}
                   {#if message.editedAt}
                     <span class="chat-messages__edited" data-tooltip={edited(message)}>{t("chat.edited")}</span>
                   {/if}
@@ -562,6 +575,15 @@
     margin: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  .chat-messages__link {
+    color: var(--brand-color);
+    text-decoration: none;
+  }
+
+  .chat-messages__link:hover {
+    text-decoration: underline;
   }
 
   .chat-messages__text--blocked {

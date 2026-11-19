@@ -24,7 +24,10 @@
       "identifier": "opener:allow-open-url",
       "allow": [
         {
-          "url": "https://github.com/ludragg/*"
+          "url": "https://*"
+        },
+        {
+          "url": "http://*"
         }
       ]
     },

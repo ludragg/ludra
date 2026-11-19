@@ -12,15 +12,27 @@
   import Reconnecting from "@/pages/reconnecting/reconnecting.svelte";
   import UpdateGate from "@/pages/updates/update-gate.svelte";
   import WhatsNew from "@/pages/updates/whats-new.svelte";
+  import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { groupCall } from "@/stores/group-call.svelte";
   import { updates } from "@/stores/updates.svelte";
 
   let screen = $state<Screen>({ name: "login" });
 
-  const gated = $derived(updates.phase !== "idle");
+  const inCall = $derived(
+    (calls.current !== null && calls.current.status !== "incoming") || groupCall.current !== null || groupCall.joining,
+  );
+  const gated = $derived(updates.phase !== "idle" && (!inCall || updates.critical));
 
   $effect(() => {
     updates.start();
+  });
+
+  $effect(() => {
+    if (updates.critical && inCall) {
+      void groupCall.leave();
+      void calls.hangUp();
+    }
   });
 
   $effect(() => {

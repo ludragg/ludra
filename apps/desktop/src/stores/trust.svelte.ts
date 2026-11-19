@@ -68,19 +68,24 @@ class TrustStore {
     if (!signedKinds.has(kind)) {
       return payload;
     }
-    if (!this.#keys.has(peerId)) {
-      await this.prepare([peerId]);
-    }
-    const key = this.#keys.get(peerId);
     const sealed = JSON.parse(payload) as Partial<Sealed>;
-    if (!key || typeof sealed.d !== "string" || typeof sealed.s !== "string") {
+    if (typeof sealed.d !== "string" || typeof sealed.s !== "string") {
       throw new Error("unverified signal");
     }
-    const valid = await verifyText(key, this.#statement(callId, peerId, this.#selfId, kind, sealed.d), sealed.s);
-    if (!valid) {
-      throw new Error("invalid signature");
+    const statement = this.#statement(callId, peerId, this.#selfId, kind, sealed.d);
+    if (this.#keys.has(peerId) && (await this.#verify(peerId, statement, sealed.s))) {
+      return sealed.d;
     }
-    return sealed.d;
+    await this.prepare([peerId]);
+    if (await this.#verify(peerId, statement, sealed.s)) {
+      return sealed.d;
+    }
+    throw new Error("invalid signature");
+  }
+
+  async #verify(peerId: string, statement: string, proof: string): Promise<boolean> {
+    const key = this.#keys.get(peerId);
+    return key ? verifyText(key, statement, proof) : false;
   }
 
   async safetyNumber(peerId: string): Promise<string | null> {

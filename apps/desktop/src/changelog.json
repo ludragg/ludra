@@ -1,20 +1,26 @@
 [
   {
-    "version": "0.3.4",
+    "version": "0.3.5",
     "notes": {
       "pt": {
-        "features": [
-          "Os seus grupos agora aparecem direto na barra lateral esquerda, junto com o botão para criar um novo grupo.",
-          "A tela de Amigos voltou a exibir a logo do Ludra centralizada quando não há amigos online ou pedidos pendentes."
-        ],
-        "fixes": []
+        "features": ["Links nas mensagens agora são clicáveis e abrem no seu navegador."],
+        "fixes": [
+          "Revertida uma atualização publicada por engano que trocava o layout e deixava o aplicativo com problemas. Tudo volta a funcionar como antes.",
+          "O aviso de atualização não interrompe mais uma chamada em andamento. Ele aparece quando você sai da chamada.",
+          "As notificações não tiram mais você de um jogo ou aplicativo em tela cheia: enquanto você está em tela cheia, elas ficam em silêncio.",
+          "Quando chega uma atualização obrigatória durante uma chamada, você é desconectado da chamada (com o som de saída) para poder atualizar.",
+          "Corrigido um problema em que alguém ficava preso em \"Conectando…\" sem áudio, com um aviso de segurança, quando a chave de segurança da pessoa havia mudado."
+        ]
       },
       "en": {
-        "features": [
-          "Your groups now appear directly in the left bar, along with the button to create a new group.",
-          "The Friends screen once again shows the centered Ludra logo when there are no online friends or pending requests."
-        ],
-        "fixes": []
+        "features": ["Links in messages are now clickable and open in your browser."],
+        "fixes": [
+          "Reverted an update that was published by mistake, which changed the layout and left the app broken. Everything is back to how it worked before.",
+          "The update prompt no longer interrupts an ongoing call. It shows up once you leave the call.",
+          "Notifications no longer pull you out of a fullscreen game or app: while you're in fullscreen, they stay silent.",
+          "When a required update arrives during a call, you're disconnected from the call (with the leave sound) so you can update.",
+          "Fixed an issue where someone could get stuck on \"Connecting…\" with no audio and a security warning when their security key had changed."
+        ]
       }
     }
   },

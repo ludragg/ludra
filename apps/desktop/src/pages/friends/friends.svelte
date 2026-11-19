@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Logo } from "@/components";
   import { t, type Key } from "@/i18n";
   import { FriendState, Presence, type Friend } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
@@ -74,12 +73,7 @@
       </ul>
     </div>
   {:else}
-    <div class="friends__empty-state">
-      <div class="friends__empty-logo">
-        <Logo size="large" />
-      </div>
-      <p class="friends__empty">{empty}</p>
-    </div>
+    <p class="friends__empty">{empty}</p>
   {/if}
 {/snippet}
 
@@ -136,12 +130,7 @@
     {@render friendList(t("friends.allFriends"), accepted, t("friends.none"))}
   {:else if tab === "pending"}
     {#if incoming.length === 0 && outgoing.length === 0}
-      <div class="friends__empty-state">
-        <div class="friends__empty-logo">
-          <Logo size="large" />
-        </div>
-        <p class="friends__empty">{t("friends.noPending")}</p>
-      </div>
+      <p class="friends__empty">{t("friends.noPending")}</p>
     {/if}
     {#if incoming.length > 0}
       <div class="friends__group">
@@ -205,12 +194,7 @@
         </ul>
       </div>
     {:else}
-      <div class="friends__empty-state">
-        <div class="friends__empty-logo">
-          <Logo size="large" />
-        </div>
-        <p class="friends__empty">{t("friends.noBlocked")}</p>
-      </div>
+      <p class="friends__empty">{t("friends.noBlocked")}</p>
     {/if}
   {:else}
     <FriendsAdd />
@@ -341,28 +325,6 @@
     flex-direction: column;
     gap: 4px;
     list-style: none;
-  }
-
-  .friends__empty-state {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding-bottom: 48px;
-    text-align: center;
-  }
-
-  .friends__empty-logo {
-    width: 96px;
-    height: 96px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    display: grid;
-    place-items: center;
-    opacity: 0.4;
   }
 
   .friends__empty {
