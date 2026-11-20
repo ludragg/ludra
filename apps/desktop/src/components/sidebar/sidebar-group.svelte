@@ -13,7 +13,7 @@
   import { chat } from "@/stores/chat.svelte";
   import SidebarGroupMenu from "./sidebar-group-menu.svelte";
 
-  let { conversation, active }: { conversation: Conversation; active: boolean } = $props();
+  let { conversation, active, tag = "" }: { conversation: Conversation; active: boolean; tag?: string } = $props();
 
   let menu = $state<{ x: number; y: number } | null>(null);
   let picker = $state<HTMLInputElement>();
@@ -127,15 +127,22 @@
     class="sidebar-group"
     class:sidebar-group--active={active}
     class:sidebar-group--unread={unread > 0}
-    aria-current={active}
+    aria-current={active ? "page" : undefined}
     onclick={() => chat.select(conversation.id)}
     oncontextmenu={openMenu}
   >
-    <GroupAvatar id={conversation.id} avatar={conversation.avatar} />
+    <span class="sidebar-group__avatar-wrap">
+      <GroupAvatar id={conversation.id} avatar={conversation.avatar} size="large" />
+      {#if active || unread > 0}
+        <span class="sidebar-group__avatar-dot" aria-hidden="true"></span>
+      {/if}
+    </span>
     <span class="sidebar-group__body">
       <span class="sidebar-group__row">
         <span class="sidebar-group__name">{conversation.name}</span>
-        {#if last}
+        {#if unread === 0 && tag}
+          <span class="sidebar-group__tag" title={tag}>{tag}</span>
+        {:else if unread === 0 && last}
           <time class="sidebar-group__time">{formatRecent(toDate(last.sentAt))}</time>
         {/if}
       </span>
@@ -148,11 +155,11 @@
         {:else}
           <span class="sidebar-group__preview">{preview}</span>
         {/if}
-        {#if unread > 0}
-          <span class="sidebar-group__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
-        {/if}
       </span>
     </span>
+    {#if unread > 0}
+      <span class="sidebar-group__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
+    {/if}
   </button>
 {/if}
 
@@ -170,27 +177,64 @@
 
 <style>
   .sidebar-group {
+    position: relative;
     width: 100%;
-    padding: 9px 8px;
+    padding: 8px 10px;
     display: flex;
     align-items: center;
     gap: 10px;
     border: 0;
-    border-radius: 4px;
+    border-radius: 8px;
     background: transparent;
-    color: var(--muted-color);
+    color: #ffffff;
     text-align: left;
     line-height: 1.35;
-    transition: all ease 0.1s;
+    overflow: hidden;
+    transition:
+      background 150ms ease,
+      color 150ms ease;
   }
 
   .sidebar-group:hover {
-    background: var(--hover-color);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .sidebar-group--active,
   .sidebar-group--active:hover {
-    background: var(--active-color);
+    background: rgba(139, 92, 246, 0.15);
+  }
+
+  .sidebar-group--active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #8b5cf6;
+  }
+
+  .sidebar-group__avatar-wrap {
+    position: relative;
+    flex: none;
+    display: inline-flex;
+    border-radius: 50%;
+  }
+
+  .sidebar-group--active .sidebar-group__avatar-wrap {
+    box-shadow: 0 0 0 1.5px #8b5cf6;
+  }
+
+  .sidebar-group__avatar-dot {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    border: 2px solid #0b0b0f;
   }
 
   .sidebar-group--renaming,
@@ -260,8 +304,24 @@
   .sidebar-group__time {
     margin-left: auto;
     flex: none;
-    font-size: var(--tiny-font-size);
-    color: var(--subtle-color);
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  .sidebar-group__tag {
+    max-width: 52px;
+    margin-left: auto;
+    padding: 1px 6px;
+    flex: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.4;
   }
 
   .sidebar-group__preview {
@@ -270,33 +330,39 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: var(--small-font-size);
-    color: var(--subtle-color);
+    color: #9ca3af;
+  }
+
+  .sidebar-group--active .sidebar-group__name {
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .sidebar-group--active .sidebar-group__preview {
-    color: var(--body-color);
+    color: #d1d5db;
   }
 
   .sidebar-group--unread .sidebar-group__time {
-    color: var(--muted-color);
+    color: #ffffff;
     font-weight: 600;
   }
 
   .sidebar-group--unread .sidebar-group__preview {
-    color: var(--muted-color);
+    color: #d1d5db;
   }
 
   .sidebar-group__badge {
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px 1px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
     flex: none;
     display: grid;
     place-items: center;
-    border-radius: 6px;
-    background: var(--brand-color);
-    color: var(--dark-background-color);
-    font-size: var(--tiny-font-size);
+    border-radius: 999px;
+    background: #8b5cf6;
+    color: #ffffff;
+    font-size: 11px;
     font-weight: 700;
+    line-height: 1;
   }
 </style>

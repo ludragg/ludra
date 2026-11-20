@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Logo } from "@/components";
   import { t, type Key } from "@/i18n";
   import { FriendState, Presence, type Friend } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
@@ -16,6 +17,7 @@
   ];
 
   let tab = $state<Tab>("online");
+  let query = $state("");
 
   const accepted = $derived(chat.friends.filter(({ state }) => state === FriendState.ACCEPTED));
   const online = $derived(
@@ -23,6 +25,23 @@
   );
   const incoming = $derived(chat.friends.filter(({ state }) => state === FriendState.INCOMING));
   const outgoing = $derived(chat.friends.filter(({ state }) => state === FriendState.OUTGOING));
+
+  const search = $derived(query.trim().toLowerCase());
+  const filteredOnline = $derived(
+    search ? online.filter(({ user }) => user?.username.toLowerCase().includes(search)) : online,
+  );
+  const filteredAccepted = $derived(
+    search ? accepted.filter(({ user }) => user?.username.toLowerCase().includes(search)) : accepted,
+  );
+  const filteredIncoming = $derived(
+    search ? incoming.filter(({ user }) => user?.username.toLowerCase().includes(search)) : incoming,
+  );
+  const filteredOutgoing = $derived(
+    search ? outgoing.filter(({ user }) => user?.username.toLowerCase().includes(search)) : outgoing,
+  );
+  const filteredBlocked = $derived(
+    search ? chat.blocked.filter((user) => user.username.toLowerCase().includes(search)) : chat.blocked,
+  );
 
   let arming = $state<string | null>(null);
   let disarm: number | undefined;
@@ -43,10 +62,19 @@
   }
 </script>
 
+{#snippet emptyState(message: string)}
+  <div class="friends__empty">
+    <div class="friends__empty-brand">
+      <Logo size="large" />
+    </div>
+    <p class="friends__empty-text">{message}</p>
+  </div>
+{/snippet}
+
 {#snippet friendList(title: string, list: Friend[], empty: string)}
-  {#if list.length > 0}
-    <div class="friends__group">
-      <span class="friends__label">{title} — {list.length}</span>
+  <div class="friends__group">
+    <span class="friends__label">{title} — {list.length}</span>
+    {#if list.length > 0}
       <ul class="friends__list">
         {#each list as friend (friend.user!.id)}
           <FriendRow {friend}>
@@ -71,9 +99,10 @@
           </FriendRow>
         {/each}
       </ul>
-    </div>
-  {:else}
-    <p class="friends__empty">{empty}</p>
+    {/if}
+  </div>
+  {#if list.length === 0}
+    {@render emptyState(search ? t("friends.searchEmpty") : empty)}
   {/if}
 {/snippet}
 
@@ -124,19 +153,66 @@
 </header>
 
 <section class="friends__content" aria-label={t("friends.title")}>
+  {#if tab !== "add"}
+    <div class="friends__search">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <input
+        class="friends__search-input"
+        type="text"
+        placeholder={t("friends.search")}
+        aria-label={t("friends.search")}
+        bind:value={query}
+      />
+      {#if query}
+        <button
+          class="friends__search-clear"
+          type="button"
+          aria-label={t("friends.search")}
+          onclick={() => (query = "")}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      {/if}
+    </div>
+  {/if}
+
   {#if tab === "online"}
-    {@render friendList(t("friends.online"), online, t("friends.noneOnline"))}
+    {@render friendList(t("friends.online"), filteredOnline, t("friends.noneOnline"))}
   {:else if tab === "all"}
-    {@render friendList(t("friends.allFriends"), accepted, t("friends.none"))}
+    {@render friendList(t("friends.allFriends"), filteredAccepted, t("friends.none"))}
   {:else if tab === "pending"}
-    {#if incoming.length === 0 && outgoing.length === 0}
-      <p class="friends__empty">{t("friends.noPending")}</p>
-    {/if}
-    {#if incoming.length > 0}
+    {#if filteredIncoming.length === 0 && filteredOutgoing.length === 0}
       <div class="friends__group">
-        <span class="friends__label">{t("friends.received")} — {incoming.length}</span>
+        <span class="friends__label">{t("friends.pending")} — 0</span>
+      </div>
+      {@render emptyState(search ? t("friends.searchEmpty") : t("friends.noPending"))}
+    {/if}
+    {#if filteredIncoming.length > 0}
+      <div class="friends__group">
+        <span class="friends__label">{t("friends.received")} — {filteredIncoming.length}</span>
         <ul class="friends__list">
-          {#each incoming as friend (friend.user!.id)}
+          {#each filteredIncoming as friend (friend.user!.id)}
             <FriendRow {friend}>
               <FriendAction
                 icon="accept"
@@ -161,11 +237,11 @@
         </ul>
       </div>
     {/if}
-    {#if outgoing.length > 0}
+    {#if filteredOutgoing.length > 0}
       <div class="friends__group">
-        <span class="friends__label">{t("friends.sent")} — {outgoing.length}</span>
+        <span class="friends__label">{t("friends.sent")} — {filteredOutgoing.length}</span>
         <ul class="friends__list">
-          {#each outgoing as friend (friend.user!.id)}
+          {#each filteredOutgoing as friend (friend.user!.id)}
             <FriendRow {friend}>
               <FriendAction
                 icon="decline"
@@ -178,11 +254,11 @@
       </div>
     {/if}
   {:else if tab === "blocked"}
-    {#if chat.blocked.length > 0}
-      <div class="friends__group">
-        <span class="friends__label">{t("friends.blocked")} — {chat.blocked.length}</span>
+    <div class="friends__group">
+      <span class="friends__label">{t("friends.blocked")} — {filteredBlocked.length}</span>
+      {#if filteredBlocked.length > 0}
         <ul class="friends__list">
-          {#each chat.blocked as user (user.id)}
+          {#each filteredBlocked as user (user.id)}
             <FriendRow friend={{ user, state: FriendState.UNSPECIFIED } as Friend}>
               <FriendAction
                 icon="unblock"
@@ -192,12 +268,14 @@
             </FriendRow>
           {/each}
         </ul>
-      </div>
-    {:else}
-      <p class="friends__empty">{t("friends.noBlocked")}</p>
+      {/if}
+    </div>
+    {#if filteredBlocked.length === 0}
+      {@render emptyState(search ? t("friends.searchEmpty") : t("friends.noBlocked"))}
     {/if}
   {:else}
     <FriendsAdd />
+    {@render emptyState(t("friends.addEmpty"))}
   {/if}
 </section>
 
@@ -304,6 +382,64 @@
     overflow-y: auto;
   }
 
+  .friends__search {
+    height: 40px;
+    padding: 0 14px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 8px;
+    background: var(--dark-background-color);
+    border: 1px solid var(--border-color);
+    transition: border-color ease 0.15s;
+  }
+
+  .friends__search:focus-within {
+    border-color: var(--brand-color);
+  }
+
+  .friends__search > svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--subtle-color);
+    pointer-events: none;
+  }
+
+  .friends__search-input {
+    min-width: 0;
+    height: 100%;
+    flex-grow: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--body-color);
+  }
+
+  .friends__search-clear {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--subtle-color);
+    transition: color ease 0.15s;
+  }
+
+  .friends__search-clear:hover {
+    color: var(--muted-color);
+  }
+
+  .friends__search-clear svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .friends__group {
     display: flex;
     flex-direction: column;
@@ -328,8 +464,34 @@
   }
 
   .friends__empty {
+    flex-grow: 1;
+    padding: 48px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .friends__empty-brand {
+    width: 96px;
+    height: 96px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+  }
+
+  .friends__empty-brand :global(.logo) {
+    opacity: 0.35;
+  }
+
+  .friends__empty-text {
+    max-width: 320px;
     margin: 0;
-    padding: 0 8px;
     color: var(--subtle-color);
+    font-size: var(--body-font-size);
   }
 </style>
