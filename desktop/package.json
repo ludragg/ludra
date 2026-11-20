@@ -1,0 +1,17 @@
+{
+  "name": "ludra-desktop-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agente desktop em Electron para detecção automática de jogos do Ludra (bandeja do sistema).",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "dependencies": {
+    "ps-list": "^8.1.1"
+  },
+  "devDependencies": {
+    "electron": "^35.0.0"
+  }
+}

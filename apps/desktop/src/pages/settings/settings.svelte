@@ -1,20 +1,42 @@
 <script lang="ts">
+  import ProfileEditor from "@/components/profile/profile-editor.svelte";
   import { t, type Key } from "@/i18n";
+  import { profileStore } from "@/stores/profile.svelte";
   import SettingsAccount from "./settings-account.svelte";
+  import SettingsGames from "./settings-games.svelte";
   import SettingsNotifications from "./settings-notifications.svelte";
   import SettingsSystem from "./settings-system.svelte";
   import SettingsVoice from "./settings-voice.svelte";
 
-  type Tab = "account" | "voice" | "system" | "notifications";
+  type Tab = "profile" | "games" | "account" | "voice" | "system" | "notifications";
 
   const tabs: { id: Tab; label: Key }[] = [
+    { id: "profile", label: "settings.myProfile" },
+    { id: "games", label: "settings.games" },
     { id: "account", label: "settings.account" },
     { id: "voice", label: "settings.voice" },
     { id: "system", label: "settings.system" },
     { id: "notifications", label: "settings.notifications" },
   ];
 
-  let tab = $state<Tab>("account");
+  let tab = $state<Tab>("profile");
+
+  function switchTab(next: Tab) {
+    if (next === tab) return;
+    if (tab === "profile" && profileStore.hasUnsavedChanges) {
+      const ok = window.confirm("Você tem alterações não salvas no seu perfil. Deseja sair sem salvar?");
+      if (!ok) return;
+      profileStore.hasUnsavedChanges = false;
+    }
+    tab = next;
+  }
+
+  $effect(() => {
+    if (profileStore.pendingSettingsTab) {
+      tab = profileStore.pendingSettingsTab;
+      profileStore.pendingSettingsTab = null;
+    }
+  });
 </script>
 
 <header class="settings__header">
@@ -43,7 +65,7 @@
         class:settings__tab--active={tab === item.id}
         role="tab"
         aria-selected={tab === item.id}
-        onclick={() => (tab = item.id)}
+        onclick={() => switchTab(item.id)}
       >
         {t(item.label)}
       </button>
@@ -52,8 +74,12 @@
 </header>
 
 <section class="settings__content" aria-label={t("settings.title")}>
-  <div class="settings__panel">
-    {#if tab === "account"}
+  <div class="settings__panel" class:settings__panel--wide={tab === "profile" || tab === "games"}>
+    {#if tab === "profile"}
+      <ProfileEditor />
+    {:else if tab === "games"}
+      <SettingsGames />
+    {:else if tab === "account"}
       <SettingsAccount />
     {:else if tab === "voice"}
       <SettingsVoice />
@@ -141,5 +167,9 @@
 
   .settings__panel {
     max-width: 560px;
+  }
+
+  .settings__panel--wide {
+    max-width: 960px;
   }
 </style>

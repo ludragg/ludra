@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import ActivityInline from "@/components/activity/activity-inline.svelte";
   import Avatar from "@/components/avatar/avatar.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
   import { callPreview, isCall } from "@/helpers/call-summary";
@@ -10,6 +11,8 @@
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { presenceStore } from "@/stores/presence.svelte";
+  import { profileStore } from "@/stores/profile.svelte";
 
   let { conversation, active }: { conversation: Conversation; active: boolean } = $props();
 
@@ -24,6 +27,7 @@
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
 
+  const peerActivity = $derived(presenceStore.getVisible(peer.id).activity);
   const last = $derived(conversation.lastMessage);
   const callStart = $derived(calls.current?.peer.id === peer.id ? calls.current.startedAt : null);
   const unread = $derived(chat.unread[conversation.id] ?? 0);
@@ -48,7 +52,25 @@
   onclick={() => chat.select(conversation.id)}
   oncontextmenu={openMenu}
 >
-  <Avatar user={peer} size="small" />
+  <span
+    class="sidebar-conversation__avatar-btn"
+    role="button"
+    tabindex="0"
+    aria-label="Ver perfil de {peer.username}"
+    onclick={(e) => {
+      e.stopPropagation();
+      profileStore.openModal(peer.id, peer.username);
+    }}
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        profileStore.openModal(peer.id, peer.username);
+      }
+    }}
+  >
+    <Avatar user={peer} size="small" />
+  </span>
   <span class="sidebar-conversation__body">
     <span class="sidebar-conversation__row">
       <span class="sidebar-conversation__name">{peer.username}</span>
@@ -62,6 +84,8 @@
           <span class="sidebar-conversation__live-icon"><CallIcon name="phone" /></span>
           {elapsed.format(callStart)}
         </span>
+      {:else if peerActivity}
+        <ActivityInline activity={peerActivity} />
       {:else}
         <span class="sidebar-conversation__preview">{preview}</span>
       {/if}
@@ -179,5 +203,11 @@
     color: var(--dark-background-color);
     font-size: var(--tiny-font-size);
     font-weight: 700;
+  }
+  .sidebar-conversation__avatar-btn {
+    display: inline-flex;
+    flex: none;
+    border-radius: 50%;
+    cursor: pointer;
   }
 </style>

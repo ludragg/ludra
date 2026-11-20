@@ -1,8 +1,11 @@
 <script lang="ts">
   import { Avatar, Status } from "@/components";
+  import ActivityInline from "@/components/activity/activity-inline.svelte";
   import { t } from "@/i18n";
-  import { Presence, type Conversation, type User } from "@/protocol/ludra/v1/models_pb";
+  import type { Conversation, User } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
+  import { presenceStore } from "@/stores/presence.svelte";
+  import { profileStore } from "@/stores/profile.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
 
   let { group }: { group: Conversation } = $props();
@@ -37,10 +40,6 @@
     [...group.members].sort((a, b) => Number(b.id === group.ownerId) - Number(a.id === group.ownerId)),
   );
 
-  function presence(user: User): Presence | null {
-    return user.id === chat.user?.id ? chat.user.presence : chat.presenceOf(user.id);
-  }
-
   async function remove(user: User) {
     pending = true;
     await chat.removeGroupMember(group.id, user.id).catch(() => undefined);
@@ -74,26 +73,37 @@
   <h2 class="group-members__title">{t("group.membersTitle", { count: group.members.length })}</h2>
   <ul class="group-members__list">
     {#each members as member (member.id)}
-      {@const status = presence(member)}
+      {@const isMe = member.id === chat.user?.id}
+      {@const memberPresence = presenceStore.getVisible(member.id)}
+      {@const memberActivity = memberPresence.activity}
+      {@const memberStatus = memberPresence.status}
       <li
         class="group-members__member"
-        class:group-members__member--offline={status !== Presence.ONLINE && status !== Presence.BUSY}
+        class:group-members__member--offline={memberStatus === "invisible"}
         oncontextmenu={(event) => openMenu(event, member)}
       >
-        <Avatar user={member} size="small" />
-        <span class="group-members__info">
-          <span class="group-members__name">
-            <span class="group-members__username">{member.username}</span>
-            {#if member.id === group.ownerId}
-              <svg class="group-members__crown" viewBox="0 0 24 24" role="img" aria-label={t("group.owner")}>
-                <path d="M2 18h20l-2-11-5 4-3-7-3 7-5-4z" />
-              </svg>
+        <button
+          type="button"
+          class="group-members__profile-btn"
+          onclick={() => profileStore.openModal(member.id, member.username)}
+        >
+          <Avatar user={member} size="small" />
+          <span class="group-members__info">
+            <span class="group-members__name">
+              <span class="group-members__username">{member.username}</span>
+              {#if member.id === group.ownerId}
+                <svg class="group-members__crown" viewBox="0 0 24 24" role="img" aria-label={t("group.owner")}>
+                  <path d="M2 18h20l-2-11-5 4-3-7-3 7-5-4z" />
+                </svg>
+              {/if}
+            </span>
+            {#if memberActivity}
+              <ActivityInline activity={memberActivity} />
+            {:else}
+              <Status status={memberStatus} labelOverride={!isMe && memberStatus === "invisible" ? "Offline" : ""} />
             {/if}
           </span>
-          {#if status !== null}
-            <Status presence={status} />
-          {/if}
-        </span>
+        </button>
         {#if owner && member.id !== chat.user?.id}
           <button
             class="group-members__remove"
@@ -267,5 +277,23 @@
 
   .group-members__leave:hover {
     background: rgba(246, 116, 107, 0.1);
+  }
+  .group-members__profile-btn {
+    min-width: 0;
+    flex-grow: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .group-members__profile-btn:hover .group-members__username {
+    color: #c4b5fd;
+    text-decoration: underline;
   }
 </style>

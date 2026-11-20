@@ -3,6 +3,7 @@
   import { calls } from "@/stores/call.svelte";
   import { chat, type SidebarTab } from "@/stores/chat.svelte";
   import { groupCall } from "@/stores/group-call.svelte";
+  import DetectedGameCard from "@/components/activity/detected-game-card.svelte";
   import GroupDialog from "@/pages/group/group-dialog.svelte";
   import SidebarCall from "./sidebar-call.svelte";
   import SidebarConversation from "./sidebar-conversation.svelte";
@@ -63,6 +64,7 @@
     <div class="sidebar__tabs">
       <div class="sidebar__tablist" role="tablist" aria-label={t("sidebar.conversations")}>
         {#each tabs as tab (tab.id)}
+          {@const unread = unreadIn(tab.id)}
           <button
             class="sidebar__tab"
             class:sidebar__tab--active={chat.sidebarTab === tab.id}
@@ -71,32 +73,29 @@
             onclick={() => (chat.sidebarTab = tab.id)}
           >
             {tab.label}
-            {#if unreadIn(tab.id) > 0 && chat.sidebarTab !== tab.id}
-              <span class="sidebar__tab-dot" aria-label={t("sidebar.unread", { count: unreadIn(tab.id) })}></span>
+            {#if unread > 0 && chat.sidebarTab !== tab.id}
+              <span class="sidebar__tab-badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
             {/if}
           </button>
         {/each}
       </div>
-      {#if chat.sidebarTab === "group"}
-        <button
-          class="sidebar__create"
-          aria-label={t("group.create")}
-          data-tooltip={t("group.create")}
-          onclick={() => (creating = true)}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            aria-hidden="true"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
-      {/if}
     </div>
+
+    {#if chat.sidebarTab === "group"}
+      <button class="sidebar__create-button" type="button" onclick={() => (creating = true)}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        <span>{t("group.create")}</span>
+      </button>
+    {/if}
 
     <ul class="sidebar__list">
       {#if chat.sidebarTab === "direct"}
@@ -110,7 +109,11 @@
       {:else}
         {#each chat.groups as conversation (conversation.id)}
           <li>
-            <SidebarGroup {conversation} active={conversation.id === chat.activeId} />
+            <SidebarGroup
+              {conversation}
+              active={conversation.id === chat.activeId}
+              tag={chat.groupTags[conversation.id]}
+            />
           </li>
         {:else}
           <li class="sidebar__empty">{t("sidebar.noGroups")}</li>
@@ -150,6 +153,7 @@
         onhangup={() => groupCall.leave()}
       />
     {/if}
+    <DetectedGameCard />
     <SidebarProfile />
   </div>
 </nav>
@@ -166,9 +170,9 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    background: var(--dark-background-color);
+    background: #0b0b0f;
     border-right: 1px solid var(--border-color);
-    color: var(--muted-color);
+    color: #ffffff;
   }
 
   .sidebar__footer {
@@ -226,7 +230,7 @@
 
   .sidebar__section {
     min-height: 0;
-    padding: 0 16px;
+    padding: 0 12px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -246,8 +250,10 @@
   }
 
   .sidebar__tab {
-    position: relative;
     padding: 4px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
@@ -264,37 +270,57 @@
   }
 
   .sidebar__tab--active {
-    color: var(--muted-color);
-    border-bottom-color: var(--brand-color);
+    color: #ffffff;
+    border-bottom-color: #8b5cf6;
   }
 
-  .sidebar__tab-dot {
-    position: absolute;
-    top: 3px;
-    right: -8px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--brand-color);
-  }
-
-  .sidebar__create {
-    width: 24px;
-    height: 24px;
-    padding: 5px;
-    flex: none;
-    display: grid;
+  .sidebar__tab-badge {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 5px;
+    display: inline-grid;
     place-items: center;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--subtle-color);
-    transition: all ease 0.1s;
+    border-radius: 999px;
+    background: #8b5cf6;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
   }
 
-  .sidebar__create:hover {
-    background: var(--active-color);
-    color: var(--muted-color);
+  .sidebar__create-button {
+    width: 100%;
+    height: 36px;
+    margin: 10px 0 6px;
+    padding: 0 12px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+    border: 1px solid #8b5cf6;
+    background: #111118;
+    color: #ffffff;
+    font-size: var(--hint-font-size);
+    font-weight: 600;
+    transition:
+      background 150ms ease,
+      box-shadow 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .sidebar__create-button:hover {
+    background: #1a1a26;
+    border-color: #a78bfa;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+  }
+
+  .sidebar__create-button svg {
+    width: 15px;
+    height: 15px;
+    flex: none;
   }
 
   .sidebar__list {
@@ -302,7 +328,7 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     overflow-y: auto;
     list-style: none;
   }
