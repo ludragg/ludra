@@ -3,6 +3,7 @@ import { FileSignalKind, SignalKind, type FileSignal, type Message } from "@/pro
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
 import { FileChannel } from "@/services/file-channel";
+import { preferences } from "@/stores/preferences.svelte";
 import { trust } from "@/stores/trust.svelte";
 
 export type TransferState =
@@ -21,7 +22,7 @@ export type Transfer = { state: TransferState; received: number; total: number; 
 
 type Shared = { name: string; size: number; available: boolean };
 
-const sendSize = 64 * 1024;
+const sendSize = 256 * 1024;
 const readSize = 1024 * 1024;
 const flushSize = 1024 * 1024;
 const offerTimeout = 20_000;
@@ -36,6 +37,14 @@ class TimeoutError extends Error {}
 
 function signed(transferId: string): string {
   return `file:${transferId}`;
+}
+
+function direct(): boolean {
+  return preferences.values.directCalls && preferences.values.directDownloads;
+}
+
+function agreed(description: string): boolean {
+  return description.includes(" typ srflx");
 }
 
 function write(download: number, data: Uint8Array) {
@@ -210,7 +219,8 @@ class FileStore {
     try {
       const offered = this.#await(transferId, offerTimeout);
       offered.catch(() => undefined);
-      const { iceServers } = await client.requestFile(message.id, transferId);
+      const wantsDirect = direct();
+      const { iceServers } = await client.requestFile(message.id, transferId, wantsDirect);
       const offer = await offered;
       if (offer.kind === FileSignalKind.UNAVAILABLE) {
         this.#fail(message.id, "expired");
@@ -218,10 +228,9 @@ class FileStore {
       }
 
       this.#start(message.id, "connecting", total);
-      channel = new FileChannel(iceServers);
-      const answer = await channel.answer(
-        await trust.open(signed(transferId), senderId, SignalKind.OFFER, offer.payload),
-      );
+      const description = await trust.open(signed(transferId), senderId, SignalKind.OFFER, offer.payload);
+      channel = new FileChannel(iceServers, wantsDirect && agreed(description));
+      const answer = await channel.answer(description);
       await client.fileSignal(
         message.id,
         transferId,
@@ -276,7 +285,7 @@ class FileStore {
     }
     this.#serving++;
     const { messageId, transferId, peerId } = signal;
-    const channel = new FileChannel(signal.iceServers);
+    const channel = new FileChannel(signal.iceServers, signal.direct && direct());
 
     try {
       const answered = this.#await(transferId, answerTimeout);
@@ -297,21 +306,27 @@ class FileStore {
       const open = await channel.open();
       open.bufferedAmountLowThreshold = lowWater;
 
-      for (let offset = 0; offset < shared.size;) {
+      const read = (offset: number) =>
+        offset < shared.size ? invoke<ArrayBuffer>("read_shared", { id: messageId, offset, length: readSize }) : null;
+
+      let pending = read(0);
+      for (let offset = 0; pending;) {
         if (this.#canceled.has(transferId) || open.readyState !== "open") {
           return;
         }
-        const buffer = await invoke<ArrayBuffer>("read_shared", { id: messageId, offset, length: readSize });
+        const buffer = await pending;
         if (buffer.byteLength === 0) {
           return;
         }
+        offset += buffer.byteLength;
+        pending = read(offset);
+        pending?.catch(() => undefined);
         for (let start = 0; start < buffer.byteLength; start += sendSize) {
           if (open.bufferedAmount > highWater) {
             await drained(open);
           }
           open.send(buffer.slice(start, start + sendSize));
         }
-        offset += buffer.byteLength;
       }
       open.send("done");
       await closed(open);

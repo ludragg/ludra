@@ -399,20 +399,17 @@ func (s *session) announce(presence protocol.Presence) {
 	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
 	defer cancel()
 
-	friendIDs, err := s.friends.IDs(ctx, s.user.Id)
+	watchers, err := s.account.PresenceIDs(ctx, s.user.Id)
 	if err != nil {
-		slog.Error("load friends", "error", err)
+		slog.Error("load presence audience", "error", err)
 		return
 	}
-	s.hub.publish(friendIDs, presenceChangedFrame(s.user.Id, presence), nil)
+	s.hub.publish(watchers, presenceChangedFrame(s.user.Id, presence), nil)
 }
 
 func (s *session) conversation(conversation chat.Conversation) *protocol.Conversation {
 	result := toConversation(conversation)
-	result.Peer.Presence = protocol.Presence_PRESENCE_OFFLINE
-	if conversation.IsFriend {
-		result.Peer.Presence = s.hub.presence(result.Peer.Id)
-	}
+	result.Peer.Presence = s.hub.presence(result.Peer.Id)
 	return result
 }
 

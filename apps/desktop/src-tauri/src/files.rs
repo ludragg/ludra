@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 use crate::registry::Registry;
 
 const MAX_CHUNK: u64 = 1 << 20;
+const IMAGE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
 
 pub struct FilesState {
     picked: Mutex<HashSet<PathBuf>>,
@@ -168,19 +169,18 @@ pub fn stash_file(
                 .filter(|char| char.is_ascii_alphanumeric() || matches!(char, '.' | '-' | '_'))
                 .collect::<String>()
         })
-        .filter(|name| name.contains('.'))
+        .filter(|name| {
+            name.rsplit_once('.').is_some_and(|(stem, extension)| {
+                !stem.is_empty() && IMAGE_EXTENSIONS.contains(&extension)
+            })
+        })
         .unwrap_or_else(|| "imagem.png".into());
     let folder = app
         .path()
-        .app_local_data_dir()
-        .map_err(|error| error.to_string())?
-        .join("pasted");
+        .download_dir()
+        .map_err(|error| error.to_string())?;
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|time| time.as_millis())
-        .unwrap_or_default();
-    let path = folder.join(format!("{stamp}-{name}"));
+    let path = unused_path(&folder, &name);
     std::fs::write(&path, data).map_err(|error| error.to_string())?;
     state.picked.lock().unwrap().insert(path.clone());
     Ok(Picked {
@@ -188,6 +188,18 @@ pub fn stash_file(
         path: path.to_string_lossy().into_owned(),
         size: data.len() as u64,
     })
+}
+
+fn unused_path(folder: &Path, name: &str) -> PathBuf {
+    let path = folder.join(name);
+    if !path.exists() {
+        return path;
+    }
+    let (stem, extension) = name.rsplit_once('.').unwrap_or((name, ""));
+    (1..)
+        .map(|number| folder.join(format!("{stem} ({number}).{extension}")))
+        .find(|candidate| !candidate.exists())
+        .unwrap_or(path)
 }
 
 #[tauri::command]

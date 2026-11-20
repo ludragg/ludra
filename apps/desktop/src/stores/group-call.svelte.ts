@@ -65,6 +65,7 @@ class GroupCallStore {
   camera = $state.raw<MediaStream | null>(null);
   cameras = $state.raw<Record<string, MediaStream>>({});
   latency = $state<number | null>(null);
+  latencies = $state.raw<Record<string, number>>({});
   error = $state("");
   friendly: (userId: string) => boolean = () => false;
 
@@ -425,6 +426,15 @@ class GroupCallStore {
     room.onSpeaking = (speaking) => (this.speaking = speaking);
     room.onConnecting = (connecting) => (this.connecting = connecting);
     room.onLatency = (milliseconds) => (this.latency = room.peers().length ? milliseconds : null);
+    room.onPeerLatency = (peerId, milliseconds) => {
+      const next = { ...this.latencies };
+      if (milliseconds === null) {
+        delete next[peerId];
+      } else {
+        next[peerId] = milliseconds;
+      }
+      this.latencies = next;
+    };
     room.onPeerConnected = (peerId) => {
       this.#linked.add(peerId);
       this.#shareState();
@@ -800,6 +810,7 @@ class GroupCallStore {
     this.states = {};
     this.connecting = false;
     this.latency = null;
+    this.latencies = {};
   }
 
   #showError(message: string) {

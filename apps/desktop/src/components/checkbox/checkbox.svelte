@@ -3,11 +3,25 @@
     label,
     checked,
     disabled = false,
+    sub = false,
     onchange,
-  }: { label: string; checked: boolean; disabled?: boolean; onchange: (checked: boolean) => void } = $props();
+  }: {
+    label: string;
+    checked: boolean;
+    disabled?: boolean;
+    sub?: boolean;
+    onchange: (checked: boolean) => void;
+  } = $props();
 </script>
 
-<button class="checkbox" role="checkbox" aria-checked={checked} {disabled} onclick={() => onchange(!checked)}>
+<button
+  class="checkbox"
+  class:checkbox--sub={sub}
+  role="checkbox"
+  aria-checked={checked}
+  {disabled}
+  onclick={() => onchange(!checked)}
+>
   <span class="checkbox__box" class:checkbox__box--checked={checked}>
     {#if checked}
       <svg
@@ -38,6 +52,21 @@
     color: var(--body-color);
     text-align: left;
     transition: color ease 0.1s;
+  }
+
+  .checkbox--sub {
+    padding: 6px 0 6px 32px;
+    gap: 10px;
+    font-size: var(--small-font-size);
+  }
+
+  .checkbox--sub .checkbox__box {
+    width: 16px;
+    height: 16px;
+  }
+
+  .checkbox--sub .checkbox__box svg {
+    width: 11px;
   }
 
   .checkbox:hover:not(:disabled) {

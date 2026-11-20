@@ -9,10 +9,10 @@ export class FileChannel {
   #channel: Promise<RTCDataChannel>;
   #resolve: (channel: RTCDataChannel) => void = () => {};
 
-  constructor(iceServers: IceServer[]) {
+  constructor(iceServers: IceServer[], direct: boolean) {
     this.#connection = new RTCPeerConnection({
       iceServers: iceServers.map(({ urls, username, credential }) => ({ urls, username, credential })),
-      iceTransportPolicy: "relay",
+      iceTransportPolicy: direct ? "all" : "relay",
     });
     this.#channel = new Promise((resolve, reject) => {
       this.#resolve = resolve;

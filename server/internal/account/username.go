@@ -32,3 +32,7 @@ func (s *Service) SetUsername(ctx context.Context, userID, current, username str
 func (s *Service) ContactIDs(ctx context.Context, userID string) ([]string, error) {
 	return s.queries.ListContactIDs(ctx, userID)
 }
+
+func (s *Service) PresenceIDs(ctx context.Context, userID string) ([]string, error) {
+	return s.queries.ListPresenceIDs(ctx, userID)
+}

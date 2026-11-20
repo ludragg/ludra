@@ -20,8 +20,10 @@
       }}
     />
     <Checkbox
+      sub
       label={t("settings.startMinimized")}
-      checked={preferences.values.startMinimized}
+      disabled={!preferences.values.autostart}
+      checked={preferences.values.autostart && preferences.values.startMinimized}
       onchange={(checked) => preferences.set("startMinimized", checked)}
     />
     <Checkbox
@@ -38,6 +40,13 @@
     <div class="settings-system__connection">
       <Checkbox label={t("settings.directCalls")} checked={preferences.values.directCalls} onchange={setDirectCalls} />
       <span class="settings-system__hint">{t("settings.directCallsHint")}</span>
+      <Checkbox
+        sub
+        label={t("settings.directDownloads")}
+        disabled={!preferences.values.directCalls}
+        checked={preferences.values.directCalls && preferences.values.directDownloads}
+        onchange={(checked) => preferences.set("directDownloads", checked)}
+      />
     </div>
   </SettingsGroup>
 

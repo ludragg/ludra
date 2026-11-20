@@ -1,10 +1,12 @@
 <script lang="ts">
   import Slider from "@/components/slider/slider.svelte";
+  import { t } from "@/i18n";
 
   let {
     id,
     label,
     value,
+    latency,
     x,
     y,
     onchange,
@@ -13,6 +15,7 @@
     id: string;
     label: string;
     value: number;
+    latency?: number | null;
     x: number;
     y: number;
     onchange: (percent: number) => void;
@@ -23,7 +26,7 @@
 
   const width = 240;
   const left = $derived(Math.min(x, window.innerWidth - width - 8));
-  const top = $derived(Math.min(y, window.innerHeight - 96));
+  const top = $derived(Math.min(y, window.innerHeight - (latency === undefined ? 96 : 128)));
 
   function onpointerdown(event: PointerEvent) {
     if (!menu?.contains(event.target as Node)) {
@@ -49,10 +52,29 @@
   style:width="{width}px"
   bind:this={menu}
 >
+  {#if latency !== undefined}
+    <div class="volume-menu__latency">
+      <span>{t("call.latency")}</span>
+      <span class="volume-menu__ping">{latency === null ? "-" : `${latency} ms`}</span>
+    </div>
+  {/if}
   <Slider {id} {label} {value} {onchange} />
 </div>
 
 <style>
+  .volume-menu__latency {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--small-font-size);
+    color: var(--subtle-color);
+  }
+
+  .volume-menu__ping {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-color);
+  }
+
   .volume-menu {
     position: fixed;
     z-index: 20;

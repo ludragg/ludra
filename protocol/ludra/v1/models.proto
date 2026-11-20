@@ -117,6 +117,7 @@ message FileSignal {
   FileSignalKind kind = 4;
   string payload = 5;
   repeated IceServer ice_servers = 6;
+  bool direct = 7;
 }
 
 message ImageRef {

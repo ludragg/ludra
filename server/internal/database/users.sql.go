@@ -203,6 +203,34 @@ func (q *Queries) ListIdentityKeys(ctx context.Context, userIds []string) ([]Lis
 	return items, nil
 }
 
+const listPresenceIDs = `-- name: ListPresenceIDs :many
+SELECT other.user_id FROM participants me
+JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
+WHERE me.user_id = $1
+UNION
+SELECT friend_id FROM friendships WHERE user_id = $1
+`
+
+func (q *Queries) ListPresenceIDs(ctx context.Context, userID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listPresenceIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var user_id string
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markEmailVerified = `-- name: MarkEmailVerified :exec
 UPDATE users SET email_verified_at = now()
 WHERE id = $1 AND email_verified_at IS NULL

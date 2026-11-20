@@ -63,3 +63,10 @@ UNION
 SELECT recipient_id FROM friend_requests WHERE sender_id = sqlc.arg(user_id)
 UNION
 SELECT sender_id FROM friend_requests WHERE recipient_id = sqlc.arg(user_id);
+
+-- name: ListPresenceIDs :many
+SELECT other.user_id FROM participants me
+JOIN participants other ON other.conversation_id = me.conversation_id AND other.user_id <> me.user_id
+WHERE me.user_id = sqlc.arg(user_id)
+UNION
+SELECT friend_id FROM friendships WHERE user_id = sqlc.arg(user_id);

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Ludra",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -29,8 +29,8 @@
         "enable": true,
         "scope": []
       },
-      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080; style-src 'self'; font-src 'self'; img-src 'self' data: blob: http://127.0.0.1:8080; media-src 'self' blob: http://asset.localhost; frame-src https://www.youtube-nocookie.com",
-      "devCsp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:6767; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: http://127.0.0.1:8080; media-src 'self' blob: http://asset.localhost; frame-src https://www.youtube-nocookie.com"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080; style-src 'self'; font-src 'self'; img-src 'self' data: blob: http://asset.localhost http://127.0.0.1:8080; media-src 'self' blob: http://asset.localhost; frame-src https://www.youtube-nocookie.com",
+      "devCsp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws://127.0.0.1:8080 ws://localhost:6767; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: http://asset.localhost http://127.0.0.1:8080; media-src 'self' blob: http://asset.localhost; frame-src https://www.youtube-nocookie.com"
     }
   },
   "bundle": {

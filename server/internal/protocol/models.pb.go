@@ -900,6 +900,7 @@ type FileSignal struct {
 	Kind          FileSignalKind         `protobuf:"varint,4,opt,name=kind,proto3,enum=ludra.v1.FileSignalKind" json:"kind,omitempty"`
 	Payload       string                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`
 	IceServers    []*IceServer           `protobuf:"bytes,6,rep,name=ice_servers,json=iceServers,proto3" json:"ice_servers,omitempty"`
+	Direct        bool                   `protobuf:"varint,7,opt,name=direct,proto3" json:"direct,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -974,6 +975,13 @@ func (x *FileSignal) GetIceServers() []*IceServer {
 		return x.IceServers
 	}
 	return nil
+}
+
+func (x *FileSignal) GetDirect() bool {
+	if x != nil {
+		return x.Direct
+	}
+	return false
 }
 
 type ImageRef struct {
@@ -1528,7 +1536,7 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x04size\x18\x03 \x01(\x04R\x04size\x12\x12\n" +
 	"\x04mime\x18\x04 \x01(\tR\x04mime\x12\x16\n" +
 	"\x06direct\x18\x05 \x01(\bR\x06direct\x12\x18\n" +
-	"\aexpired\x18\x06 \x01(\bR\aexpired\"\xe3\x01\n" +
+	"\aexpired\x18\x06 \x01(\bR\aexpired\"\xfb\x01\n" +
 	"\n" +
 	"FileSignal\x12\x1d\n" +
 	"\n" +
@@ -1539,7 +1547,8 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x04kind\x18\x04 \x01(\x0e2\x18.ludra.v1.FileSignalKindR\x04kind\x12\x18\n" +
 	"\apayload\x18\x05 \x01(\tR\apayload\x124\n" +
 	"\vice_servers\x18\x06 \x03(\v2\x13.ludra.v1.IceServerR\n" +
-	"iceServers\"b\n" +
+	"iceServers\x12\x16\n" +
+	"\x06direct\x18\a \x01(\bR\x06direct\"b\n" +
 	"\bImageRef\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05width\x18\x02 \x01(\rR\x05width\x12\x16\n" +

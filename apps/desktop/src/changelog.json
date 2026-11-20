@@ -1,5 +1,38 @@
 [
   {
+    "version": "0.4.1",
+    "notes": {
+      "pt": {
+        "features": [
+          "Você vê o status (online, ocupado, offline) de quem está no mesmo grupo ou conversa que você, mesmo que não seja seu amigo.",
+          "Downloads mais rápidos: com a conexão direta ligada nos dois lados, os arquivos vão direto entre os PCs, sem passar pelo servidor na Europa. Dá para desligar isso só para downloads em Configurações › Sistema.",
+          "Clique direito em alguém na chamada mostra a latência dele com você, acima do volume.",
+          "O ms da chamada em grupo agora mostra a sua melhor conexão com quem está na chamada.",
+          "Imagens coladas ficam salvas na pasta Downloads, para não sumirem do chat."
+        ],
+        "fixes": [
+          "Fotos baixadas, coladas e enviadas por você voltam a aparecer no chat.",
+          "\"Iniciar minimizado\" e o download por conexão direta ficam desativados quando a opção principal está desligada.",
+          "Os nomes das opções de notificação e de sons ficaram mais curtos."
+        ]
+      },
+      "en": {
+        "features": [
+          "You see the status (online, busy, offline) of anyone in the same group or conversation as you, even if they are not your friend.",
+          "Faster downloads: with direct connection on at both ends, files go straight between the PCs instead of through the server in Europe. You can turn this off for downloads only in Settings › System.",
+          "Right-clicking someone in a call shows their latency with you, above the volume.",
+          "The group call ms now shows your best connection among the people in the call.",
+          "Pasted images are saved to your Downloads folder, so they do not vanish from the chat."
+        ],
+        "fixes": [
+          "Photos you downloaded, pasted or sent show up in the chat again.",
+          "\"Start minimized\" and direct downloads are disabled while their main option is off.",
+          "Notification and sound option names are shorter."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.4.0",
     "notes": {
       "pt": {

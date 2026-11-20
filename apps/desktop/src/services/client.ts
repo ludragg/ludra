@@ -175,9 +175,9 @@ export class Client {
     return message!;
   }
 
-  requestFile(messageId: string, transferId: string) {
+  requestFile(messageId: string, transferId: string, direct: boolean) {
     return this.#request(
-      { case: "fileSignal", value: { messageId, transferId, kind: FileSignalKind.REQUEST } },
+      { case: "fileSignal", value: { messageId, transferId, direct, kind: FileSignalKind.REQUEST } },
       "fileTransfer",
     );
   }

@@ -333,7 +333,16 @@ class ChatStore {
 
   presenceOf(userId: string): Presence | null {
     const friend = this.friends.find(({ user, state }) => user?.id === userId && state === FriendState.ACCEPTED);
-    return friend?.user?.presence ?? null;
+    if (friend?.user) {
+      return friend.user.presence;
+    }
+    for (const { peer, members } of this.conversations) {
+      const person = peer?.id === userId ? peer : members.find(({ id }) => id === userId);
+      if (person) {
+        return person.presence;
+      }
+    }
+    return null;
   }
 
   async createGroup(name: string, memberIds: string[]) {
@@ -876,9 +885,14 @@ class ChatStore {
   }
 
   #peerPresence(userId: string, presence: Presence) {
-    for (const { peer } of this.conversations) {
+    for (const { peer, members } of this.conversations) {
       if (peer?.id === userId) {
         peer.presence = presence;
+      }
+      for (const member of members) {
+        if (member.id === userId) {
+          member.presence = presence;
+        }
       }
     }
   }

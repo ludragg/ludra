@@ -9,6 +9,7 @@ export class VoiceRoom {
   onSignal: (peerId: string, kind: SignalKind, payload: string) => void = () => {};
   onSpeaking: (speaking: Set<string>) => void = () => {};
   onLatency: (milliseconds: number) => void = () => {};
+  onPeerLatency: (peerId: string, milliseconds: number | null) => void = () => {};
   onPeerFailed: (peerId: string) => void = () => {};
   onPeerConnected: (peerId: string) => void = () => {};
   onScreen: (peerId: string, stream: MediaStream | null) => void = () => {};
@@ -65,7 +66,8 @@ export class VoiceRoom {
     this.#remoteCameras.delete(peerId);
     this.#latencies.delete(peerId);
     this.#setConnecting(peerId, false);
-    this.onLatency(this.#latencies.size ? Math.max(...this.#latencies.values()) : 0);
+    this.onPeerLatency(peerId, null);
+    this.onLatency(this.#latencies.size ? Math.min(...this.#latencies.values()) : 0);
   }
 
   refreshDirect(peerId: string, restart: boolean) {
@@ -152,7 +154,8 @@ export class VoiceRoom {
     link.onConnected = () => this.onPeerConnected(peerId);
     link.onLatency = (milliseconds) => {
       this.#latencies.set(peerId, milliseconds);
-      this.onLatency(Math.max(...this.#latencies.values()));
+      this.onPeerLatency(peerId, milliseconds);
+      this.onLatency(Math.min(...this.#latencies.values()));
     };
     link.setOutputVolume(preferences.values.outputVolume);
     link.setPeerVolume(preferences.values.userVolumes[peerId] ?? 100);

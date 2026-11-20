@@ -10,7 +10,11 @@ import (
 )
 
 func (s *session) groupConversation(group chat.Group) *protocol.Conversation {
-	return toGroupConversation(group, s.rooms.state(group.ID))
+	result := toGroupConversation(group, s.rooms.state(group.ID))
+	for _, member := range result.Members {
+		member.Presence = s.hub.presence(member.Id)
+	}
+	return result
 }
 
 func (s *session) createGroup(ctx context.Context, req *protocol.CreateGroup) *protocol.ServerFrame {

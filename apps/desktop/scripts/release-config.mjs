@@ -16,7 +16,7 @@ const csp = [
   `connect-src 'self' ipc: http://ipc.localhost ${ws}`,
   "style-src 'self'",
   "font-src 'self'",
-  `img-src 'self' data: blob: ${web}`,
+  `img-src 'self' data: blob: http://asset.localhost ${web}`,
   "media-src 'self' blob: http://asset.localhost",
   "frame-src https://www.youtube-nocookie.com",
 ].join("; ");

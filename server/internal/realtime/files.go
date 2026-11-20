@@ -65,6 +65,7 @@ func (s *session) fileSignal(ctx context.Context, req *protocol.FileSignal) *pro
 		PeerId:     s.user.Id,
 		Kind:       req.Kind,
 		Payload:    req.Payload,
+		Direct:     req.Direct,
 	}
 	if req.Kind != protocol.FileSignalKind_FILE_SIGNAL_KIND_REQUEST {
 		s.hub.publish([]string{target}, fileSignalFrame(forwarded), s)
