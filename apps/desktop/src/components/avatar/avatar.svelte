@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { User } from "@/protocol/ludra/v1/models_pb";
   import { avatarUrl } from "@/services/server";
+  import { profileStore } from "@/stores/profile.svelte";
 
   type Person = Pick<User, "id" | "username" | "avatar">;
 
@@ -9,13 +10,23 @@
 
   let failed = $state<string | null>(null);
 
+  const cachedProfile = $derived(profileStore.cache[user.id]);
+  const rawAvatar = $derived(cachedProfile?.avatar || user.avatar || "");
+  const displayName = $derived(cachedProfile?.displayName || user.username);
+
   const tone = $derived(parseInt(user.id.slice(-8), 16) % 6);
-  const initial = $derived(user.username.charAt(0).toUpperCase());
-  const source = $derived(user.avatar && failed !== user.avatar ? avatarUrl(user.id, user.avatar) : null);
+  const initial = $derived(displayName.charAt(0).toUpperCase() || "?");
+  const source = $derived.by(() => {
+    if (!rawAvatar || failed === rawAvatar) return null;
+    if (rawAvatar.startsWith("data:") || rawAvatar.startsWith("blob:") || rawAvatar.startsWith("http")) {
+      return rawAvatar;
+    }
+    return avatarUrl(user.id, rawAvatar);
+  });
 </script>
 
 {#if source}
-  <img class="avatar avatar--{size}" src={source} alt="" onerror={() => (failed = user.avatar)} />
+  <img class="avatar avatar--{size}" src={source} alt="" onerror={() => (failed = rawAvatar)} />
 {:else}
   <span class="avatar avatar--{size} avatar--tone-{tone}" aria-hidden="true">{initial}</span>
 {/if}

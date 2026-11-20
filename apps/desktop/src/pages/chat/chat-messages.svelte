@@ -18,6 +18,7 @@
     type Message,
   } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
+  import { profileStore } from "@/stores/profile.svelte";
 
   type Group = {
     key: string;
@@ -238,14 +239,25 @@
     {:else}
       {@const who = sender(group.senderId, group.messages[0].senderName)}
       <article class="chat-messages__group">
-        <span class="chat-messages__avatar" role="presentation" oncontextmenu={(event) => openMenu(event, who)}>
+        <button
+          type="button"
+          class="chat-messages__avatar chat-messages__profile-trigger"
+          aria-label="Ver perfil de {who.username}"
+          onclick={() => profileStore.openModal(who.id, who.username)}
+          oncontextmenu={(event) => openMenu(event, who)}
+        >
           <Avatar user={who} />
-        </span>
+        </button>
         <div class="chat-messages__content">
           <header class="chat-messages__meta">
-            <span class="chat-messages__author" role="presentation" oncontextmenu={(event) => openMenu(event, who)}>
+            <button
+              type="button"
+              class="chat-messages__author chat-messages__profile-trigger"
+              onclick={() => profileStore.openModal(who.id, who.username)}
+              oncontextmenu={(event) => openMenu(event, who)}
+            >
               {who.username}
-            </span>
+            </button>
             <time class="chat-messages__time">{group.time}</time>
           </header>
           {#each group.messages as message (message.id)}
@@ -596,5 +608,17 @@
   .chat-messages__censored {
     font-style: italic;
     color: var(--subtle-color);
+  }
+  .chat-messages__profile-trigger {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .chat-messages__author.chat-messages__profile-trigger:hover {
+    text-decoration: underline;
+    color: #c4b5fd;
   }
 </style>
