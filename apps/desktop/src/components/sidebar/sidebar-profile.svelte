@@ -1,12 +1,17 @@
 <script lang="ts">
+  import ActivityInline from "@/components/activity/activity-inline.svelte";
   import Avatar from "@/components/avatar/avatar.svelte";
+  import StatusDot from "@/components/profile/status-dot.svelte";
   import Status from "@/components/status/status.svelte";
   import { t } from "@/i18n";
   import { chat } from "@/stores/chat.svelte";
+  import { usePresence } from "@/stores/presence.svelte";
   import SidebarStatusMenu from "./sidebar-status-menu.svelte";
 
   let menuOpen = $state(false);
   let profile = $state<HTMLElement>();
+
+  const myPresence = usePresence(() => chat.user?.id ?? null);
 
   function onpointerdown(event: PointerEvent) {
     if (menuOpen && !profile?.contains(event.target as Node)) {
@@ -35,10 +40,19 @@
       aria-label={t("sidebar.changeStatus")}
       onclick={() => (menuOpen = !menuOpen)}
     >
-      <Avatar user={chat.user} />
+      <span class="sidebar-profile__avatar-wrap">
+        <Avatar user={chat.user} />
+        <span class="sidebar-profile__dot">
+          <StatusDot status={myPresence.status} size="small" ringColor="#15151d" />
+        </span>
+      </span>
       <span class="sidebar-profile__info">
         <span class="sidebar-profile__name">{chat.user.username}</span>
-        <Status presence={chat.user.presence} />
+        {#if myPresence.activity}
+          <ActivityInline activity={myPresence.activity} />
+        {:else}
+          <Status status={myPresence.status} />
+        {/if}
       </span>
     </button>
     <button
@@ -114,6 +128,19 @@
 
   .sidebar-profile__identity:hover {
     background: var(--surface-color);
+  }
+
+  .sidebar-profile__avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+  }
+
+  .sidebar-profile__dot {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: flex;
   }
 
   .sidebar-profile__info {

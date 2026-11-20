@@ -1,46 +1,94 @@
 <script lang="ts">
-  import { t, type Key } from "@/i18n";
-  import { Presence } from "@/protocol/ludra/v1/models_pb";
+  import { tick } from "svelte";
+  import StatusDot from "@/components/profile/status-dot.svelte";
+  import { PRESENCE_ORDER, PRESENCE_STATUSES, toProtoPresence, type PresenceStatus } from "@/constants/presence";
+  import { t } from "@/i18n";
   import { chat } from "@/stores/chat.svelte";
+  import { presenceStore } from "@/stores/presence.svelte";
 
   let { onclose }: { onclose: () => void } = $props();
 
-  const options: { presence: Presence; label: Key }[] = [
-    { presence: Presence.ONLINE, label: "presence.online" },
-    { presence: Presence.BUSY, label: "presence.busy" },
-    { presence: Presence.INVISIBLE, label: "presence.invisible" },
-  ];
+  let menuEl = $state<HTMLElement>();
 
-  async function choose(presence: Presence) {
+  const userId = $derived(chat.user?.id ?? "local-preview");
+  const currentStatus = $derived(presenceStore.getRecord(userId).status);
+
+  $effect(() => {
+    void tick().then(() => {
+      const activeIdx = Math.max(0, PRESENCE_ORDER.indexOf(currentStatus));
+      const buttons = menuEl?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]');
+      buttons?.[activeIdx]?.focus();
+    });
+  });
+
+  function choose(status: PresenceStatus) {
+    // Atualização otimista imediata na fonte única de verdade (presenceStore + localStorage)
+    presenceStore.setStatus(userId, status, "manual");
+    chat.setPresence(toProtoPresence(status)).catch(() => undefined);
     onclose();
-    if (presence !== chat.user?.presence) {
-      await chat.setPresence(presence).catch(() => undefined);
+  }
+
+  function onkeydown(event: KeyboardEvent) {
+    const buttons = Array.from(menuEl?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]') ?? []);
+    if (buttons.length === 0) return;
+
+    const currentIndex = buttons.indexOf(document.activeElement as HTMLButtonElement);
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onclose();
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      buttons[(currentIndex + 1 + buttons.length) % buttons.length]?.focus();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      buttons[(currentIndex - 1 + buttons.length) % buttons.length]?.focus();
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      buttons[0]?.focus();
+    } else if (event.key === "End") {
+      event.preventDefault();
+      buttons[buttons.length - 1]?.focus();
     }
   }
 </script>
 
-<div class="sidebar-status-menu" role="menu" aria-label={t("sidebar.status")}>
-  {#each options as option (option.presence)}
-    {@const checked = option.presence === chat.user?.presence}
+<div
+  class="sidebar-status-menu"
+  bind:this={menuEl}
+  role="menu"
+  aria-label={t("sidebar.status")}
+  tabindex="-1"
+  onpointerdown={(e) => e.stopPropagation()}
+  {onkeydown}
+>
+  {#each PRESENCE_ORDER as status (status)}
+    {@const info = PRESENCE_STATUSES[status]}
+    {@const checked = status === currentStatus}
     <button
+      type="button"
       class="sidebar-status-menu__option"
+      class:sidebar-status-menu__option--active={checked}
       role="menuitemradio"
       aria-checked={checked}
-      onclick={() => choose(option.presence)}
+      onclick={() => choose(status)}
     >
-      <span
-        class="sidebar-status-menu__dot"
-        class:sidebar-status-menu__dot--online={option.presence === Presence.ONLINE}
-        class:sidebar-status-menu__dot--busy={option.presence === Presence.BUSY}
-      ></span>
-      <span class="sidebar-status-menu__label">{t(option.label)}</span>
+      <span class="sidebar-status-menu__dot">
+        <StatusDot {status} size="small" bordered={false} ringColor="#111118" />
+      </span>
+      <span class="sidebar-status-menu__text">
+        <span class="sidebar-status-menu__label">{info.label}</span>
+        {#if info.description}
+          <span class="sidebar-status-menu__desc">{info.description}</span>
+        {/if}
+      </span>
       {#if checked}
         <svg
           class="sidebar-status-menu__check"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2.4"
+          stroke-width="2.6"
           stroke-linecap="round"
           stroke-linejoin="round"
           aria-hidden="true"
@@ -62,11 +110,13 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    border-radius: 8px;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    z-index: 1;
+    border-radius: 10px;
+    background: #111118;
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.7),
+      0 0 18px rgba(139, 92, 246, 0.14);
+    z-index: 40;
   }
 
   .sidebar-status-menu__option {
@@ -76,42 +126,54 @@
     align-items: center;
     gap: 10px;
     border: 0;
-    border-radius: 6px;
+    border-radius: 7px;
     background: transparent;
     text-align: left;
-    transition: background ease 0.1s;
+    transition: background 150ms ease;
   }
 
-  .sidebar-status-menu__option:hover {
-    background: var(--surface-color);
+  .sidebar-status-menu__option:hover,
+  .sidebar-status-menu__option:focus-visible {
+    background: rgba(255, 255, 255, 0.06);
+    outline: none;
+  }
+
+  .sidebar-status-menu__option--active {
+    background: rgba(139, 92, 246, 0.12);
   }
 
   .sidebar-status-menu__dot {
-    width: 10px;
-    height: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: none;
-    border-radius: 50%;
-    border: 2.5px solid var(--subtle-color);
   }
 
-  .sidebar-status-menu__dot--online {
-    border: 0;
-    background: var(--success-color);
-  }
-
-  .sidebar-status-menu__dot--busy {
-    border: 0;
-    background: #f6746b;
+  .sidebar-status-menu__text {
+    min-width: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   .sidebar-status-menu__label {
-    flex-grow: 1;
-    font-weight: 600;
-    color: var(--muted-color);
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.25;
+  }
+
+  .sidebar-status-menu__desc {
+    font-size: 11px;
+    color: #9ca3af;
+    line-height: 1.25;
   }
 
   .sidebar-status-menu__check {
     width: 16px;
-    color: var(--brand-color);
+    height: 16px;
+    flex: none;
+    color: #8b5cf6;
   }
 </style>

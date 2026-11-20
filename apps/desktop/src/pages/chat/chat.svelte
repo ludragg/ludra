@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Sidebar } from "@/components";
+  import ProfileModal from "@/components/profile/profile-modal.svelte";
   import ServerBar from "@/components/server-bar/server-bar.svelte";
   import StreamAudio from "@/components/stream-audio/stream-audio.svelte";
   import { t } from "@/i18n";
@@ -12,11 +13,16 @@
   import { chat } from "@/stores/chat.svelte";
   import { groupCall } from "@/stores/group-call.svelte";
   import { preferences } from "@/stores/preferences.svelte";
+  import { startAutoAway } from "@/stores/presence.svelte";
   import CallPanel from "./call-panel.svelte";
   import ChatComposer from "./chat-composer.svelte";
   import ChatHeader from "./chat-header.svelte";
   import ChatMessages from "./chat-messages.svelte";
   import IncomingCall from "./incoming-call.svelte";
+
+  $effect(() => {
+    return startAutoAway(() => chat.user?.id ?? null);
+  });
 </script>
 
 <div class="chat">
@@ -69,6 +75,8 @@
     <GroupRinging ringing={groupCall.ringing} />
   {/if}
 {/if}
+
+<ProfileModal />
 
 <style>
   .chat {

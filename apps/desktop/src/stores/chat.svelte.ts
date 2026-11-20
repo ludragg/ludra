@@ -22,9 +22,13 @@ import { callTarget, friendsTarget, onToastOpen, showToast } from "@/services/to
 import { calls } from "@/stores/call.svelte";
 import { focus } from "@/stores/focus";
 import { groupCall } from "@/stores/group-call.svelte";
+import { toProtoPresence } from "@/constants/presence";
 import { preferences } from "@/stores/preferences.svelte";
+import { presenceStore } from "@/stores/presence.svelte";
+import { profileStore } from "@/stores/profile.svelte";
 import { trust } from "@/stores/trust.svelte";
 import { updates } from "@/stores/updates.svelte";
+import type { UserProfile } from "@/services/profile-api";
 
 type Thread = {
   messages: Message[];
@@ -60,6 +64,7 @@ class ChatStore {
   groupPhotoError = $state<{ conversationId: string; message: string } | null>(null);
   threads = $state<Record<string, Thread>>({});
   unread = $state<Record<string, number>>({});
+  groupTags = $state<Record<string, string>>({});
 
   active = $derived(this.conversations.find((conversation) => conversation.id === this.activeId) ?? null);
   thread = $derived(this.activeId ? this.threads[this.activeId] : undefined);
@@ -76,6 +81,39 @@ class ChatStore {
   constructor() {
     this.#restore();
     onToastOpen((target) => this.#openTarget(target));
+    profileStore.onProfileSaved((profile) => this.syncMyProfile(profile));
+    presenceStore.onStatusChanged((userId, status) => {
+      if (this.user && this.user.id === userId) {
+        this.#presence(userId, toProtoPresence(status));
+      }
+    });
+  }
+
+  /**
+   * Sincroniza o perfil salvo no ProfileEditor com o estado global do app
+   * (sidebar, mensagens, lista de membros e ProfileCard).
+   */
+  syncMyProfile(profile: UserProfile) {
+    if (!this.user || this.user.id !== profile.id) {
+      return;
+    }
+
+    const nextUser: User = {
+      ...this.user,
+      username: profile.displayName || this.user.username,
+      avatar: profile.avatar,
+      presence: toProtoPresence(profile.status),
+    };
+
+    this.user = nextUser;
+    this.names[profile.id] = nextUser.username;
+
+    for (const conversation of this.conversations) {
+      if (conversation.peer?.id === profile.id) {
+        conversation.peer = nextUser;
+      }
+      conversation.members = conversation.members.map((member) => (member.id === profile.id ? nextUser : member));
+    }
   }
 
   #openTarget(target: string) {
@@ -163,6 +201,210 @@ class ChatStore {
           this.notice = t("common.connectionFailed");
         }
       }
+    }
+
+    if (!token && import.meta.env.DEV) {
+      const savedMe = profileStore.cache["local-preview"];
+      const savedPresence = presenceStore.getRecord("local-preview");
+      const me: User = {
+        $typeName: "ludra.v1.User",
+        id: "local-preview",
+        username: savedMe?.displayName || "felikovizk",
+        avatar: savedMe?.avatar || "",
+        presence: toProtoPresence(savedPresence.status),
+      };
+      const dexty: User = {
+        $typeName: "ludra.v1.User",
+        id: "peer-1",
+        username: "dexty",
+        avatar: "",
+        presence: Presence.ONLINE,
+      };
+      const felipe: User = {
+        $typeName: "ludra.v1.User",
+        id: "peer-2",
+        username: "felipe_dev",
+        avatar: "",
+        presence: Presence.ONLINE,
+      };
+      const gabriel: User = {
+        $typeName: "ludra.v1.User",
+        id: "peer-3",
+        username: "gpaschoal01",
+        avatar: "",
+        presence: Presence.ONLINE,
+      };
+      const ghost: User = {
+        $typeName: "ludra.v1.User",
+        id: "peer-4",
+        username: "ghost_gamer",
+        avatar: "",
+        presence: Presence.INVISIBLE,
+      };
+
+      this.user = me;
+      this.names = {
+        [me.id]: me.username,
+        [dexty.id]: dexty.username,
+        [felipe.id]: felipe.username,
+        [gabriel.id]: gabriel.username,
+        [ghost.id]: ghost.username,
+      };
+      this.friends = [
+        { $typeName: "ludra.v1.Friend", user: dexty, state: FriendState.ACCEPTED },
+        { $typeName: "ludra.v1.Friend", user: felipe, state: FriendState.ACCEPTED },
+        { $typeName: "ludra.v1.Friend", user: gabriel, state: FriendState.ACCEPTED },
+        { $typeName: "ludra.v1.Friend", user: ghost, state: FriendState.ACCEPTED },
+      ];
+
+      const now = Math.floor(Date.now() / 1000);
+      const msg1: Message = {
+        $typeName: "ludra.v1.Message",
+        id: "msg-1",
+        conversationId: "preview-group-1",
+        senderId: dexty.id,
+        senderName: dexty.username,
+        content: "Bora fechar squad no Valorant? Clica no meu perfil pra ver o GIF animado de fundo!",
+        sentAt: { $typeName: "google.protobuf.Timestamp", seconds: BigInt(now - 180), nanos: 0 },
+        kind: MessageKind.TEXT,
+        callOutcome: 0,
+        callDuration: 0,
+        event: 0,
+        targetId: "",
+        targetName: "",
+      };
+      const msg2: Message = {
+        $typeName: "ludra.v1.Message",
+        id: "msg-2",
+        conversationId: "preview-group-1",
+        senderId: felipe.id,
+        senderName: felipe.username,
+        content: "Tô terminando de estudar aqui, já entro! (Perfil com banner estático)",
+        sentAt: { $typeName: "google.protobuf.Timestamp", seconds: BigInt(now - 90), nanos: 0 },
+        kind: MessageKind.TEXT,
+        callOutcome: 0,
+        callDuration: 0,
+        event: 0,
+        targetId: "",
+        targetName: "",
+      };
+      const msg3: Message = {
+        $typeName: "ludra.v1.Message",
+        id: "msg-3",
+        conversationId: "preview-group-1",
+        senderId: gabriel.id,
+        senderName: gabriel.username,
+        content: "Fechou, só terminar essa ranqueada! (Perfil com cor sólida)",
+        sentAt: { $typeName: "google.protobuf.Timestamp", seconds: BigInt(now - 20), nanos: 0 },
+        kind: MessageKind.TEXT,
+        callOutcome: 0,
+        callDuration: 0,
+        event: 0,
+        targetId: "",
+        targetName: "",
+      };
+
+      this.conversations = [
+        {
+          $typeName: "ludra.v1.Conversation",
+          id: "preview-dm-1",
+          kind: ConversationKind.DIRECT,
+          name: "",
+          avatar: "",
+          ownerId: "",
+          peer: dexty,
+          members: [me, dexty],
+          lastMessage: msg1,
+        },
+        {
+          $typeName: "ludra.v1.Conversation",
+          id: "preview-dm-2",
+          kind: ConversationKind.DIRECT,
+          name: "",
+          avatar: "",
+          ownerId: "",
+          peer: gabriel,
+          members: [me, gabriel],
+          lastMessage: msg3,
+        },
+        {
+          $typeName: "ludra.v1.Conversation",
+          id: "preview-group-1",
+          kind: ConversationKind.GROUP,
+          name: "Galera do Game",
+          avatar: "",
+          ownerId: me.id,
+          members: [me, dexty, felipe, gabriel, ghost],
+          lastMessage: msg1,
+        },
+        {
+          $typeName: "ludra.v1.Conversation",
+          id: "preview-group-2",
+          kind: ConversationKind.GROUP,
+          name: "Trabalho - Projeto",
+          avatar: "",
+          ownerId: me.id,
+          members: [me, felipe],
+          lastMessage: {
+            $typeName: "ludra.v1.Message",
+            id: "msg-work",
+            conversationId: "preview-group-2",
+            senderId: me.id,
+            senderName: me.username,
+            content: "Beleza, vou enviar",
+            sentAt: {
+              $typeName: "google.protobuf.Timestamp",
+              seconds: BigInt(now - 86_400),
+              nanos: 0,
+            },
+            kind: MessageKind.TEXT,
+            callOutcome: 0,
+            callDuration: 0,
+            event: 0,
+            targetId: "",
+            targetName: "",
+          },
+        },
+        {
+          $typeName: "ludra.v1.Conversation",
+          id: "preview-group-3",
+          kind: ConversationKind.GROUP,
+          name: "Estudos",
+          avatar: "",
+          ownerId: felipe.id,
+          members: [me, dexty, felipe],
+          lastMessage: {
+            $typeName: "ludra.v1.Message",
+            id: "msg-study",
+            conversationId: "preview-group-3",
+            senderId: felipe.id,
+            senderName: felipe.username,
+            content: "Amanhã às 14h",
+            sentAt: {
+              $typeName: "google.protobuf.Timestamp",
+              seconds: BigInt(now - 4 * 86_400),
+              nanos: 0,
+            },
+            kind: MessageKind.TEXT,
+            callOutcome: 0,
+            callDuration: 0,
+            event: 0,
+            targetId: "",
+            targetName: "",
+          },
+        },
+      ];
+      this.unread = { "preview-group-1": 3 };
+      this.groupTags = { "preview-group-2": "Importante" };
+      this.sidebarTab = "group";
+      this.activeId = "preview-group-1";
+      this.threads = {
+        "preview-group-1": { messages: [msg1, msg2, msg3], hasMore: false, loading: false },
+        "preview-group-2": { messages: [], hasMore: false, loading: false },
+        "preview-group-3": { messages: [], hasMore: false, loading: false },
+        "preview-dm-1": { messages: [msg1], hasMore: false, loading: false },
+        "preview-dm-2": { messages: [msg3], hasMore: false, loading: false },
+      };
     }
 
     this.restoring = false;
@@ -326,7 +568,28 @@ class ChatStore {
   }
 
   async createGroup(name: string, memberIds: string[]) {
-    const conversation = await this.#client!.createGroup(name, memberIds);
+    if (!this.#client) {
+      const id = `local-group-${Date.now()}`;
+      const members = [
+        ...(this.user ? [this.user] : []),
+        ...this.friends.map(({ user }) => user).filter((u): u is User => Boolean(u && memberIds.includes(u.id))),
+      ];
+      const conversation: Conversation = {
+        $typeName: "ludra.v1.Conversation",
+        id,
+        kind: ConversationKind.GROUP,
+        name,
+        avatar: "",
+        ownerId: this.user?.id ?? "",
+        members,
+      };
+      this.conversations = [conversation, ...this.conversations];
+      this.threads[id] = { messages: [], hasMore: false, loading: false };
+      this.sidebarTab = "group";
+      await this.select(id);
+      return;
+    }
+    const conversation = await this.#client.createGroup(name, memberIds);
     this.#upsert(conversation);
     this.sidebarTab = "group";
     await this.select(conversation.id);
@@ -439,8 +702,12 @@ class ChatStore {
   }
 
   async setPresence(presence: Presence) {
-    await this.#client!.setPresence(presence);
-    this.#presence(this.user!.id, presence);
+    if (this.#client) {
+      await this.#client.setPresence(presence);
+    }
+    if (this.user) {
+      this.#presence(this.user.id, presence);
+    }
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
@@ -484,7 +751,39 @@ class ChatStore {
   }
 
   async start(username: string) {
-    const conversation = await this.#client!.openConversation(username);
+    if (!this.#client) {
+      const existing = this.directs.find(({ peer }) => peer?.username.toLowerCase() === username.toLowerCase());
+      if (existing) {
+        this.sidebarTab = "direct";
+        await this.select(existing.id);
+        return;
+      }
+      const friend = this.friends.find(({ user }) => user?.username.toLowerCase() === username.toLowerCase())?.user;
+      const peer: User = friend ?? {
+        $typeName: "ludra.v1.User",
+        id: `local-peer-${username}`,
+        username,
+        avatar: "",
+        presence: Presence.ONLINE,
+      };
+      const id = `local-dm-${peer.id}`;
+      const conversation: Conversation = {
+        $typeName: "ludra.v1.Conversation",
+        id,
+        kind: ConversationKind.DIRECT,
+        name: "",
+        avatar: "",
+        ownerId: "",
+        peer,
+        members: this.user ? [this.user, peer] : [peer],
+      };
+      this.conversations = [conversation, ...this.conversations];
+      this.threads[id] = { messages: [], hasMore: false, loading: false };
+      this.sidebarTab = "direct";
+      await this.select(id);
+      return;
+    }
+    const conversation = await this.#client.openConversation(username);
 
     if (!this.conversations.some(({ id }) => id === conversation.id)) {
       this.conversations.unshift(conversation);
@@ -501,12 +800,39 @@ class ChatStore {
   }
 
   async send(content: string) {
-    const message = await this.#client!.sendMessage(this.activeId!, content);
+    if (!this.#client) {
+      if (!this.activeId || !this.user) return;
+      const message: Message = {
+        $typeName: "ludra.v1.Message",
+        id: `local-msg-${Date.now()}`,
+        conversationId: this.activeId,
+        senderId: this.user.id,
+        senderName: this.user.username,
+        content,
+        sentAt: {
+          $typeName: "google.protobuf.Timestamp",
+          seconds: BigInt(Math.floor(Date.now() / 1000)),
+          nanos: 0,
+        },
+        kind: MessageKind.TEXT,
+        callOutcome: 0,
+        callDuration: 0,
+        event: 0,
+        targetId: "",
+        targetName: "",
+      };
+      this.#receive(message);
+      return;
+    }
+    const message = await this.#client.sendMessage(this.activeId!, content);
     this.#receive(message);
   }
 
   async #load(conversationId: string, beforeId = "") {
     this.threads[conversationId] ??= { messages: [], hasMore: false, loading: false };
+    if (!this.#client) {
+      return;
+    }
     const thread = this.threads[conversationId];
     thread.loading = true;
 

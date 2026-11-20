@@ -1,18 +1,27 @@
 <script lang="ts">
-  import { presenceLabel } from "@/helpers/presence";
-  import { Presence } from "@/protocol/ludra/v1/models_pb";
+  import StatusDot from "@/components/profile/status-dot.svelte";
+  import { fromProtoPresence, PRESENCE_STATUSES, type PresenceStatus } from "@/constants/presence";
+  import type { Presence } from "@/protocol/ludra/v1/models_pb";
 
-  let { presence }: { presence: Presence } = $props();
+  let {
+    status = undefined,
+    presence = undefined,
+    labelOverride = "",
+  }: {
+    status?: PresenceStatus;
+    presence?: Presence;
+    labelOverride?: string;
+  } = $props();
+
+  const resolved = $derived<PresenceStatus>(
+    status ?? (presence !== undefined ? fromProtoPresence(presence) : "online"),
+  );
+  const label = $derived(labelOverride || PRESENCE_STATUSES[resolved].label);
 </script>
 
 <span class="status">
-  <span
-    class="status__dot"
-    class:status__dot--online={presence === Presence.ONLINE}
-    class:status__dot--invisible={presence === Presence.INVISIBLE}
-    class:status__dot--busy={presence === Presence.BUSY}
-  ></span>
-  <span class="status__label">{presenceLabel(presence)}</span>
+  <StatusDot status={resolved} size="small" bordered={false} ringColor="transparent" />
+  <span class="status__label">{label}</span>
 </span>
 
 <style>
@@ -24,28 +33,7 @@
     color: var(--subtle-color);
   }
 
-  .status__dot {
-    width: 8px;
-    height: 8px;
-    flex: none;
-    border-radius: 50%;
-    background: var(--subtle-color);
-  }
-
   .status__label {
     transform: translateY(1px);
-  }
-
-  .status__dot--online {
-    background: var(--success-color);
-  }
-
-  .status__dot--busy {
-    background: #f6746b;
-  }
-
-  .status__dot--invisible {
-    background: transparent;
-    border: 2px solid var(--subtle-color);
   }
 </style>
