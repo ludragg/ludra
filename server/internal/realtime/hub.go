@@ -74,6 +74,12 @@ func (h *hub) status(userID string) protocol.Presence {
 	}
 }
 
+func (h *hub) connected(userID string) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.sessions[userID]) > 0
+}
+
 func (h *hub) visible(userID string) bool {
 	return len(h.sessions[userID]) > 0 && !h.invisible[userID]
 }

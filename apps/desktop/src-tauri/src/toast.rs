@@ -19,6 +19,8 @@ pub struct Toast {
     name: String,
     avatar: String,
     target: String,
+    #[serde(default)]
+    mentions: Vec<String>,
 }
 
 #[derive(Default)]

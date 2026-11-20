@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Sidebar } from "@/components";
+  import DropZone from "@/components/drop-zone/drop-zone.svelte";
   import ServerBar from "@/components/server-bar/server-bar.svelte";
   import StreamAudio from "@/components/stream-audio/stream-audio.svelte";
   import { t } from "@/i18n";
@@ -35,10 +36,14 @@
         <CallPanel {call} />
       {/if}
       {#key chat.activeId}
-        <ChatMessages />
         {#if chat.isFriend(chat.active.peer.id)}
-          <ChatComposer recipient={chat.active.peer.username} />
+          <div class="chat__thread">
+            <ChatMessages />
+            <ChatComposer recipient={chat.active.peer.username} />
+            <DropZone target={chat.active.peer.username} />
+          </div>
         {:else}
+          <ChatMessages />
           <p class="chat__locked">
             {chat.isBlocked(chat.active.peer.id)
               ? t("chat.youBlocked", { name: chat.active.peer.username })
@@ -74,6 +79,14 @@
   .chat {
     height: 100%;
     display: flex;
+  }
+
+  .chat__thread {
+    position: relative;
+    min-height: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .chat__main {

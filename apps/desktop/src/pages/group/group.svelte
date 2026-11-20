@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
+  import DropZone from "@/components/drop-zone/drop-zone.svelte";
   import ChatComposer from "@/pages/chat/chat-composer.svelte";
   import ChatMessages from "@/pages/chat/chat-messages.svelte";
   import { groupCall } from "@/stores/group-call.svelte";
@@ -25,6 +26,7 @@
       <ChatMessages />
       <ChatComposer recipient={group.name} />
     {/key}
+    <DropZone target={group.name} />
   </div>
   <GroupMembers {group} />
 </div>
@@ -41,6 +43,7 @@
   }
 
   .group__chat {
+    position: relative;
     min-width: 0;
     flex-grow: 1;
     display: flex;

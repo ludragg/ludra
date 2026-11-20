@@ -3,6 +3,7 @@ package realtime
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -15,16 +16,19 @@ import (
 	"ludra/internal/chat"
 	"ludra/internal/failure"
 	"ludra/internal/friends"
+	"ludra/internal/gifs"
 	"ludra/internal/protocol"
+	"ludra/internal/unfurl"
 	"ludra/internal/voice"
 )
 
 const (
-	maxFrameSize = 64 << 10
-	sendBuffer   = 64
-	writeTimeout = 5 * time.Second
-	pingInterval = 10 * time.Second
-	pingTimeout  = 10 * time.Second
+	maxFrameSize      = 64 << 10
+	signedInFrameSize = 1 << 20
+	sendBuffer        = 64
+	writeTimeout      = 5 * time.Second
+	pingInterval      = 10 * time.Second
+	pingTimeout       = 10 * time.Second
 )
 
 type session struct {
@@ -39,11 +43,14 @@ type session struct {
 	rooms     *rooms
 	voice     *sync.Mutex
 	ip        string
+	previews  *unfurl.Fetcher
+	gifs      *gifs.Client
 	user      *protocol.User
 	sessionID string
 	challenge *account.Challenge
 	expires   time.Time
 	handling  atomic.Bool
+	receiving atomic.Bool
 	later     []*protocol.ServerFrame
 	send      chan []byte
 }
@@ -90,13 +97,20 @@ func (s *session) readLoop(ctx context.Context) {
 }
 
 func (s *session) read(ctx context.Context) (websocket.MessageType, []byte, error) {
-	if s.user != nil {
-		return s.conn.Read(ctx)
+	if s.user == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, s.expires)
+		defer cancel()
 	}
 
-	ctx, cancel := context.WithDeadline(ctx, s.expires)
-	defer cancel()
-	return s.conn.Read(ctx)
+	kind, reader, err := s.conn.Reader(ctx)
+	if err != nil {
+		return 0, nil, err
+	}
+	s.receiving.Store(true)
+	defer s.receiving.Store(false)
+	data, err := io.ReadAll(reader)
+	return kind, data, err
 }
 
 func (s *session) writeLoop(ctx context.Context, cancel context.CancelFunc) {
@@ -126,13 +140,13 @@ func (s *session) heartbeat(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if s.handling.Load() {
+			if s.handling.Load() || s.receiving.Load() {
 				continue
 			}
 			pingCtx, done := context.WithTimeout(ctx, pingTimeout)
 			err := s.conn.Ping(pingCtx)
 			done()
-			if err != nil && ctx.Err() == nil && !s.handling.Load() {
+			if err != nil && ctx.Err() == nil && !s.handling.Load() && !s.receiving.Load() {
 				s.conn.CloseNow()
 				return
 			}
@@ -256,6 +270,41 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 			return tooManyRequests()
 		}
 		return s.sendMessage(ctx, payload.SendMessage)
+	case *protocol.ClientFrame_GetImage:
+		if !s.guard.imageReads.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.getImage(ctx, payload.GetImage)
+	case *protocol.ClientFrame_SearchGifs:
+		if !s.guard.gifSearches.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.searchGifs(ctx, payload.SearchGifs)
+	case *protocol.ClientFrame_GetGifPreview:
+		if !s.guard.imageReads.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.gifPreview(ctx, payload.GetGifPreview)
+	case *protocol.ClientFrame_SendGif:
+		if !s.guard.images.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.sendGif(ctx, payload.SendGif)
+	case *protocol.ClientFrame_SendDirectFile:
+		if !s.guard.messages.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.sendDirectFile(ctx, payload.SendDirectFile)
+	case *protocol.ClientFrame_FileSignal:
+		if !s.guard.signals.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.fileSignal(ctx, payload.FileSignal)
+	case *protocol.ClientFrame_RemovePreview:
+		if !s.guard.messages.Allow(s.user.Id) {
+			return tooManyRequests()
+		}
+		return s.removePreview(ctx, payload.RemovePreview)
 	case *protocol.ClientFrame_EditMessage:
 		if !s.guard.messages.Allow(s.user.Id) {
 			return tooManyRequests()
@@ -414,6 +463,7 @@ func (s *session) sendMessage(ctx context.Context, req *protocol.SendMessage) *p
 
 	frame := messageCreatedFrame(named(toMessage(message), s.user.Username, nil))
 	s.hub.publish(recipients, frame, s)
+	s.unfurl(ctx, message)
 	return frame
 }
 
@@ -425,6 +475,7 @@ func (s *session) editMessage(ctx context.Context, req *protocol.EditMessage) *p
 
 	frame := messageUpdatedFrame(named(toMessage(message), s.user.Username, nil))
 	s.hub.publish(recipients, frame, s)
+	s.unfurl(ctx, message)
 	return frame
 }
 
@@ -448,6 +499,8 @@ var errorCodes = map[failure.Kind]protocol.ErrorCode{
 	failure.InvalidCode:     protocol.ErrorCode_ERROR_CODE_INVALID_CODE,
 	failure.TooManyRequests: protocol.ErrorCode_ERROR_CODE_TOO_MANY_REQUESTS,
 	failure.Forbidden:       protocol.ErrorCode_ERROR_CODE_FORBIDDEN,
+	failure.Unavailable:     protocol.ErrorCode_ERROR_CODE_UNAVAILABLE,
+	failure.QuotaExceeded:   protocol.ErrorCode_ERROR_CODE_QUOTA_EXCEEDED,
 }
 
 func failed(err error) *protocol.ServerFrame {

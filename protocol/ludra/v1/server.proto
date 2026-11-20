@@ -43,6 +43,10 @@ message ServerFrame {
     UpdateAvailable update_available = 33;
     StreamPreview stream_preview = 34;
     MessageDeleted message_deleted = 35;
+    ImageData image_data = 36;
+    GifResults gif_results = 37;
+    FileSignal file_signal = 39;
+    FileTransfer file_transfer = 40;
   }
 }
 
@@ -58,6 +62,7 @@ enum ErrorCode {
   ERROR_CODE_TOO_MANY_REQUESTS = 8;
   ERROR_CODE_FORBIDDEN = 9;
   ERROR_CODE_UNAVAILABLE = 10;
+  ERROR_CODE_QUOTA_EXCEEDED = 11;
 }
 
 message Error {
@@ -166,6 +171,30 @@ message CallEnded {
 }
 
 message Ack {}
+
+message FileTransfer {
+  repeated IceServer ice_servers = 1;
+}
+
+message Gif {
+  string id = 1;
+  string title = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+}
+
+message GifResults {
+  repeated Gif gifs = 1;
+  string next = 2;
+}
+
+message ImageData {
+  string id = 1;
+  bytes data = 2;
+  string mime = 3;
+  uint32 offset = 4;
+  uint32 total = 5;
+}
 
 message MessageUpdated {
   Message message = 1;

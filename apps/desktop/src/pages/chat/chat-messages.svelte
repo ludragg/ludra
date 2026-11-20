@@ -1,13 +1,19 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { onDestroy, tick } from "svelte";
   import { Avatar } from "@/components";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
+  import ChatImage from "@/components/chat-image/chat-image.svelte";
   import EyeButton from "@/components/eye-button/eye-button.svelte";
+  import FileCard from "@/components/file-card/file-card.svelte";
+  import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
+  import LinkPreview from "@/components/link-preview/link-preview.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
   import { callSummary, isCall } from "@/helpers/call-summary";
+  import { Elapsed } from "@/helpers/duration.svelte";
+  import { extensionFor } from "@/helpers/files";
   import { openExternal } from "@/helpers/external";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
-  import { clean, linkify } from "@/helpers/text";
+  import { clean, markup } from "@/helpers/text";
   import { formatDay, formatTime, sameDay, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
   import {
@@ -15,9 +21,12 @@
     ConversationKind,
     MessageEvent,
     MessageKind,
+    type ImageRef,
     type Message,
   } from "@/protocol/ludra/v1/models_pb";
+  import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
+  import { files } from "@/stores/files.svelte";
 
   type Group = {
     key: string;
@@ -38,6 +47,15 @@
   let menu = $state<{ user: { id: string; username: string }; x: number; y: number } | null>(null);
   let editing = $state<{ id: string; content: string } | null>(null);
   let armed = $state<string | null>(null);
+  const elapsed = new Elapsed();
+  onDestroy(() => elapsed.stop());
+
+  let viewing = $state<{ image: ImageRef; name: string; label: string } | null>(null);
+
+  async function saveImage(image: ImageRef, name: string): Promise<string | null> {
+    const { data, mime } = await chat.imageFile(image.id);
+    return files.saveBytes(`${name}.${extensionFor(mime)}`, data);
+  }
 
   function openMenu(event: MouseEvent, user: { id: string; username: string }) {
     if (user.id === chat.user?.id || user.username === "?") {
@@ -53,18 +71,54 @@
   const myId = $derived(chat.user?.id ?? "");
   const nameOf = (userId: string) => chat.nameOf(userId);
   const owner = $derived(isGroup && chat.active?.ownerId === myId);
+  const mentionable = $derived(
+    new Set(
+      (isGroup ? (chat.active?.members ?? []) : [chat.active?.peer, chat.user])
+        .filter((person) => person !== undefined && person !== null)
+        .map((person) => person.username.toLowerCase()),
+    ),
+  );
 
   function editable(message: Message): boolean {
     return message.kind === MessageKind.TEXT && message.senderId === myId;
   }
 
   function deletable(message: Message): boolean {
-    return message.kind === MessageKind.TEXT && (message.senderId === myId || owner);
+    return (
+      (message.kind === MessageKind.TEXT || message.kind === MessageKind.IMAGE || message.kind === MessageKind.FILE) &&
+      (message.senderId === myId || owner)
+    );
   }
 
   function edited(message: Message): string {
     const date = toDate(message.editedAt);
     return t("chat.editedAt", { day: formatDay(date), time: formatTime(date) });
+  }
+
+  function mentionsMe(message: Message): boolean {
+    const me = chat.user?.username.toLowerCase();
+    return (
+      message.kind === MessageKind.TEXT &&
+      me !== undefined &&
+      markup(message.content, new Set([me])).some((span) => span.mention)
+    );
+  }
+
+  function liveStart(message: Message): number | null {
+    if (message.callOutcome !== CallOutcome.ONGOING) {
+      return null;
+    }
+    if (isGroup) {
+      const started = chat.active?.call?.startedAt;
+      return started ? toDate(started).getTime() : null;
+    }
+    const current = calls.current;
+    return current?.startedAt && current.peer.id === chat.active?.peer?.id ? current.startedAt : null;
+  }
+
+  function view(message: Message, image: ImageRef) {
+    const name = sender(message.senderId, message.senderName).username;
+    viewing = { image, name: `ludra-${message.id.slice(-12)}`, label: t("chat.photoBy", { name }) };
   }
 
   function startEdit(message: Message) {
@@ -169,11 +223,13 @@
 </script>
 
 {#snippet body(content: string)}
-  {#each linkify(content) as span}
+  {#each markup(content, mentionable) as span}
     {#if span.href}
       <a class="chat-messages__link" href={span.href} target="_blank" rel="noreferrer" onclick={openExternal}>
         {span.text}
       </a>
+    {:else if span.mention}
+      <span class="chat-messages__mention">{span.text}</span>
     {:else}
       {span.text}
     {/if}
@@ -233,6 +289,9 @@
         {isGroup
           ? groupCallSummary(group.call, myId, nameOf)
           : callSummary(group.call, myId, chat.active?.peer?.username ?? "")}
+        {#if liveStart(group.call) !== null}
+          <span class="chat-messages__call-timer">{elapsed.format(liveStart(group.call)!)}</span>
+        {/if}
         <time class="chat-messages__time">{group.time}</time>
       </p>
     {:else}
@@ -249,7 +308,11 @@
             <time class="chat-messages__time">{group.time}</time>
           </header>
           {#each group.messages as message (message.id)}
-            <div class="chat-messages__message" class:chat-messages__message--editing={editing?.id === message.id}>
+            <div
+              class="chat-messages__message"
+              class:chat-messages__message--editing={editing?.id === message.id}
+              class:chat-messages__message--mentioned={mentionsMe(message)}
+            >
               {#if editing?.id === message.id}
                 <form class="chat-messages__edit" onsubmit={(event) => saveEdit(event, message)}>
                   <input
@@ -273,7 +336,13 @@
               {:else if chat.isBlocked(message.senderId)}
                 {@const shown = revealed[message.id] === true}
                 <p class="chat-messages__text chat-messages__text--blocked">
-                  {#if shown}
+                  {#if shown && message.image}
+                    <ChatImage
+                      image={message.image}
+                      label={t("chat.openPhoto")}
+                      onopen={() => view(message, message.image!)}
+                    />
+                  {:else if shown}
                     <span>{@render body(message.content)}</span>
                   {:else}
                     <span class="chat-messages__censored">{t("chat.blockedMessage")}</span>
@@ -285,6 +354,17 @@
                     ontoggle={() => (revealed[message.id] = !shown)}
                   />
                 </p>
+              {:else if message.kind === MessageKind.IMAGE && message.image}
+                {@const image = message.image}
+                <div class="chat-messages__photo">
+                  {#if image.expired}
+                    <p class="chat-messages__expired">{t("chat.photoExpired")}</p>
+                  {:else}
+                    <ChatImage {image} label={t("chat.openPhoto")} onopen={() => view(message, image)} />
+                  {/if}
+                </div>
+              {:else if message.kind === MessageKind.FILE && message.file}
+                <FileCard {message} sender={who.username} mine={message.senderId === myId} />
               {:else}
                 <p class="chat-messages__text">
                   {@render body(message.content)}
@@ -292,6 +372,12 @@
                     <span class="chat-messages__edited" data-tooltip={edited(message)}>{t("chat.edited")}</span>
                   {/if}
                 </p>
+                {#if message.preview}
+                  <LinkPreview
+                    preview={message.preview}
+                    onremove={message.senderId === myId ? () => chat.removePreview(message.id) : undefined}
+                  />
+                {/if}
               {/if}
               {#if editing?.id !== message.id && (editable(message) || deletable(message))}
                 <div class="chat-messages__actions" role="toolbar" aria-label={t("chat.messageActions")}>
@@ -356,6 +442,16 @@
 
 {#if menu}
   <UserMenu user={menu.user} x={menu.x} y={menu.y} onclose={() => (menu = null)} />
+{/if}
+
+{#if viewing}
+  {@const current = viewing}
+  <ImageViewer
+    load={() => chat.image(current.image.id)}
+    label={current.label}
+    save={() => saveImage(current.image, current.name)}
+    onclose={() => (viewing = null)}
+  />
 {/if}
 
 <style>
@@ -432,6 +528,11 @@
     flex: none;
   }
 
+  .chat-messages__call-timer {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
   .chat-messages__group {
     display: flex;
     gap: 12px;
@@ -476,6 +577,14 @@
   .chat-messages__message:hover,
   .chat-messages__message:focus-within {
     background: var(--surface-color);
+  }
+
+  .chat-messages__message--mentioned,
+  .chat-messages__message--mentioned:hover,
+  .chat-messages__message--mentioned:focus-within {
+    border-radius: 0 4px 4px 0;
+    background: color-mix(in srgb, var(--brand-color) 9%, transparent);
+    box-shadow: inset 2px 0 0 var(--brand-color);
   }
 
   .chat-messages__message--editing,
@@ -569,6 +678,24 @@
 
   .chat-messages__edit-link:hover {
     text-decoration: underline;
+  }
+
+  .chat-messages__photo {
+    padding: 4px 0;
+  }
+
+  .chat-messages__mention {
+    padding: 0 3px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--brand-color) 18%, transparent);
+    color: color-mix(in srgb, var(--brand-color) 45%, #ffffff);
+    font-weight: 500;
+  }
+
+  .chat-messages__expired {
+    margin: 0;
+    font-style: italic;
+    color: var(--subtle-color);
   }
 
   .chat-messages__text {

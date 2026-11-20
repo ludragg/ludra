@@ -8,14 +8,15 @@ export function isCall(message: Message): boolean {
 export function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  const rest = seconds % 60;
+  const minuteText = minutes === 1 ? t("chat.minute") : t("chat.minutes", { count: minutes });
   if (hours > 0) {
-    return `${hours} h ${String(minutes).padStart(2, "0")} min`;
+    const hourText = hours === 1 ? t("chat.hour") : t("chat.hours", { count: hours });
+    return minutes > 0 ? t("chat.hoursAndMinutes", { hours: hourText, minutes: minuteText }) : hourText;
   }
   if (minutes > 0) {
-    return `${minutes} min ${rest} s`;
+    return minuteText;
   }
-  return `${rest} s`;
+  return seconds === 1 ? t("chat.second") : t("chat.seconds", { count: seconds });
 }
 
 export function callSummary(message: Message, myId: string, peerName: string): string {

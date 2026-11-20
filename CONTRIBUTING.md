@@ -6,6 +6,19 @@ Thanks for helping with Ludra. This page covers how we work so your pull request
 
 Follow [Running locally](README.md#running-locally) to get the database, server and app running.
 
+### Ludra Dev panel (Windows)
+
+Double-click `ludradev.bat` in the repository root. The first time, it builds the panel window (about a minute). It opens a panel that:
+
+- starts and stops the database (Docker), the server and the interface (Vite), and builds the app;
+- saves test accounts from your local server and opens the app already signed in to each one, several at once, so you can test calls between accounts on one PC;
+- shows the server, interface, app and check logs, plus the email codes when SMTP is off;
+- runs the same checks as the CI and fixes formatting.
+
+The app it opens is `ludradev.exe`, with its own identifier (`app.ludra.dev`) and one WebView2 profile per account under `%LOCALAPPDATA%\app.ludra.dev`, so it never touches an installed Ludra. Saved accounts and their passwords stay in `%LOCALAPPDATA%\app.ludra.dev\devkit.json`; use throwaway accounts from your local server only. Closing the panel stops everything it started except the database.
+
+You need Node.js, Go, Rust and Docker Desktop, the same as for running it by hand. The script finds the repository from its own location, so keep it in the repository root; to start it from elsewhere, use a shortcut to it instead of a copy.
+
 ## Workflow
 
 1. Create a branch from `main`, for example `feat/voice-calls` or `fix/avatar-colors`.

@@ -6,8 +6,10 @@
 
   const home = $derived(chat.activeId !== null || chat.view === "friends");
   const unread = $derived(Object.values(chat.unread).reduce((total, count) => total + count, 0));
+  const mentioned = $derived(Object.keys(chat.mentions).length > 0);
   const alert = $derived(
     [
+      mentioned ? t("sidebar.mentioned") : "",
       unread > 0 ? t("sidebar.unread", { count: unread }) : "",
       chat.incoming > 0 ? t("sidebar.pendingRequests", { count: chat.incoming }) : "",
     ]
@@ -41,7 +43,9 @@
         />
       </svg>
     </button>
-    {#if alert}
+    {#if mentioned}
+      <span class="rail__mention" role="img" aria-label={alert}>@</span>
+    {:else if alert}
       <span class="rail__dot" class:rail__dot--active={home} role="img" aria-label={alert}></span>
     {/if}
   </span>
@@ -134,13 +138,27 @@
 
   .rail__dot {
     position: absolute;
-    top: 10px;
-    right: 12px;
+    top: 9.5px;
+    right: 11.5px;
     pointer-events: none;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--brand-color);
+  }
+
+  .rail__mention {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    pointer-events: none;
+    color: var(--neon-color);
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow:
+      0 0 3px color-mix(in srgb, var(--neon-color) 45%, transparent),
+      0 0 2px var(--dark-background-color);
   }
 
   .rail__dot--active {

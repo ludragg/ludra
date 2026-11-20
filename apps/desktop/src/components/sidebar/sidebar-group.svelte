@@ -2,10 +2,13 @@
   import { onDestroy } from "svelte";
   import CallIcon from "@/components/call-icon/call-icon.svelte";
   import GroupAvatar from "@/components/group-avatar/group-avatar.svelte";
+  import MentionText from "@/components/mention-text/mention-text.svelte";
   import { isCall } from "@/helpers/call-summary";
   import { Elapsed } from "@/helpers/duration.svelte";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
+  import { avatarTypes } from "@/helpers/image";
   import { applyMask } from "@/helpers/mask";
+  import { messageText } from "@/helpers/message-text";
   import { clean } from "@/helpers/text";
   import { formatRecent, toDate } from "@/helpers/time";
   import { t } from "@/i18n";
@@ -80,6 +83,8 @@
   const last = $derived(conversation.lastMessage);
   const callStart = $derived(conversation.call?.startedAt ? toDate(conversation.call.startedAt).getTime() : null);
   const unread = $derived(chat.unread[conversation.id] ?? 0);
+  const mentioned = $derived(chat.mentions[conversation.id] === true);
+  const names = $derived(new Set(conversation.members.map((member) => member.username.toLowerCase())));
   const myId = $derived(chat.user?.id ?? "");
   const nameOf = (userId: string) => chat.nameOf(userId);
   const preview = $derived(
@@ -90,10 +95,10 @@
         : isCall(last)
           ? groupCallSummary(last, myId, nameOf)
           : last.senderId === myId
-            ? t("sidebar.youSaid", { content: last.content })
+            ? t("sidebar.youSaid", { content: messageText(last) })
             : chat.isBlocked(last.senderId)
               ? t("chat.blockedMessage")
-              : t("sidebar.memberSaid", { name: last.senderName || nameOf(last.senderId), content: last.content }),
+              : t("sidebar.memberSaid", { name: last.senderName || nameOf(last.senderId), content: messageText(last) }),
   );
 </script>
 
@@ -126,7 +131,7 @@
   <button
     class="sidebar-group"
     class:sidebar-group--active={active}
-    class:sidebar-group--unread={unread > 0}
+    class:sidebar-group--unread={unread > 0 || mentioned}
     aria-current={active}
     onclick={() => chat.select(conversation.id)}
     oncontextmenu={openMenu}
@@ -146,9 +151,11 @@
             {elapsed.format(callStart)}
           </span>
         {:else}
-          <span class="sidebar-group__preview">{preview}</span>
+          <span class="sidebar-group__preview"><MentionText text={preview} {names} /></span>
         {/if}
-        {#if unread > 0}
+        {#if mentioned}
+          <span class="sidebar-group__mention" aria-label={t("sidebar.mentioned")}>@</span>
+        {:else if unread > 0}
           <span class="sidebar-group__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
         {/if}
       </span>
@@ -166,7 +173,7 @@
     onclose={() => (menu = null)}
   />
 {/if}
-<input bind:this={picker} class="sr-only" type="file" accept="image/png" tabindex="-1" onchange={pick} />
+<input bind:this={picker} class="sr-only" type="file" accept={avatarTypes.join(",")} tabindex="-1" onchange={pick} />
 
 <style>
   .sidebar-group {
@@ -265,6 +272,8 @@
   }
 
   .sidebar-group__preview {
+    margin: -1px 0;
+    padding: 1px 0;
     flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -284,6 +293,16 @@
 
   .sidebar-group--unread .sidebar-group__preview {
     color: var(--muted-color);
+  }
+
+  .sidebar-group__mention {
+    padding: 0 2px;
+    flex: none;
+    color: var(--neon-color);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 0 3px color-mix(in srgb, var(--neon-color) 45%, transparent);
   }
 
   .sidebar-group__badge {

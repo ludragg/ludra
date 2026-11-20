@@ -31,6 +31,8 @@ enum MessageKind {
   MESSAGE_KIND_TEXT = 1;
   MESSAGE_KIND_CALL = 2;
   MESSAGE_KIND_EVENT = 3;
+  MESSAGE_KIND_IMAGE = 4;
+  MESSAGE_KIND_FILE = 5;
 }
 
 enum MessageEvent {
@@ -85,6 +87,51 @@ message Message {
   string sender_name = 11;
   string target_name = 12;
   google.protobuf.Timestamp edited_at = 13;
+  ImageRef image = 14;
+  LinkPreview preview = 15;
+  FileRef file = 16;
+}
+
+message FileRef {
+  string id = 1;
+  string name = 2;
+  uint64 size = 3;
+  string mime = 4;
+  bool direct = 5;
+  bool expired = 6;
+}
+
+enum FileSignalKind {
+  FILE_SIGNAL_KIND_UNSPECIFIED = 0;
+  FILE_SIGNAL_KIND_REQUEST = 1;
+  FILE_SIGNAL_KIND_OFFER = 2;
+  FILE_SIGNAL_KIND_ANSWER = 3;
+  FILE_SIGNAL_KIND_CANCEL = 4;
+  FILE_SIGNAL_KIND_UNAVAILABLE = 5;
+}
+
+message FileSignal {
+  string message_id = 1;
+  string transfer_id = 2;
+  string peer_id = 3;
+  FileSignalKind kind = 4;
+  string payload = 5;
+  repeated IceServer ice_servers = 6;
+}
+
+message ImageRef {
+  string id = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  bool expired = 4;
+}
+
+message LinkPreview {
+  string url = 1;
+  string site = 2;
+  string title = 3;
+  string description = 4;
+  ImageRef image = 5;
 }
 
 message Friend {

@@ -19,4 +19,8 @@ var (
 	ErrNotGroupOwner        = failure.New(failure.Forbidden, "only the owner can remove members")
 	ErrMessageNotFound      = failure.New(failure.NotFound, "message not found")
 	ErrMessageForbidden     = failure.New(failure.Forbidden, "cannot change this message")
+	ErrInvalidImage         = failure.New(failure.Invalid, "invalid image")
+	ErrImageNotFound        = failure.New(failure.NotFound, "image not found")
+	ErrInvalidFile          = failure.New(failure.Invalid, "invalid file")
+	ErrGifLimit             = failure.New(failure.QuotaExceeded, "daily gif limit reached")
 )

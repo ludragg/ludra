@@ -101,6 +101,17 @@ func messageHistoryFrame(conversationID string, messages []database.ListMessages
 	list := make([]*protocol.Message, len(messages))
 	for i, row := range messages {
 		list[i] = named(toMessage(row.Message), row.SenderName, row.TargetName)
+		if row.PhotoID != nil {
+			list[i].Image = imageRef(chat.Image{ID: *row.PhotoID, Width: *row.PhotoWidth, Height: *row.PhotoHeight})
+			list[i].Image.Expired = row.PhotoExpired != nil && *row.PhotoExpired
+		}
+		if row.StoredID != nil && list[i].File != nil {
+			list[i].File.Id = *row.StoredID
+			list[i].File.Expired = row.StoredExpired != nil && *row.StoredExpired
+		}
+		if row.ThumbID != nil && list[i].Preview != nil {
+			list[i].Preview.Image = imageRef(chat.Image{ID: *row.ThumbID, Width: *row.ThumbWidth, Height: *row.ThumbHeight})
+		}
 	}
 
 	return &protocol.ServerFrame{
@@ -341,6 +352,31 @@ func toMessage(message database.Message) *protocol.Message {
 		}
 		if message.TargetID != nil {
 			result.TargetId = *message.TargetID
+		}
+	}
+
+	if message.Kind == "image" {
+		result.Kind = protocol.MessageKind_MESSAGE_KIND_IMAGE
+	}
+
+	if message.Kind == "file" {
+		result.Kind = protocol.MessageKind_MESSAGE_KIND_FILE
+		result.File = &protocol.FileRef{
+			Name:   text(message.FileName),
+			Mime:   text(message.FileMime),
+			Direct: message.FileDirect,
+		}
+		if message.FileSize != nil {
+			result.File.Size = uint64(*message.FileSize)
+		}
+	}
+
+	if message.PreviewUrl != nil && message.PreviewTitle != nil {
+		result.Preview = &protocol.LinkPreview{
+			Url:         *message.PreviewUrl,
+			Site:        text(message.PreviewSite),
+			Title:       *message.PreviewTitle,
+			Description: text(message.PreviewDescription),
 		}
 	}
 

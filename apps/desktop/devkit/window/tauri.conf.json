@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Ludra Dev",
+  "identifier": "app.ludra.devkit",
+  "build": {
+    "frontendDist": "http://127.0.0.1:6790/"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Ludra Dev",
+        "url": "http://127.0.0.1:6790/",
+        "width": 1240,
+        "height": 820,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "decorations": false,
+        "theme": "Dark",
+        "backgroundColor": "#0D0D0D"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "icon": ["../../src-tauri/icons/icon.ico"]
+  }
+}

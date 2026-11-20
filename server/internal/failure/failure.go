@@ -11,6 +11,8 @@ const (
 	InvalidCode
 	TooManyRequests
 	Forbidden
+	Unavailable
+	QuotaExceeded
 )
 
 type Error struct {

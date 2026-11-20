@@ -3,6 +3,7 @@
   import { listen } from "@tauri-apps/api/event";
   import Avatar from "@/components/avatar/avatar.svelte";
   import GroupAvatar from "@/components/group-avatar/group-avatar.svelte";
+  import MentionText from "@/components/mention-text/mention-text.svelte";
   import { t } from "@/i18n";
   import type { Toast } from "@/services/toast";
 
@@ -82,7 +83,7 @@
         {/if}
         <span class="toasts__text">
           <span class="toasts__title">{item.title}</span>
-          <span class="toasts__body">{item.body}</span>
+          <span class="toasts__body"><MentionText text={item.body} names={new Set(item.mentions ?? [])} /></span>
         </span>
       </button>
       <button class="toasts__close" aria-label={t("titleBar.close")} onclick={() => dismiss(item.key)}>

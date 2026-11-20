@@ -77,7 +77,16 @@ func (s *Service) EditMessage(ctx context.Context, userID, messageID, content st
 		return database.Message{}, nil, err
 	}
 
-	message, err := s.queries.EditMessage(ctx, database.EditMessageParams{ID: messageID, Content: content})
+	var message database.Message
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		q := s.queries.WithTx(tx)
+		var err error
+		message, err = q.EditMessage(ctx, database.EditMessageParams{ID: messageID, Content: content})
+		if err != nil {
+			return err
+		}
+		return q.DeletePreviewImage(ctx, messageID)
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return database.Message{}, nil, ErrMessageNotFound
 	}
@@ -112,7 +121,7 @@ func (s *Service) DeleteMessage(ctx context.Context, userID, messageID string) (
 		return Deletion{}, ErrMessageNotFound
 	}
 	owner := target.ConversationKind == "group" && target.OwnerID != nil && *target.OwnerID == userID
-	if target.Kind != "text" || (target.SenderID != userID && !owner) {
+	if (target.Kind != "text" && target.Kind != "image" && target.Kind != "file") || (target.SenderID != userID && !owner) {
 		return Deletion{}, ErrMessageForbidden
 	}
 

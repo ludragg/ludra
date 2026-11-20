@@ -16,7 +16,9 @@ const csp = [
   `connect-src 'self' ipc: http://ipc.localhost ${ws}`,
   "style-src 'self'",
   "font-src 'self'",
-  `img-src 'self' data: ${web}`,
+  `img-src 'self' data: blob: ${web}`,
+  "media-src 'self' blob: http://asset.localhost",
+  "frame-src https://www.youtube-nocookie.com",
 ].join("; ");
 
 writeFileSync(

@@ -9,3 +9,4 @@ apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/tauri.release.conf.json
 *.key
 deploy/data/
+apps/desktop/devkit/window/gen/

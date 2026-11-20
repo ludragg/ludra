@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { t } from "@/i18n";
 import type { CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import {
@@ -13,13 +14,17 @@ import {
 } from "@/protocol/ludra/v1/models_pb";
 import { Client, ServerError, type Account, type SignIn } from "@/services/client";
 import { isCall } from "@/helpers/call-summary";
-import { maxUploadBytes, toAvatar } from "@/helpers/image";
+import { avatarTypes, maxUploadBytes, toAvatar } from "@/helpers/image";
+import { messageText } from "@/helpers/message-text";
+import { extensionOf, maxDirectBytes, mimeFor, type Picked } from "@/helpers/files";
+import { markup } from "@/helpers/text";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { playMessageSound, windowFocused } from "@/services/desktop";
 import { serverUrl } from "@/services/server";
 import { clearSessionToken, readSessionToken, saveSessionToken } from "@/services/session-token";
 import { callTarget, friendsTarget, onToastOpen, showToast } from "@/services/toast";
 import { calls } from "@/stores/call.svelte";
+import { files } from "@/stores/files.svelte";
 import { focus } from "@/stores/focus";
 import { groupCall } from "@/stores/group-call.svelte";
 import { preferences } from "@/stores/preferences.svelte";
@@ -45,6 +50,8 @@ class ChatStore {
   user = $state<User | null>(null);
   email = $state("");
   twoFactor = $state(false);
+  photoError = $state("");
+  sending = $state("");
   renamedAt = $state<number | null>(null);
   restoring = $state(true);
   reconnecting = $state(false);
@@ -60,6 +67,7 @@ class ChatStore {
   groupPhotoError = $state<{ conversationId: string; message: string } | null>(null);
   threads = $state<Record<string, Thread>>({});
   unread = $state<Record<string, number>>({});
+  mentions = $state<Record<string, true>>({});
 
   active = $derived(this.conversations.find((conversation) => conversation.id === this.activeId) ?? null);
   thread = $derived(this.activeId ? this.threads[this.activeId] : undefined);
@@ -68,6 +76,8 @@ class ChatStore {
   groups = $derived(this.conversations.filter(({ kind }) => kind === ConversationKind.GROUP));
 
   #client: Client | null = null;
+  #images = new Map<string, Promise<{ url: string; blob: Blob }>>();
+  #gifPreviews = new Map<string, Promise<string>>();
   #challenge: Client | null = null;
   #photoTimer: number | undefined;
   #offlineTimer: number | undefined;
@@ -232,6 +242,7 @@ class ChatStore {
     await trust.attach(client, account.user.id).catch(() => undefined);
     calls.attach(client);
     groupCall.attach(client);
+    files.attach(client);
     groupCall.friendly = (userId) => this.isFriend(userId);
 
     this.#client = client;
@@ -351,7 +362,7 @@ class ChatStore {
   async setGroupPhoto(conversationId: string, file: File) {
     this.groupPhotoError = null;
     try {
-      if (file.type !== "image/png") {
+      if (!avatarTypes.includes(file.type)) {
         throw new Error(t("settings.photoType"));
       }
       if (file.size > maxUploadBytes) {
@@ -477,6 +488,7 @@ class ChatStore {
   async select(conversationId: string) {
     this.activeId = conversationId;
     delete this.unread[conversationId];
+    delete this.mentions[conversationId];
 
     if (!this.threads[conversationId]) {
       await this.#load(conversationId);
@@ -503,6 +515,139 @@ class ChatStore {
   async send(content: string) {
     const message = await this.#client!.sendMessage(this.activeId!, content);
     this.#receive(message);
+  }
+
+  async pasteImage(file: File) {
+    if (!this.activeId || this.sending) {
+      return;
+    }
+    this.photoError = "";
+    try {
+      const picked = await invoke<Picked>("stash_file", new Uint8Array(await file.arrayBuffer()), {
+        headers: { "x-file-name": `imagem.${extensionOf(file.name) || file.type.split("/")[1] || "png"}` },
+      });
+      await this.sendFiles([picked]);
+    } catch {
+      this.photoError = t("chat.fileFailed", { name: file.name || t("chat.photo") });
+    }
+  }
+
+  async sendFiles(picked: Picked[]) {
+    const conversationId = this.activeId;
+    if (!conversationId || this.sending) {
+      return;
+    }
+    this.photoError = "";
+    for (const file of picked) {
+      if (file.size > maxDirectBytes) {
+        this.photoError = t("chat.fileTooLarge", { name: file.name });
+        return;
+      }
+      this.sending = file.name;
+      try {
+        const message = await this.#client!.sendDirectFile(conversationId, file.name, file.size, mimeFor(file.name));
+        await invoke("share_file", { id: message.id, path: file.path });
+        this.#receive(message);
+      } catch (cause) {
+        this.photoError = this.#sendError(cause, t("chat.fileFailed", { name: file.name }));
+        return;
+      } finally {
+        this.sending = "";
+      }
+    }
+  }
+
+  #mentionsMe(message: Message): boolean {
+    const me = this.user?.username.toLowerCase();
+    return (
+      message.kind === MessageKind.TEXT &&
+      me !== undefined &&
+      markup(message.content, new Set([me])).some((span) => span.mention)
+    );
+  }
+
+  #sendError(cause: unknown, fallback: string): string {
+    if (cause instanceof ServerError && cause.code === ErrorCode.TOO_MANY_REQUESTS) {
+      return t("common.tooManyRequests");
+    }
+    if (cause instanceof ServerError && cause.code === ErrorCode.QUOTA_EXCEEDED) {
+      return t("chat.gifLimit");
+    }
+    return fallback;
+  }
+
+  searchGifs(query: string, pos = "") {
+    return this.#client!.searchGifs(query, pos, preferences.values.language === "en" ? "en_US" : "pt_BR");
+  }
+
+  gifPreview(id: string): Promise<string> {
+    let pending = this.#gifPreviews.get(id);
+    if (!pending) {
+      pending = this.#client!.gifPreview(id).then(({ data, mime }) =>
+        URL.createObjectURL(new Blob([data as Uint8Array<ArrayBuffer>], { type: mime })),
+      );
+      pending.catch(() => this.#gifPreviews.delete(id));
+      this.#gifPreviews.set(id, pending);
+    }
+    return pending;
+  }
+
+  async sendGif(id: string) {
+    const conversationId = this.activeId;
+    if (!conversationId || this.sending) {
+      return;
+    }
+    this.photoError = "";
+    this.sending = "GIF";
+    try {
+      this.#receive(await this.#client!.sendGif(conversationId, id));
+    } catch (cause) {
+      this.photoError = this.#sendError(cause, t("chat.gifFailed"));
+    } finally {
+      this.sending = "";
+    }
+  }
+
+  async removePreview(messageId: string) {
+    this.#update(await this.#client!.removePreview(messageId));
+  }
+
+  async image(id: string): Promise<string> {
+    return (await this.#loadImage(id)).url;
+  }
+
+  async imageFile(id: string): Promise<{ data: Uint8Array; mime: string }> {
+    const { blob } = await this.#loadImage(id);
+    return { data: new Uint8Array(await blob.arrayBuffer()), mime: blob.type };
+  }
+
+  async #downloadImage(id: string) {
+    const parts: Uint8Array<ArrayBuffer>[] = [];
+    let offset = 0;
+    let total = 1;
+    let mime = "";
+    while (offset < total) {
+      const chunk = await this.#client!.getImage(id, offset);
+      if (chunk.data.length === 0) {
+        break;
+      }
+      mime = chunk.mime;
+      total = chunk.total;
+      parts.push(chunk.data as Uint8Array<ArrayBuffer>);
+      offset += chunk.data.length;
+    }
+    const blob = new Blob(parts, { type: mime });
+    return { url: URL.createObjectURL(blob), blob };
+  }
+
+  #loadImage(id: string) {
+    let pending = this.#images.get(id);
+    if (!pending) {
+      pending = this.#downloadImage(id);
+      pending.catch(() => this.#images.delete(id));
+      this.#images.set(id, pending);
+    }
+    return pending;
   }
 
   async #load(conversationId: string, beforeId = "") {
@@ -542,6 +687,9 @@ class ChatStore {
     const watching = message.conversationId === this.activeId && windowFocused();
     if (message.conversationId !== this.activeId && !this.isBlocked(message.senderId)) {
       this.unread[message.conversationId] = (this.unread[message.conversationId] ?? 0) + 1;
+      if (this.#mentionsMe(message)) {
+        this.mentions[message.conversationId] = true;
+      }
     }
     if (
       watching ||
@@ -562,7 +710,8 @@ class ChatStore {
       if (conversation?.kind === ConversationKind.GROUP) {
         showToast({
           title: conversation.name,
-          body: `${sender}: ${message.content}`,
+          body: `${sender}: ${messageText(message)}`,
+          mentions: conversation.members.map(({ username }) => username.toLowerCase()),
           kind: "group",
           id: conversation.id,
           name: conversation.name,
@@ -572,7 +721,10 @@ class ChatStore {
       } else {
         showToast({
           title: sender,
-          body: message.content,
+          body: messageText(message),
+          mentions: [conversation?.peer?.username, this.user?.username]
+            .filter((name): name is string => Boolean(name))
+            .map((name) => name.toLowerCase()),
           kind: "user",
           id: message.senderId,
           name: sender,
@@ -634,6 +786,7 @@ class ChatStore {
     this.conversations = this.conversations.filter(({ id }) => id !== conversationId);
     delete this.threads[conversationId];
     delete this.unread[conversationId];
+    delete this.mentions[conversationId];
     if (this.activeId === conversationId) {
       this.showFriends();
     }
@@ -751,6 +904,7 @@ class ChatStore {
     window.clearTimeout(this.#photoTimer);
     calls.detach();
     groupCall.detach();
+    files.detach();
     trust.detach();
     this.#client = null;
     this.user = null;
@@ -764,6 +918,20 @@ class ChatStore {
     this.activeId = null;
     this.threads = {};
     this.unread = {};
+    this.mentions = {};
+    this.photoError = "";
+    this.sending = "";
+    for (const pending of this.#images.values()) {
+      pending.then(
+        ({ url }) => URL.revokeObjectURL(url),
+        () => undefined,
+      );
+    }
+    this.#images.clear();
+    for (const pending of this.#gifPreviews.values()) {
+      pending.then(URL.revokeObjectURL, () => undefined);
+    }
+    this.#gifPreviews.clear();
     this.notice = notice;
   }
 }

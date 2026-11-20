@@ -17,8 +17,10 @@ import (
 	"ludra/internal/config"
 	"ludra/internal/database"
 	"ludra/internal/friends"
+	"ludra/internal/gifs"
 	"ludra/internal/mail"
 	"ludra/internal/realtime"
+	"ludra/internal/unfurl"
 	"ludra/internal/updates"
 	"ludra/internal/voice"
 )
@@ -58,10 +60,13 @@ func run() error {
 		return err
 	}
 
-	gateway := realtime.NewGateway(chats, friends.NewService(pool), accounts, relay, cfg.Origins, cfg.Proxies)
+	fetcher := unfurl.New()
+	gateway := realtime.NewGateway(
+		chats, friends.NewService(pool), accounts, relay, fetcher, gifs.New(cfg.KlipyKey, fetcher), cfg.Origins, cfg.Proxies,
+	)
 	feed := updates.NewFeed(cfg.UpdatesRepo)
 	go feed.Run(ctx, gateway.AnnounceUpdate)
-	go cleanup(ctx, accounts)
+	go cleanup(ctx, accounts, chats)
 
 	if cfg.Mail.Host == "" {
 		slog.Warn("SMTP is not configured, verification codes will be written to this log")
@@ -95,13 +100,16 @@ func run() error {
 	return server.Shutdown(shutdownCtx)
 }
 
-func cleanup(ctx context.Context, accounts *account.Service) {
+func cleanup(ctx context.Context, accounts *account.Service, chats *chat.Service) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 
 	for {
 		if err := accounts.Cleanup(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("cleanup failed", "error", err)
+		}
+		if _, err := chats.ExpireFiles(ctx); err != nil && ctx.Err() == nil {
+			slog.Error("expire files failed", "error", err)
 		}
 
 		select {

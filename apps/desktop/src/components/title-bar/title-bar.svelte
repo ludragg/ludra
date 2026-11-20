@@ -148,7 +148,7 @@
   }
 
   .title-bar__version {
-    padding: 2px 5px 1px;
+    padding: 1px 5px 2px;
     border-radius: 4px;
     background: var(--surface-color);
     border: 1px solid var(--border-color);

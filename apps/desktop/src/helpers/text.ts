@@ -4,7 +4,7 @@ export function clean(text: string): string {
   return text.replace(edges, "");
 }
 
-export type TextSpan = { text: string; href?: string };
+export type TextSpan = { text: string; href?: string; mention?: boolean };
 
 const links = /(?<=^|[\s(<[{"'])(?:https?:\/\/|www\.)[^\s\p{Cf}]+/giu;
 const trailing = ".,;:!?)]}'\"\u00bb\u201d\u2019\u2026";
@@ -39,4 +39,45 @@ export function linkify(text: string): TextSpan[] {
   }
 
   return spans;
+}
+
+const mentions = /(?<=^|[\s(<[{"'])@([a-zA-Z0-9_.]{3,32})/g;
+
+function mentioned(name: string, names: Set<string>): string | null {
+  let candidate = name;
+  while (candidate.length >= 3) {
+    if (names.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+    if (!candidate.endsWith(".")) {
+      return null;
+    }
+    candidate = candidate.slice(0, -1);
+  }
+  return null;
+}
+
+export function markup(text: string, names: Set<string>): TextSpan[] {
+  return linkify(text).flatMap((span) => {
+    if (span.href || names.size === 0) {
+      return [span];
+    }
+    const result: TextSpan[] = [];
+    let last = 0;
+    for (const match of span.text.matchAll(mentions)) {
+      const name = mentioned(match[1], names);
+      if (!name) {
+        continue;
+      }
+      if (match.index > last) {
+        result.push({ text: span.text.slice(last, match.index) });
+      }
+      result.push({ text: `@${name}`, mention: true });
+      last = match.index + name.length + 1;
+    }
+    if (last < span.text.length) {
+      result.push({ text: span.text.slice(last) });
+    }
+    return result;
+  });
 }

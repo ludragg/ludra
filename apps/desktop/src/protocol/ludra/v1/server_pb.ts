@@ -6,7 +6,7 @@ import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2"
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import type { Call, CallSignal, Conversation, Friend, GroupCall, IceServer, Message as Message$1, Presence, User } from "./models_pb";
+import type { Call, CallSignal, Conversation, FileSignal, Friend, GroupCall, IceServer, Message as Message$1, Presence, User } from "./models_pb";
 import { file_ludra_v1_models } from "./models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/server.proto.
  */
 export const file_ludra_v1_server: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIvcNCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SAASKwoLZnJpZW5kX2xpc3QYDCABKAsyFC5sdWRyYS52MS5GcmllbmRMaXN0SAASMQoOZnJpZW5kX3VwZGF0ZWQYDSABKAsyFy5sdWRyYS52MS5GcmllbmRVcGRhdGVkSAASMQoOZnJpZW5kX3JlbW92ZWQYDiABKAsyFy5sdWRyYS52MS5GcmllbmRSZW1vdmVkSAASOgoTdHdvX2ZhY3Rvcl9yZXF1aXJlZBgPIAEoCzIbLmx1ZHJhLnYxLlR3b0ZhY3RvclJlcXVpcmVkSAASNQoQcGFzc3dvcmRfY2hhbmdlZBgQIAEoCzIZLmx1ZHJhLnYxLlBhc3N3b3JkQ2hhbmdlZEgAEjgKEnR3b19mYWN0b3JfY2hhbmdlZBgRIAEoCzIaLmx1ZHJhLnYxLlR3b0ZhY3RvckNoYW5nZWRIABItCgx1c2VyX3VwZGF0ZWQYEiABKAsyFS5sdWRyYS52MS5Vc2VyVXBkYXRlZEgAEi0KDGNhbGxfc3RhcnRlZBgTIAEoCzIVLmx1ZHJhLnYxLkNhbGxTdGFydGVkSAASLwoNY2FsbF9pbmNvbWluZxgUIAEoCzIWLmx1ZHJhLnYxLkNhbGxJbmNvbWluZ0gAEi8KDWNhbGxfYWNjZXB0ZWQYFSABKAsyFi5sdWRyYS52MS5DYWxsQWNjZXB0ZWRIABIpCgpjYWxsX2VuZGVkGBYgASgLMhMubHVkcmEudjEuQ2FsbEVuZGVkSAASKwoLY2FsbF9zaWduYWwYFyABKAsyFC5sdWRyYS52MS5DYWxsU2lnbmFsSAASHAoDYWNrGBggASgLMg0ubHVkcmEudjEuQWNrSAASMwoPbWVzc2FnZV91cGRhdGVkGBkgASgLMhgubHVkcmEudjEuTWVzc2FnZVVwZGF0ZWRIABI9ChRjb252ZXJzYXRpb25fdXBkYXRlZBgaIAEoCzIdLmx1ZHJhLnYxLkNvbnZlcnNhdGlvblVwZGF0ZWRIABI9ChRjb252ZXJzYXRpb25fcmVtb3ZlZBgbIAEoCzIdLmx1ZHJhLnYxLkNvbnZlcnNhdGlvblJlbW92ZWRIABI2ChFncm91cF9jYWxsX2pvaW5lZBgcIAEoCzIZLmx1ZHJhLnYxLkdyb3VwQ2FsbEpvaW5lZEgAEjgKEmdyb3VwX2NhbGxfdXBkYXRlZBgdIAEoCzIaLmx1ZHJhLnYxLkdyb3VwQ2FsbFVwZGF0ZWRIABI4ChJncm91cF9jYWxsX3JpbmdpbmcYHiABKAsyGi5sdWRyYS52MS5Hcm91cENhbGxSaW5naW5nSAASLQoMYmxvY2tlZF9saXN0GB8gASgLMhUubHVkcmEudjEuQmxvY2tlZExpc3RIABIvCg1pZGVudGl0eV9rZXlzGCAgASgLMhYubHVkcmEudjEuSWRlbnRpdHlLZXlzSAASNQoQdXBkYXRlX2F2YWlsYWJsZRghIAEoCzIZLmx1ZHJhLnYxLlVwZGF0ZUF2YWlsYWJsZUgAEjEKDnN0cmVhbV9wcmV2aWV3GCIgASgLMhcubHVkcmEudjEuU3RyZWFtUHJldmlld0gAEjMKD21lc3NhZ2VfZGVsZXRlZBgjIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VEZWxldGVkSABCCQoHcGF5bG9hZCI7CgVFcnJvchIhCgRjb2RlGAEgASgOMhMubHVkcmEudjEuRXJyb3JDb2RlEg8KB21lc3NhZ2UYAiABKAkikwEKCExvZ2dlZEluEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyEg0KBXRva2VuGAIgASgJEg0KBWVtYWlsGAMgASgJEhIKCnR3b19mYWN0b3IYBCABKAgSNwoTdXNlcm5hbWVfY2hhbmdlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiCwoJTG9nZ2VkT3V0IiUKFFZlcmlmaWNhdGlvblJlcXVpcmVkEg0KBWVtYWlsGAEgASgJIgoKCENvZGVTZW50IkEKEENvbnZlcnNhdGlvbkxpc3QSLQoNY29udmVyc2F0aW9ucxgBIAMoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiJCChJDb252ZXJzYXRpb25PcGVuZWQSLAoMY29udmVyc2F0aW9uGAEgASgLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uImAKDk1lc3NhZ2VIaXN0b3J5EhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIjCghtZXNzYWdlcxgCIAMoCzIRLmx1ZHJhLnYxLk1lc3NhZ2USEAoIaGFzX21vcmUYAyABKAgiNAoOTWVzc2FnZUNyZWF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiSAoPUHJlc2VuY2VDaGFuZ2VkEg8KB3VzZXJfaWQYASABKAkSJAoIcHJlc2VuY2UYAiABKA4yEi5sdWRyYS52MS5QcmVzZW5jZSIvCgpGcmllbmRMaXN0EiEKB2ZyaWVuZHMYASADKAsyEC5sdWRyYS52MS5GcmllbmQiawoMSWRlbnRpdHlLZXlzEi4KBGtleXMYASADKAsyIC5sdWRyYS52MS5JZGVudGl0eUtleXMuS2V5c0VudHJ5GisKCUtleXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiwKC0Jsb2NrZWRMaXN0Eh0KBXVzZXJzGAEgAygLMg4ubHVkcmEudjEuVXNlciIxCg1GcmllbmRVcGRhdGVkEiAKBmZyaWVuZBgBIAEoCzIQLmx1ZHJhLnYxLkZyaWVuZCIgCg1GcmllbmRSZW1vdmVkEg8KB3VzZXJfaWQYASABKAkiIgoRVHdvRmFjdG9yUmVxdWlyZWQSDQoFZW1haWwYASABKAkiEQoPUGFzc3dvcmRDaGFuZ2VkIiMKEFR3b0ZhY3RvckNoYW5nZWQSDwoHZW5hYmxlZBgBIAEoCCIrCgtVc2VyVXBkYXRlZBIcCgR1c2VyGAEgASgLMg4ubHVkcmEudjEuVXNlciIrCgtDYWxsU3RhcnRlZBIcCgRjYWxsGAEgASgLMg4ubHVkcmEudjEuQ2FsbCIsCgxDYWxsSW5jb21pbmcSHAoEY2FsbBgBIAEoCzIOLmx1ZHJhLnYxLkNhbGwiLwoMQ2FsbEFjY2VwdGVkEg8KB2NhbGxfaWQYASABKAkSDgoGZGlyZWN0GAIgASgIIkUKCUNhbGxFbmRlZBIPCgdjYWxsX2lkGAEgASgJEicKBnJlYXNvbhgCIAEoDjIXLmx1ZHJhLnYxLkNhbGxFbmRSZWFzb24iBQoDQWNrIjQKDk1lc3NhZ2VVcGRhdGVkEiIKB21lc3NhZ2UYASABKAsyES5sdWRyYS52MS5NZXNzYWdlImYKDk1lc3NhZ2VEZWxldGVkEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRISCgptZXNzYWdlX2lkGAIgASgJEicKDGxhc3RfbWVzc2FnZRgDIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiQwoTQ29udmVyc2F0aW9uVXBkYXRlZBIsCgxjb252ZXJzYXRpb24YASABKAsyFi5sdWRyYS52MS5Db252ZXJzYXRpb24iLgoTQ29udmVyc2F0aW9uUmVtb3ZlZBIXCg9jb252ZXJzYXRpb25faWQYASABKAkifgoPR3JvdXBDYWxsSm9pbmVkEg8KB2NhbGxfaWQYASABKAkSFwoPY29udmVyc2F0aW9uX2lkGAIgASgJEigKC2ljZV9zZXJ2ZXJzGAMgAygLMhMubHVkcmEudjEuSWNlU2VydmVyEhcKD3BhcnRpY2lwYW50X2lkcxgEIAMoCSJOChBHcm91cENhbGxVcGRhdGVkEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCRIhCgRjYWxsGAIgASgLMhMubHVkcmEudjEuR3JvdXBDYWxsIkwKEEdyb3VwQ2FsbFJpbmdpbmcSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEh8KB3N0YXJ0ZXIYAiABKAsyDi5sdWRyYS52MS5Vc2VyIiIKD1VwZGF0ZUF2YWlsYWJsZRIPCgd2ZXJzaW9uGAEgASgJIkgKDVN0cmVhbVByZXZpZXcSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSDQoFaW1hZ2UYAyABKAkq0gIKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASHgoaRVJST1JfQ09ERV9JTlZBTElEX1JFUVVFU1QQARIeChpFUlJPUl9DT0RFX1VOQVVUSEVOVElDQVRFRBACEhgKFEVSUk9SX0NPREVfTk9UX0ZPVU5EEAMSFwoTRVJST1JfQ09ERV9JTlRFUk5BTBAEEiIKHkVSUk9SX0NPREVfSU5WQUxJRF9DUkVERU5USUFMUxAFEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBhIbChdFUlJPUl9DT0RFX0lOVkFMSURfQ09ERRAHEiAKHEVSUk9SX0NPREVfVE9PX01BTllfUkVRVUVTVFMQCBIYChRFUlJPUl9DT0RFX0ZPUkJJRERFThAJEhoKFkVSUk9SX0NPREVfVU5BVkFJTEFCTEUQCirRAQoNQ2FsbEVuZFJlYXNvbhIfChtDQUxMX0VORF9SRUFTT05fVU5TUEVDSUZJRUQQABIbChdDQUxMX0VORF9SRUFTT05fSFVOR19VUBABEhwKGENBTExfRU5EX1JFQVNPTl9ERUNMSU5FRBACEhoKFkNBTExfRU5EX1JFQVNPTl9NSVNTRUQQAxImCiJDQUxMX0VORF9SRUFTT05fQU5TV0VSRURfRUxTRVdIRVJFEAQSIAocQ0FMTF9FTkRfUkVBU09OX0RJU0NPTk5FQ1RFRBAFQnUKDGNvbS5sdWRyYS52MUILU2VydmVyUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_ludra_v1_models]);
+  fileDesc("ChVsdWRyYS92MS9zZXJ2ZXIucHJvdG8SCGx1ZHJhLnYxIq0PCgtTZXJ2ZXJGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgNEiAKBWVycm9yGAIgASgLMg8ubHVkcmEudjEuRXJyb3JIABInCglsb2dnZWRfaW4YAyABKAsyEi5sdWRyYS52MS5Mb2dnZWRJbkgAEjcKEWNvbnZlcnNhdGlvbl9saXN0GAQgASgLMhoubHVkcmEudjEuQ29udmVyc2F0aW9uTGlzdEgAEjsKE2NvbnZlcnNhdGlvbl9vcGVuZWQYBSABKAsyHC5sdWRyYS52MS5Db252ZXJzYXRpb25PcGVuZWRIABIzCg9tZXNzYWdlX2hpc3RvcnkYBiABKAsyGC5sdWRyYS52MS5NZXNzYWdlSGlzdG9yeUgAEjMKD21lc3NhZ2VfY3JlYXRlZBgHIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VDcmVhdGVkSAASNQoQcHJlc2VuY2VfY2hhbmdlZBgIIAEoCzIZLmx1ZHJhLnYxLlByZXNlbmNlQ2hhbmdlZEgAEikKCmxvZ2dlZF9vdXQYCSABKAsyEy5sdWRyYS52MS5Mb2dnZWRPdXRIABI/ChV2ZXJpZmljYXRpb25fcmVxdWlyZWQYCiABKAsyHi5sdWRyYS52MS5WZXJpZmljYXRpb25SZXF1aXJlZEgAEicKCWNvZGVfc2VudBgLIAEoCzISLmx1ZHJhLnYxLkNvZGVTZW50SAASKwoLZnJpZW5kX2xpc3QYDCABKAsyFC5sdWRyYS52MS5GcmllbmRMaXN0SAASMQoOZnJpZW5kX3VwZGF0ZWQYDSABKAsyFy5sdWRyYS52MS5GcmllbmRVcGRhdGVkSAASMQoOZnJpZW5kX3JlbW92ZWQYDiABKAsyFy5sdWRyYS52MS5GcmllbmRSZW1vdmVkSAASOgoTdHdvX2ZhY3Rvcl9yZXF1aXJlZBgPIAEoCzIbLmx1ZHJhLnYxLlR3b0ZhY3RvclJlcXVpcmVkSAASNQoQcGFzc3dvcmRfY2hhbmdlZBgQIAEoCzIZLmx1ZHJhLnYxLlBhc3N3b3JkQ2hhbmdlZEgAEjgKEnR3b19mYWN0b3JfY2hhbmdlZBgRIAEoCzIaLmx1ZHJhLnYxLlR3b0ZhY3RvckNoYW5nZWRIABItCgx1c2VyX3VwZGF0ZWQYEiABKAsyFS5sdWRyYS52MS5Vc2VyVXBkYXRlZEgAEi0KDGNhbGxfc3RhcnRlZBgTIAEoCzIVLmx1ZHJhLnYxLkNhbGxTdGFydGVkSAASLwoNY2FsbF9pbmNvbWluZxgUIAEoCzIWLmx1ZHJhLnYxLkNhbGxJbmNvbWluZ0gAEi8KDWNhbGxfYWNjZXB0ZWQYFSABKAsyFi5sdWRyYS52MS5DYWxsQWNjZXB0ZWRIABIpCgpjYWxsX2VuZGVkGBYgASgLMhMubHVkcmEudjEuQ2FsbEVuZGVkSAASKwoLY2FsbF9zaWduYWwYFyABKAsyFC5sdWRyYS52MS5DYWxsU2lnbmFsSAASHAoDYWNrGBggASgLMg0ubHVkcmEudjEuQWNrSAASMwoPbWVzc2FnZV91cGRhdGVkGBkgASgLMhgubHVkcmEudjEuTWVzc2FnZVVwZGF0ZWRIABI9ChRjb252ZXJzYXRpb25fdXBkYXRlZBgaIAEoCzIdLmx1ZHJhLnYxLkNvbnZlcnNhdGlvblVwZGF0ZWRIABI9ChRjb252ZXJzYXRpb25fcmVtb3ZlZBgbIAEoCzIdLmx1ZHJhLnYxLkNvbnZlcnNhdGlvblJlbW92ZWRIABI2ChFncm91cF9jYWxsX2pvaW5lZBgcIAEoCzIZLmx1ZHJhLnYxLkdyb3VwQ2FsbEpvaW5lZEgAEjgKEmdyb3VwX2NhbGxfdXBkYXRlZBgdIAEoCzIaLmx1ZHJhLnYxLkdyb3VwQ2FsbFVwZGF0ZWRIABI4ChJncm91cF9jYWxsX3JpbmdpbmcYHiABKAsyGi5sdWRyYS52MS5Hcm91cENhbGxSaW5naW5nSAASLQoMYmxvY2tlZF9saXN0GB8gASgLMhUubHVkcmEudjEuQmxvY2tlZExpc3RIABIvCg1pZGVudGl0eV9rZXlzGCAgASgLMhYubHVkcmEudjEuSWRlbnRpdHlLZXlzSAASNQoQdXBkYXRlX2F2YWlsYWJsZRghIAEoCzIZLmx1ZHJhLnYxLlVwZGF0ZUF2YWlsYWJsZUgAEjEKDnN0cmVhbV9wcmV2aWV3GCIgASgLMhcubHVkcmEudjEuU3RyZWFtUHJldmlld0gAEjMKD21lc3NhZ2VfZGVsZXRlZBgjIAEoCzIYLmx1ZHJhLnYxLk1lc3NhZ2VEZWxldGVkSAASKQoKaW1hZ2VfZGF0YRgkIAEoCzITLmx1ZHJhLnYxLkltYWdlRGF0YUgAEisKC2dpZl9yZXN1bHRzGCUgASgLMhQubHVkcmEudjEuR2lmUmVzdWx0c0gAEisKC2ZpbGVfc2lnbmFsGCcgASgLMhQubHVkcmEudjEuRmlsZVNpZ25hbEgAEi8KDWZpbGVfdHJhbnNmZXIYKCABKAsyFi5sdWRyYS52MS5GaWxlVHJhbnNmZXJIAEIJCgdwYXlsb2FkIjsKBUVycm9yEiEKBGNvZGUYASABKA4yEy5sdWRyYS52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCSKTAQoITG9nZ2VkSW4SHAoEdXNlchgBIAEoCzIOLmx1ZHJhLnYxLlVzZXISDQoFdG9rZW4YAiABKAkSDQoFZW1haWwYAyABKAkSEgoKdHdvX2ZhY3RvchgEIAEoCBI3ChN1c2VybmFtZV9jaGFuZ2VkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCILCglMb2dnZWRPdXQiJQoUVmVyaWZpY2F0aW9uUmVxdWlyZWQSDQoFZW1haWwYASABKAkiCgoIQ29kZVNlbnQiQQoQQ29udmVyc2F0aW9uTGlzdBItCg1jb252ZXJzYXRpb25zGAEgAygLMhYubHVkcmEudjEuQ29udmVyc2F0aW9uIkIKEkNvbnZlcnNhdGlvbk9wZW5lZBIsCgxjb252ZXJzYXRpb24YASABKAsyFi5sdWRyYS52MS5Db252ZXJzYXRpb24iYAoOTWVzc2FnZUhpc3RvcnkSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEiMKCG1lc3NhZ2VzGAIgAygLMhEubHVkcmEudjEuTWVzc2FnZRIQCghoYXNfbW9yZRgDIAEoCCI0Cg5NZXNzYWdlQ3JlYXRlZBIiCgdtZXNzYWdlGAEgASgLMhEubHVkcmEudjEuTWVzc2FnZSJICg9QcmVzZW5jZUNoYW5nZWQSDwoHdXNlcl9pZBgBIAEoCRIkCghwcmVzZW5jZRgCIAEoDjISLmx1ZHJhLnYxLlByZXNlbmNlIi8KCkZyaWVuZExpc3QSIQoHZnJpZW5kcxgBIAMoCzIQLmx1ZHJhLnYxLkZyaWVuZCJrCgxJZGVudGl0eUtleXMSLgoEa2V5cxgBIAMoCzIgLmx1ZHJhLnYxLklkZW50aXR5S2V5cy5LZXlzRW50cnkaKwoJS2V5c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiLAoLQmxvY2tlZExpc3QSHQoFdXNlcnMYASADKAsyDi5sdWRyYS52MS5Vc2VyIjEKDUZyaWVuZFVwZGF0ZWQSIAoGZnJpZW5kGAEgASgLMhAubHVkcmEudjEuRnJpZW5kIiAKDUZyaWVuZFJlbW92ZWQSDwoHdXNlcl9pZBgBIAEoCSIiChFUd29GYWN0b3JSZXF1aXJlZBINCgVlbWFpbBgBIAEoCSIRCg9QYXNzd29yZENoYW5nZWQiIwoQVHdvRmFjdG9yQ2hhbmdlZBIPCgdlbmFibGVkGAEgASgIIisKC1VzZXJVcGRhdGVkEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyIisKC0NhbGxTdGFydGVkEhwKBGNhbGwYASABKAsyDi5sdWRyYS52MS5DYWxsIiwKDENhbGxJbmNvbWluZxIcCgRjYWxsGAEgASgLMg4ubHVkcmEudjEuQ2FsbCIvCgxDYWxsQWNjZXB0ZWQSDwoHY2FsbF9pZBgBIAEoCRIOCgZkaXJlY3QYAiABKAgiRQoJQ2FsbEVuZGVkEg8KB2NhbGxfaWQYASABKAkSJwoGcmVhc29uGAIgASgOMhcubHVkcmEudjEuQ2FsbEVuZFJlYXNvbiIFCgNBY2siOAoMRmlsZVRyYW5zZmVyEigKC2ljZV9zZXJ2ZXJzGAEgAygLMhMubHVkcmEudjEuSWNlU2VydmVyIj8KA0dpZhIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRINCgV3aWR0aBgDIAEoDRIOCgZoZWlnaHQYBCABKA0iNwoKR2lmUmVzdWx0cxIbCgRnaWZzGAEgAygLMg0ubHVkcmEudjEuR2lmEgwKBG5leHQYAiABKAkiUgoJSW1hZ2VEYXRhEgoKAmlkGAEgASgJEgwKBGRhdGEYAiABKAwSDAoEbWltZRgDIAEoCRIOCgZvZmZzZXQYBCABKA0SDQoFdG90YWwYBSABKA0iNAoOTWVzc2FnZVVwZGF0ZWQSIgoHbWVzc2FnZRgBIAEoCzIRLmx1ZHJhLnYxLk1lc3NhZ2UiZgoOTWVzc2FnZURlbGV0ZWQSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEhIKCm1lc3NhZ2VfaWQYAiABKAkSJwoMbGFzdF9tZXNzYWdlGAMgASgLMhEubHVkcmEudjEuTWVzc2FnZSJDChNDb252ZXJzYXRpb25VcGRhdGVkEiwKDGNvbnZlcnNhdGlvbhgBIAEoCzIWLmx1ZHJhLnYxLkNvbnZlcnNhdGlvbiIuChNDb252ZXJzYXRpb25SZW1vdmVkEhcKD2NvbnZlcnNhdGlvbl9pZBgBIAEoCSJ+Cg9Hcm91cENhbGxKb2luZWQSDwoHY2FsbF9pZBgBIAEoCRIXCg9jb252ZXJzYXRpb25faWQYAiABKAkSKAoLaWNlX3NlcnZlcnMYAyADKAsyEy5sdWRyYS52MS5JY2VTZXJ2ZXISFwoPcGFydGljaXBhbnRfaWRzGAQgAygJIk4KEEdyb3VwQ2FsbFVwZGF0ZWQSFwoPY29udmVyc2F0aW9uX2lkGAEgASgJEiEKBGNhbGwYAiABKAsyEy5sdWRyYS52MS5Hcm91cENhbGwiTAoQR3JvdXBDYWxsUmluZ2luZxIXCg9jb252ZXJzYXRpb25faWQYASABKAkSHwoHc3RhcnRlchgCIAEoCzIOLmx1ZHJhLnYxLlVzZXIiIgoPVXBkYXRlQXZhaWxhYmxlEg8KB3ZlcnNpb24YASABKAkiSAoNU3RyZWFtUHJldmlldxIXCg9jb252ZXJzYXRpb25faWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRINCgVpbWFnZRgDIAEoCSrxAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIeChpFUlJPUl9DT0RFX0lOVkFMSURfUkVRVUVTVBABEh4KGkVSUk9SX0NPREVfVU5BVVRIRU5USUNBVEVEEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEAQSIgoeRVJST1JfQ09ERV9JTlZBTElEX0NSRURFTlRJQUxTEAUSHQoZRVJST1JfQ09ERV9BTFJFQURZX0VYSVNUUxAGEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9DT0RFEAcSIAocRVJST1JfQ09ERV9UT09fTUFOWV9SRVFVRVNUUxAIEhgKFEVSUk9SX0NPREVfRk9SQklEREVOEAkSGgoWRVJST1JfQ09ERV9VTkFWQUlMQUJMRRAKEh0KGUVSUk9SX0NPREVfUVVPVEFfRVhDRUVERUQQCyrRAQoNQ2FsbEVuZFJlYXNvbhIfChtDQUxMX0VORF9SRUFTT05fVU5TUEVDSUZJRUQQABIbChdDQUxMX0VORF9SRUFTT05fSFVOR19VUBABEhwKGENBTExfRU5EX1JFQVNPTl9ERUNMSU5FRBACEhoKFkNBTExfRU5EX1JFQVNPTl9NSVNTRUQQAxImCiJDQUxMX0VORF9SRUFTT05fQU5TV0VSRURfRUxTRVdIRVJFEAQSIAocQ0FMTF9FTkRfUkVBU09OX0RJU0NPTk5FQ1RFRBAFQnUKDGNvbS5sdWRyYS52MUILU2VydmVyUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_ludra_v1_models]);
 
 /**
  * @generated from message ludra.v1.ServerFrame
@@ -232,6 +232,30 @@ export type ServerFrame = Message<"ludra.v1.ServerFrame"> & {
      */
     value: MessageDeleted;
     case: "messageDeleted";
+  } | {
+    /**
+     * @generated from field: ludra.v1.ImageData image_data = 36;
+     */
+    value: ImageData;
+    case: "imageData";
+  } | {
+    /**
+     * @generated from field: ludra.v1.GifResults gif_results = 37;
+     */
+    value: GifResults;
+    case: "gifResults";
+  } | {
+    /**
+     * @generated from field: ludra.v1.FileSignal file_signal = 39;
+     */
+    value: FileSignal;
+    case: "fileSignal";
+  } | {
+    /**
+     * @generated from field: ludra.v1.FileTransfer file_transfer = 40;
+     */
+    value: FileTransfer;
+    case: "fileTransfer";
   } | { case: undefined; value?: undefined };
 };
 
@@ -685,6 +709,114 @@ export const AckSchema: GenMessage<Ack> = /*@__PURE__*/
   messageDesc(file_ludra_v1_server, 24);
 
 /**
+ * @generated from message ludra.v1.FileTransfer
+ */
+export type FileTransfer = Message<"ludra.v1.FileTransfer"> & {
+  /**
+   * @generated from field: repeated ludra.v1.IceServer ice_servers = 1;
+   */
+  iceServers: IceServer[];
+};
+
+/**
+ * Describes the message ludra.v1.FileTransfer.
+ * Use `create(FileTransferSchema)` to create a new message.
+ */
+export const FileTransferSchema: GenMessage<FileTransfer> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 25);
+
+/**
+ * @generated from message ludra.v1.Gif
+ */
+export type Gif = Message<"ludra.v1.Gif"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: uint32 width = 3;
+   */
+  width: number;
+
+  /**
+   * @generated from field: uint32 height = 4;
+   */
+  height: number;
+};
+
+/**
+ * Describes the message ludra.v1.Gif.
+ * Use `create(GifSchema)` to create a new message.
+ */
+export const GifSchema: GenMessage<Gif> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 26);
+
+/**
+ * @generated from message ludra.v1.GifResults
+ */
+export type GifResults = Message<"ludra.v1.GifResults"> & {
+  /**
+   * @generated from field: repeated ludra.v1.Gif gifs = 1;
+   */
+  gifs: Gif[];
+
+  /**
+   * @generated from field: string next = 2;
+   */
+  next: string;
+};
+
+/**
+ * Describes the message ludra.v1.GifResults.
+ * Use `create(GifResultsSchema)` to create a new message.
+ */
+export const GifResultsSchema: GenMessage<GifResults> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 27);
+
+/**
+ * @generated from message ludra.v1.ImageData
+ */
+export type ImageData = Message<"ludra.v1.ImageData"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: bytes data = 2;
+   */
+  data: Uint8Array;
+
+  /**
+   * @generated from field: string mime = 3;
+   */
+  mime: string;
+
+  /**
+   * @generated from field: uint32 offset = 4;
+   */
+  offset: number;
+
+  /**
+   * @generated from field: uint32 total = 5;
+   */
+  total: number;
+};
+
+/**
+ * Describes the message ludra.v1.ImageData.
+ * Use `create(ImageDataSchema)` to create a new message.
+ */
+export const ImageDataSchema: GenMessage<ImageData> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_server, 28);
+
+/**
  * @generated from message ludra.v1.MessageUpdated
  */
 export type MessageUpdated = Message<"ludra.v1.MessageUpdated"> & {
@@ -699,7 +831,7 @@ export type MessageUpdated = Message<"ludra.v1.MessageUpdated"> & {
  * Use `create(MessageUpdatedSchema)` to create a new message.
  */
 export const MessageUpdatedSchema: GenMessage<MessageUpdated> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 25);
+  messageDesc(file_ludra_v1_server, 29);
 
 /**
  * @generated from message ludra.v1.MessageDeleted
@@ -726,7 +858,7 @@ export type MessageDeleted = Message<"ludra.v1.MessageDeleted"> & {
  * Use `create(MessageDeletedSchema)` to create a new message.
  */
 export const MessageDeletedSchema: GenMessage<MessageDeleted> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 26);
+  messageDesc(file_ludra_v1_server, 30);
 
 /**
  * @generated from message ludra.v1.ConversationUpdated
@@ -743,7 +875,7 @@ export type ConversationUpdated = Message<"ludra.v1.ConversationUpdated"> & {
  * Use `create(ConversationUpdatedSchema)` to create a new message.
  */
 export const ConversationUpdatedSchema: GenMessage<ConversationUpdated> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 27);
+  messageDesc(file_ludra_v1_server, 31);
 
 /**
  * @generated from message ludra.v1.ConversationRemoved
@@ -760,7 +892,7 @@ export type ConversationRemoved = Message<"ludra.v1.ConversationRemoved"> & {
  * Use `create(ConversationRemovedSchema)` to create a new message.
  */
 export const ConversationRemovedSchema: GenMessage<ConversationRemoved> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 28);
+  messageDesc(file_ludra_v1_server, 32);
 
 /**
  * @generated from message ludra.v1.GroupCallJoined
@@ -792,7 +924,7 @@ export type GroupCallJoined = Message<"ludra.v1.GroupCallJoined"> & {
  * Use `create(GroupCallJoinedSchema)` to create a new message.
  */
 export const GroupCallJoinedSchema: GenMessage<GroupCallJoined> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 29);
+  messageDesc(file_ludra_v1_server, 33);
 
 /**
  * @generated from message ludra.v1.GroupCallUpdated
@@ -814,7 +946,7 @@ export type GroupCallUpdated = Message<"ludra.v1.GroupCallUpdated"> & {
  * Use `create(GroupCallUpdatedSchema)` to create a new message.
  */
 export const GroupCallUpdatedSchema: GenMessage<GroupCallUpdated> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 30);
+  messageDesc(file_ludra_v1_server, 34);
 
 /**
  * @generated from message ludra.v1.GroupCallRinging
@@ -836,7 +968,7 @@ export type GroupCallRinging = Message<"ludra.v1.GroupCallRinging"> & {
  * Use `create(GroupCallRingingSchema)` to create a new message.
  */
 export const GroupCallRingingSchema: GenMessage<GroupCallRinging> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 31);
+  messageDesc(file_ludra_v1_server, 35);
 
 /**
  * @generated from message ludra.v1.UpdateAvailable
@@ -853,7 +985,7 @@ export type UpdateAvailable = Message<"ludra.v1.UpdateAvailable"> & {
  * Use `create(UpdateAvailableSchema)` to create a new message.
  */
 export const UpdateAvailableSchema: GenMessage<UpdateAvailable> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 32);
+  messageDesc(file_ludra_v1_server, 36);
 
 /**
  * @generated from message ludra.v1.StreamPreview
@@ -880,7 +1012,7 @@ export type StreamPreview = Message<"ludra.v1.StreamPreview"> & {
  * Use `create(StreamPreviewSchema)` to create a new message.
  */
 export const StreamPreviewSchema: GenMessage<StreamPreview> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_server, 33);
+  messageDesc(file_ludra_v1_server, 37);
 
 /**
  * @generated from enum ludra.v1.ErrorCode
@@ -940,6 +1072,11 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_UNAVAILABLE = 10;
    */
   UNAVAILABLE = 10,
+
+  /**
+   * @generated from enum value: ERROR_CODE_QUOTA_EXCEEDED = 11;
+   */
+  QUOTA_EXCEEDED = 11,
 }
 
 /**

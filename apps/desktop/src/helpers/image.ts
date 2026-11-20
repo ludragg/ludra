@@ -2,6 +2,7 @@ const avatarSize = 256;
 const maxBytes = 48 * 1024;
 
 export const maxUploadBytes = 5 * 1024 * 1024;
+export const avatarTypes = ["image/png", "image/jpeg"];
 
 export async function toAvatar(file: Blob): Promise<Uint8Array> {
   const bitmap = await createImageBitmap(file);

@@ -24,6 +24,9 @@
 ## Features
 
 - [x] Direct messages and groups of up to 10 people, with message editing and deleting
+- [x] Files of any type up to 2 GB, sent straight from your PC (nothing stored on the server), with drag and drop and
+      photos and videos playing inside the chat
+- [x] GIFs, link previews (YouTube videos play inside the chat) and mentions
 - [x] Friends, blocking, and Online, Busy and Invisible status
 - [x] Voice and video calls in direct messages and groups, with noise suppression
 - [x] Screen sharing up to 1440p at 120 FPS, with system audio, switching screens without stopping
@@ -51,6 +54,10 @@ cd server
 go run ./cmd/ludra
 ```
 
+On Windows you can skip the commands below: double-click `ludradev.bat` in the repository root to open the Ludra Dev
+panel, which starts the database, the server and the app, and opens test accounts already signed in. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md#ludra-dev-panel-windows).
+
 Then the app, in another terminal:
 
 ```sh
@@ -69,6 +76,9 @@ Calls go through the TURN relay built into the server. It listens on UDP `3478` 
 Without SMTP settings, the server prints verification and password reset codes to its log instead of sending
 emails. To send real emails, set the variables listed in [`.env.example`](.env.example). With Gmail, use an
 [app password](https://myaccount.google.com/apppasswords).
+
+The GIF picker uses [KLIPY](https://klipy.com/developers). Create a free key in their partner dashboard and set
+`LUDRA_KLIPY_KEY`; without it, the picker says GIFs are not available on that server.
 
 ## Project layout
 

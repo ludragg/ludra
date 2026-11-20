@@ -1,0 +1,74 @@
+.button {
+  height: 32px;
+  padding: 0 12px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  font-size: var(--hint-font-size);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background ease 0.15s;
+}
+
+.button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: default;
+}
+
+.button--primary {
+  border: 0;
+  background: var(--muted-color);
+  color: var(--on-brand-color);
+}
+
+.button--primary:not(:disabled):hover {
+  background: #ffffff;
+}
+
+.button--outline {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--muted-color);
+}
+
+.button--outline:not(:disabled):hover {
+  background: var(--active-color);
+}
+
+.icon-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--subtle-color);
+  transition:
+    background ease 0.15s,
+    color ease 0.15s;
+}
+
+.icon-button:not(:disabled):hover {
+  background: var(--active-color);
+  color: var(--muted-color);
+}
+
+.icon-button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: default;
+}
+
+.section-title {
+  margin: 0;
+  flex-grow: 1;
+  font-size: var(--small-font-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--subtle-color);
+}

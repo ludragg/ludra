@@ -48,18 +48,40 @@ type GroupAvatar struct {
 	UpdatedAt      time.Time
 }
 
-type Message struct {
+type Image struct {
 	ID             string
+	MessageID      string
 	ConversationID string
-	SenderID       string
-	Content        string
+	Role           string
+	Data           []byte
+	Mime           string
+	Width          int32
+	Height         int32
 	CreatedAt      time.Time
-	Kind           string
-	CallOutcome    *string
-	CallDuration   *int32
-	Event          *string
-	TargetID       *string
-	EditedAt       *time.Time
+	Size           int32
+	Expired        bool
+}
+
+type Message struct {
+	ID                 string
+	ConversationID     string
+	SenderID           string
+	Content            string
+	CreatedAt          time.Time
+	Kind               string
+	CallOutcome        *string
+	CallDuration       *int32
+	Event              *string
+	TargetID           *string
+	EditedAt           *time.Time
+	PreviewUrl         *string
+	PreviewSite        *string
+	PreviewTitle       *string
+	PreviewDescription *string
+	FileName           *string
+	FileSize           *int64
+	FileMime           *string
+	FileDirect         bool
 }
 
 type Participant struct {

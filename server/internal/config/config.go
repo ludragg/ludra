@@ -15,6 +15,7 @@ type Config struct {
 	Origins     []string
 	Proxies     []netip.Prefix
 	UpdatesRepo string
+	KlipyKey    string
 	Mail        mail.Config
 	Turn        voice.Config
 }
@@ -26,6 +27,7 @@ func Load() Config {
 		Origins:     strings.Split(env("LUDRA_ORIGINS", "localhost,localhost:*,tauri.localhost"), ","),
 		Proxies:     prefixes(env("LUDRA_TRUSTED_PROXIES", "")),
 		UpdatesRepo: env("LUDRA_UPDATES_REPO", "ludragg/ludra"),
+		KlipyKey:    env("LUDRA_KLIPY_KEY", ""),
 		Mail: mail.Config{
 			Host:     env("LUDRA_SMTP_HOST", ""),
 			Port:     env("LUDRA_SMTP_PORT", "587"),

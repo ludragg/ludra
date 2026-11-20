@@ -18,7 +18,8 @@ bash setup.sh
 
 `setup.sh` installs Docker, opens the firewall ports below and creates `.env` with a random database password, a random TURN secret and the VPS public IP.
 
-Edit `.env` and fill in the domain and the SMTP settings:
+Edit `.env` and fill in the domain, the SMTP settings and, for the GIF picker, `LUDRA_KLIPY_KEY` (a free key from
+[KLIPY](https://klipy.com/developers)):
 
 ```bash
 nano .env

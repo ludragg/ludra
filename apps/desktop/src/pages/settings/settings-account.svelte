@@ -3,7 +3,7 @@
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import { maskEmail } from "@/helpers/email";
   import { applyMask } from "@/helpers/mask";
-  import { maxUploadBytes, toAvatar } from "@/helpers/image";
+  import { avatarTypes, maxUploadBytes, toAvatar } from "@/helpers/image";
   import { validPassword } from "@/helpers/password";
   import { localeTag, t } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
@@ -50,7 +50,7 @@
     }
 
     photoError = "";
-    if (file.type !== "image/png") {
+    if (!avatarTypes.includes(file.type)) {
       photoError = t("settings.photoType");
       return;
     }
@@ -366,7 +366,14 @@
             </div>
           </div>
         </div>
-        <input bind:this={picker} class="sr-only" type="file" accept="image/png" tabindex="-1" onchange={pick} />
+        <input
+          bind:this={picker}
+          class="sr-only"
+          type="file"
+          accept={avatarTypes.join(",")}
+          tabindex="-1"
+          onchange={pick}
+        />
         {#if photoError}
           <span class="settings-account__message settings-account__message--error" role="alert">{photoError}</span>
         {:else}

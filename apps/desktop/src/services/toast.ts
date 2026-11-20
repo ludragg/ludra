@@ -9,6 +9,7 @@ export type Toast = {
   name: string;
   avatar: string;
   target: string;
+  mentions?: string[];
 };
 
 export const friendsTarget = "friends";

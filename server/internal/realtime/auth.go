@@ -42,6 +42,7 @@ func (s *session) signIn(start func() (account.Outcome, error)) *protocol.Server
 
 	s.sessionID = session.ID
 	s.user = &protocol.User{Id: session.UserID, Username: session.Username, Avatar: session.Avatar, Presence: presence}
+	s.conn.SetReadLimit(signedInFrameSize)
 	if s.hub.register(s.user.Id, s, session.Invisible, session.Busy) {
 		s.announce(s.hub.presence(s.user.Id))
 	}
@@ -81,5 +82,6 @@ func (s *session) signOut() {
 	}
 	s.user = nil
 	s.sessionID = ""
+	s.conn.SetReadLimit(maxFrameSize)
 	s.expires = time.Now().Add(authTimeout)
 }

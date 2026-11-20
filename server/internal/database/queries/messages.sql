@@ -9,10 +9,16 @@ WHERE EXISTS (
 RETURNING *;
 
 -- name: ListMessages :many
-SELECT sqlc.embed(m), sender.username AS sender_name, target.username AS target_name
+SELECT sqlc.embed(m), sender.username AS sender_name, target.username AS target_name,
+       photo.id AS photo_id, photo.width AS photo_width, photo.height AS photo_height, photo.expired AS photo_expired,
+       thumb.id AS thumb_id, thumb.width AS thumb_width, thumb.height AS thumb_height,
+       stored.id AS stored_id, stored.expired AS stored_expired
 FROM messages m
 JOIN users sender ON sender.id = m.sender_id
 LEFT JOIN users target ON target.id = m.target_id
+LEFT JOIN images photo ON photo.message_id = m.id AND photo.role = 'photo'
+LEFT JOIN images thumb ON thumb.message_id = m.id AND thumb.role = 'preview' AND NOT thumb.expired
+LEFT JOIN images stored ON stored.message_id = m.id AND stored.role = 'file'
 WHERE m.conversation_id = sqlc.arg(conversation_id)::uuid
   AND (sqlc.narg(before_id)::uuid IS NULL OR m.id < sqlc.narg(before_id)::uuid)
 ORDER BY m.id DESC
@@ -44,7 +50,8 @@ JOIN conversations c ON c.id = m.conversation_id
 WHERE m.id = $1;
 
 -- name: EditMessage :one
-UPDATE messages SET content = sqlc.arg(content), edited_at = now()
+UPDATE messages SET content = sqlc.arg(content), edited_at = now(),
+    preview_url = NULL, preview_site = NULL, preview_title = NULL, preview_description = NULL
 WHERE id = sqlc.arg(id) AND kind = 'text'
 RETURNING *;
 

@@ -3,9 +3,11 @@
   import CallIcon from "@/components/call-icon/call-icon.svelte";
   import Avatar from "@/components/avatar/avatar.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
+  import MentionText from "@/components/mention-text/mention-text.svelte";
   import { callPreview, isCall } from "@/helpers/call-summary";
   import { Elapsed } from "@/helpers/duration.svelte";
   import { formatRecent, toDate } from "@/helpers/time";
+  import { messageText } from "@/helpers/message-text";
   import { t } from "@/i18n";
   import type { Conversation } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
@@ -27,23 +29,25 @@
   const last = $derived(conversation.lastMessage);
   const callStart = $derived(calls.current?.peer.id === peer.id ? calls.current.startedAt : null);
   const unread = $derived(chat.unread[conversation.id] ?? 0);
+  const mentioned = $derived(chat.mentions[conversation.id] === true);
+  const names = $derived(new Set([peer.username, chat.user?.username ?? ""].map((name) => name.toLowerCase())));
   const preview = $derived(
     !last
       ? t("sidebar.noMessages")
       : isCall(last)
         ? callPreview(last)
         : last.senderId === chat.user?.id
-          ? t("sidebar.youSaid", { content: last.content })
+          ? t("sidebar.youSaid", { content: messageText(last) })
           : chat.isBlocked(last.senderId)
             ? t("chat.blockedMessage")
-            : last.content,
+            : messageText(last),
   );
 </script>
 
 <button
   class="sidebar-conversation"
   class:sidebar-conversation--active={active}
-  class:sidebar-conversation--unread={unread > 0}
+  class:sidebar-conversation--unread={unread > 0 || mentioned}
   aria-current={active}
   onclick={() => chat.select(conversation.id)}
   oncontextmenu={openMenu}
@@ -63,9 +67,11 @@
           {elapsed.format(callStart)}
         </span>
       {:else}
-        <span class="sidebar-conversation__preview">{preview}</span>
+        <span class="sidebar-conversation__preview"><MentionText text={preview} {names} /></span>
       {/if}
-      {#if unread > 0}
+      {#if mentioned}
+        <span class="sidebar-conversation__mention" aria-label={t("sidebar.mentioned")}>@</span>
+      {:else if unread > 0}
         <span class="sidebar-conversation__badge" aria-label={t("sidebar.unread", { count: unread })}>{unread}</span>
       {/if}
     </span>
@@ -146,6 +152,8 @@
   }
 
   .sidebar-conversation__preview {
+    margin: -1px 0;
+    padding: 1px 0;
     flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -165,6 +173,16 @@
 
   .sidebar-conversation--unread .sidebar-conversation__preview {
     color: var(--muted-color);
+  }
+
+  .sidebar-conversation__mention {
+    padding: 0 2px;
+    flex: none;
+    color: var(--neon-color);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 0 3px color-mix(in srgb, var(--neon-color) 45%, transparent);
   }
 
   .sidebar-conversation__badge {

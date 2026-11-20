@@ -2,16 +2,18 @@ import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/p
 import { timestampMs } from "@bufbuild/protobuf/wkt";
 import { t } from "@/i18n";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
-import type {
-  Call,
-  CallSignal,
-  Conversation,
-  Friend,
-  GroupCall,
-  Message,
-  Presence,
-  SignalKind,
-  User,
+import {
+  FileSignalKind,
+  type Call,
+  type CallSignal,
+  type Conversation,
+  type FileSignal,
+  type Friend,
+  type GroupCall,
+  type Message,
+  type Presence,
+  type SignalKind,
+  type User,
 } from "@/protocol/ludra/v1/models_pb";
 import {
   ErrorCode,
@@ -63,6 +65,7 @@ export class Client {
   onCallAccepted: (callId: string, direct: boolean) => void = () => {};
   onCallEnded: (callId: string, reason: CallEndReason) => void = () => {};
   onCallSignal: (signal: CallSignal) => void = () => {};
+  onFileSignal: (signal: FileSignal) => void = () => {};
   onConversationUpdated: (conversation: Conversation) => void = () => {};
   onBlocked: (users: User[]) => void = () => {};
   onConversationRemoved: (conversationId: string) => void = () => {};
@@ -157,6 +160,47 @@ export class Client {
 
   async editMessage(messageId: string, content: string): Promise<Message> {
     const { message } = await this.#request({ case: "editMessage", value: { messageId, content } }, "messageUpdated");
+    return message!;
+  }
+
+  getImage(id: string, offset: number) {
+    return this.#request({ case: "getImage", value: { id, offset } }, "imageData");
+  }
+
+  async sendDirectFile(conversationId: string, name: string, size: number, mime: string): Promise<Message> {
+    const { message } = await this.#request(
+      { case: "sendDirectFile", value: { conversationId, name, size: BigInt(size), mime } },
+      "messageCreated",
+    );
+    return message!;
+  }
+
+  requestFile(messageId: string, transferId: string) {
+    return this.#request(
+      { case: "fileSignal", value: { messageId, transferId, kind: FileSignalKind.REQUEST } },
+      "fileTransfer",
+    );
+  }
+
+  async fileSignal(messageId: string, transferId: string, peerId: string, kind: FileSignalKind, payload = "") {
+    await this.#request({ case: "fileSignal", value: { messageId, transferId, peerId, kind, payload } }, "ack");
+  }
+
+  searchGifs(query: string, pos: string, locale: string) {
+    return this.#request({ case: "searchGifs", value: { query, pos, locale } }, "gifResults");
+  }
+
+  gifPreview(id: string) {
+    return this.#request({ case: "getGifPreview", value: { id } }, "imageData");
+  }
+
+  async sendGif(conversationId: string, id: string): Promise<Message> {
+    const { message } = await this.#request({ case: "sendGif", value: { conversationId, id } }, "messageCreated");
+    return message!;
+  }
+
+  async removePreview(messageId: string): Promise<Message> {
+    const { message } = await this.#request({ case: "removePreview", value: { messageId } }, "messageUpdated");
     return message!;
   }
 
@@ -325,7 +369,11 @@ export class Client {
   }
 
   async #ping() {
-    const timer = window.setTimeout(() => this.#drop(), pingTimeout);
+    let timer = 0;
+    const arm = () => {
+      timer = window.setTimeout(() => (this.#socket.bufferedAmount > 0 ? arm() : this.#drop()), pingTimeout);
+    };
+    arm();
     await this.#send({ case: "ping", value: {} }).catch(() => undefined);
     window.clearTimeout(timer);
   }
@@ -447,6 +495,9 @@ export class Client {
         break;
       case "callSignal":
         this.onCallSignal(payload.value);
+        break;
+      case "fileSignal":
+        this.onFileSignal(payload.value);
         break;
       case "conversationUpdated":
         if (payload.value.conversation) {

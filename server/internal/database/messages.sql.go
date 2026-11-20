@@ -22,7 +22,7 @@ func (q *Queries) CloseStaleCalls(ctx context.Context) error {
 const createCallMessage = `-- name: CreateCallMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, call_outcome, call_duration)
 VALUES ($1, $2, '', 'call', 'ongoing', 0)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct
 `
 
 type CreateCallMessageParams struct {
@@ -45,6 +45,14 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 		&i.Event,
 		&i.TargetID,
 		&i.EditedAt,
+		&i.PreviewUrl,
+		&i.PreviewSite,
+		&i.PreviewTitle,
+		&i.PreviewDescription,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileMime,
+		&i.FileDirect,
 	)
 	return i, err
 }
@@ -52,7 +60,7 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 const createEventMessage = `-- name: CreateEventMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
 VALUES ($1, $2, $3, 'event', $4, $5)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct
 `
 
 type CreateEventMessageParams struct {
@@ -84,6 +92,14 @@ func (q *Queries) CreateEventMessage(ctx context.Context, arg CreateEventMessage
 		&i.Event,
 		&i.TargetID,
 		&i.EditedAt,
+		&i.PreviewUrl,
+		&i.PreviewSite,
+		&i.PreviewTitle,
+		&i.PreviewDescription,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileMime,
+		&i.FileDirect,
 	)
 	return i, err
 }
@@ -96,7 +112,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct
 `
 
 type CreateMessageParams struct {
@@ -120,6 +136,14 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.Event,
 		&i.TargetID,
 		&i.EditedAt,
+		&i.PreviewUrl,
+		&i.PreviewSite,
+		&i.PreviewTitle,
+		&i.PreviewDescription,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileMime,
+		&i.FileDirect,
 	)
 	return i, err
 }
@@ -135,9 +159,10 @@ func (q *Queries) DeleteMessage(ctx context.Context, id string) error {
 }
 
 const editMessage = `-- name: EditMessage :one
-UPDATE messages SET content = $1, edited_at = now()
+UPDATE messages SET content = $1, edited_at = now(),
+    preview_url = NULL, preview_site = NULL, preview_title = NULL, preview_description = NULL
 WHERE id = $2 AND kind = 'text'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct
 `
 
 type EditMessageParams struct {
@@ -160,6 +185,14 @@ func (q *Queries) EditMessage(ctx context.Context, arg EditMessageParams) (Messa
 		&i.Event,
 		&i.TargetID,
 		&i.EditedAt,
+		&i.PreviewUrl,
+		&i.PreviewSite,
+		&i.PreviewTitle,
+		&i.PreviewDescription,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileMime,
+		&i.FileDirect,
 	)
 	return i, err
 }
@@ -167,7 +200,7 @@ func (q *Queries) EditMessage(ctx context.Context, arg EditMessageParams) (Messa
 const finishCallMessage = `-- name: FinishCallMessage :one
 UPDATE messages SET call_outcome = $1, call_duration = $2
 WHERE id = $3 AND kind = 'call'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct
 `
 
 type FinishCallMessageParams struct {
@@ -191,6 +224,14 @@ func (q *Queries) FinishCallMessage(ctx context.Context, arg FinishCallMessagePa
 		&i.Event,
 		&i.TargetID,
 		&i.EditedAt,
+		&i.PreviewUrl,
+		&i.PreviewSite,
+		&i.PreviewTitle,
+		&i.PreviewDescription,
+		&i.FileName,
+		&i.FileSize,
+		&i.FileMime,
+		&i.FileDirect,
 	)
 	return i, err
 }
@@ -226,10 +267,16 @@ func (q *Queries) GetMessageTarget(ctx context.Context, id string) (GetMessageTa
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, m.edited_at, sender.username AS sender_name, target.username AS target_name
+SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, m.edited_at, m.preview_url, m.preview_site, m.preview_title, m.preview_description, m.file_name, m.file_size, m.file_mime, m.file_direct, sender.username AS sender_name, target.username AS target_name,
+       photo.id AS photo_id, photo.width AS photo_width, photo.height AS photo_height, photo.expired AS photo_expired,
+       thumb.id AS thumb_id, thumb.width AS thumb_width, thumb.height AS thumb_height,
+       stored.id AS stored_id, stored.expired AS stored_expired
 FROM messages m
 JOIN users sender ON sender.id = m.sender_id
 LEFT JOIN users target ON target.id = m.target_id
+LEFT JOIN images photo ON photo.message_id = m.id AND photo.role = 'photo'
+LEFT JOIN images thumb ON thumb.message_id = m.id AND thumb.role = 'preview' AND NOT thumb.expired
+LEFT JOIN images stored ON stored.message_id = m.id AND stored.role = 'file'
 WHERE m.conversation_id = $1::uuid
   AND ($2::uuid IS NULL OR m.id < $2::uuid)
 ORDER BY m.id DESC
@@ -243,9 +290,18 @@ type ListMessagesParams struct {
 }
 
 type ListMessagesRow struct {
-	Message    Message
-	SenderName string
-	TargetName *string
+	Message       Message
+	SenderName    string
+	TargetName    *string
+	PhotoID       *string
+	PhotoWidth    *int32
+	PhotoHeight   *int32
+	PhotoExpired  *bool
+	ThumbID       *string
+	ThumbWidth    *int32
+	ThumbHeight   *int32
+	StoredID      *string
+	StoredExpired *bool
 }
 
 func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]ListMessagesRow, error) {
@@ -269,8 +325,25 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]L
 			&i.Message.Event,
 			&i.Message.TargetID,
 			&i.Message.EditedAt,
+			&i.Message.PreviewUrl,
+			&i.Message.PreviewSite,
+			&i.Message.PreviewTitle,
+			&i.Message.PreviewDescription,
+			&i.Message.FileName,
+			&i.Message.FileSize,
+			&i.Message.FileMime,
+			&i.Message.FileDirect,
 			&i.SenderName,
 			&i.TargetName,
+			&i.PhotoID,
+			&i.PhotoWidth,
+			&i.PhotoHeight,
+			&i.PhotoExpired,
+			&i.ThumbID,
+			&i.ThumbWidth,
+			&i.ThumbHeight,
+			&i.StoredID,
+			&i.StoredExpired,
 		); err != nil {
 			return nil, err
 		}

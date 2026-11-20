@@ -40,6 +40,9 @@ type guard struct {
 	identityChanges *limit.Limiter
 	identityLookups *limit.Limiter
 	usernameChanges *limit.Limiter
+	images          *limit.Limiter
+	imageReads      *limit.Limiter
+	gifSearches     *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -68,6 +71,9 @@ func newGuard() *guard {
 		identityChanges: limit.New(20, time.Hour),
 		identityLookups: limit.New(60, time.Minute),
 		usernameChanges: limit.New(10, time.Hour),
+		images:          limit.New(10, time.Minute),
+		imageReads:      limit.New(1200, time.Minute),
+		gifSearches:     limit.New(60, time.Minute),
 	}
 }
 

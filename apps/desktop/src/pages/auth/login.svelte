@@ -3,6 +3,7 @@
   import { t } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
+  import { takeDevLogin } from "@/services/dev-profile";
   import { chat } from "@/stores/chat.svelte";
   import AuthLayout from "./auth-layout.svelte";
   import type { Navigate } from "./screen";
@@ -15,6 +16,16 @@
   let password = $state("");
   let errors = $state<Partial<Record<Field, string>>>({});
   let submitting = $state(false);
+
+  $effect(() => {
+    takeDevLogin().then((profile) => {
+      if (profile) {
+        login = profile.login;
+        password = profile.password;
+        void submit();
+      }
+    });
+  });
 
   function validate(): Partial<Record<Field, string>> {
     const result: Partial<Record<Field, string>> = {};

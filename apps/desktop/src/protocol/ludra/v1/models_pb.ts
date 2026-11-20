@@ -12,7 +12,7 @@ import type { Message as Message$1 } from "@bufbuild/protobuf";
  * Describes the file ludra/v1/models.proto.
  */
 export const file_ludra_v1_models: GenFile = /*@__PURE__*/
-  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIloKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZRIOCgZhdmF0YXIYBCABKAki4QEKCUdyb3VwQ2FsbBIKCgJpZBgBIAEoCRIXCg9wYXJ0aWNpcGFudF9pZHMYAiADKAkSLgoKc3RhcnRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLcmluZ2luZ19pZHMYBSADKAkSEQoJbXV0ZWRfaWRzGAYgAygJEhQKDGRlYWZlbmVkX2lkcxgHIAMoCRITCgtzaGFyaW5nX2lkcxgIIAMoCRISCgpkaXJlY3RfaWRzGAkgAygJEhIKCmNhbWVyYV9pZHMYCiADKAlKBAgEEAUi+wIKB01lc3NhZ2USCgoCaWQYASABKAkSFwoPY29udmVyc2F0aW9uX2lkGAIgASgJEhEKCXNlbmRlcl9pZBgDIAEoCRIPCgdjb250ZW50GAQgASgJEisKB3NlbnRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiMKBGtpbmQYBiABKA4yFS5sdWRyYS52MS5NZXNzYWdlS2luZBIrCgxjYWxsX291dGNvbWUYByABKA4yFS5sdWRyYS52MS5DYWxsT3V0Y29tZRIVCg1jYWxsX2R1cmF0aW9uGAggASgNEiUKBWV2ZW50GAkgASgOMhYubHVkcmEudjEuTWVzc2FnZUV2ZW50EhEKCXRhcmdldF9pZBgKIAEoCRITCgtzZW5kZXJfbmFtZRgLIAEoCRITCgt0YXJnZXRfbmFtZRgMIAEoCRItCgllZGl0ZWRfYXQYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIkwKBkZyaWVuZBIcCgR1c2VyGAEgASgLMg4ubHVkcmEudjEuVXNlchIkCgVzdGF0ZRgCIAEoDjIVLmx1ZHJhLnYxLkZyaWVuZFN0YXRlIv8BCgxDb252ZXJzYXRpb24SCgoCaWQYASABKAkSHAoEcGVlchgCIAEoCzIOLmx1ZHJhLnYxLlVzZXISJwoMbGFzdF9tZXNzYWdlGAMgASgLMhEubHVkcmEudjEuTWVzc2FnZRIoCgRraW5kGAQgASgOMhoubHVkcmEudjEuQ29udmVyc2F0aW9uS2luZBIMCgRuYW1lGAUgASgJEhAKCG93bmVyX2lkGAYgASgJEh8KB21lbWJlcnMYByADKAsyDi5sdWRyYS52MS5Vc2VyEiEKBGNhbGwYCCABKAsyEy5sdWRyYS52MS5Hcm91cENhbGwSDgoGYXZhdGFyGAkgASgJIj8KCUljZVNlcnZlchIMCgR1cmxzGAEgAygJEhAKCHVzZXJuYW1lGAIgASgJEhIKCmNyZWRlbnRpYWwYAyABKAkiagoEQ2FsbBIKCgJpZBgBIAEoCRIcCgRwZWVyGAIgASgLMg4ubHVkcmEudjEuVXNlchIoCgtpY2Vfc2VydmVycxgDIAMoCzITLmx1ZHJhLnYxLkljZVNlcnZlchIOCgZkaXJlY3QYBCABKAgiYwoKQ2FsbFNpZ25hbBIPCgdjYWxsX2lkGAEgASgJEiIKBGtpbmQYAiABKA4yFC5sdWRyYS52MS5TaWduYWxLaW5kEg8KB3BheWxvYWQYAyABKAkSDwoHcGVlcl9pZBgEIAEoCSp6CghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhMKD1BSRVNFTkNFX09OTElORRABEhQKEFBSRVNFTkNFX09GRkxJTkUQAhIWChJQUkVTRU5DRV9JTlZJU0lCTEUQAxIRCg1QUkVTRU5DRV9CVVNZEAQqfAoLRnJpZW5kU3RhdGUSHAoYRlJJRU5EX1NUQVRFX1VOU1BFQ0lGSUVEEAASGQoVRlJJRU5EX1NUQVRFX0FDQ0VQVEVEEAESGQoVRlJJRU5EX1NUQVRFX0lOQ09NSU5HEAISGQoVRlJJRU5EX1NUQVRFX09VVEdPSU5HEAMqcQoLTWVzc2FnZUtpbmQSHAoYTUVTU0FHRV9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRTUVTU0FHRV9LSU5EX1RFWFQQARIVChFNRVNTQUdFX0tJTkRfQ0FMTBACEhYKEk1FU1NBR0VfS0lORF9FVkVOVBADKpICCgxNZXNzYWdlRXZlbnQSHQoZTUVTU0FHRV9FVkVOVF9VTlNQRUNJRklFRBAAEh4KGk1FU1NBR0VfRVZFTlRfTUVNQkVSX0FEREVEEAESIAocTUVTU0FHRV9FVkVOVF9NRU1CRVJfUkVNT1ZFRBACEh0KGU1FU1NBR0VfRVZFTlRfTUVNQkVSX0xFRlQQAxIfChtNRVNTQUdFX0VWRU5UX09XTkVSX0NIQU5HRUQQBBIfChtNRVNTQUdFX0VWRU5UX0dST1VQX1JFTkFNRUQQBRIfChtNRVNTQUdFX0VWRU5UX1BIT1RPX0NIQU5HRUQQBhIfChtNRVNTQUdFX0VWRU5UX1BIT1RPX1JFTU9WRUQQBypwChBDb252ZXJzYXRpb25LaW5kEiEKHUNPTlZFUlNBVElPTl9LSU5EX1VOU1BFQ0lGSUVEEAASHAoYQ09OVkVSU0FUSU9OX0tJTkRfRElSRUNUEAESGwoXQ09OVkVSU0FUSU9OX0tJTkRfR1JPVVAQAiqVAQoLQ2FsbE91dGNvbWUSHAoYQ0FMTF9PVVRDT01FX1VOU1BFQ0lGSUVEEAASGgoWQ0FMTF9PVVRDT01FX0NPTVBMRVRFRBABEhkKFUNBTExfT1VUQ09NRV9ERUNMSU5FRBACEhcKE0NBTExfT1VUQ09NRV9NSVNTRUQQAxIYChRDQUxMX09VVENPTUVfT05HT0lORxAEKooBCgpTaWduYWxLaW5kEhsKF1NJR05BTF9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRU0lHTkFMX0tJTkRfT0ZGRVIQARIWChJTSUdOQUxfS0lORF9BTlNXRVIQAhIZChVTSUdOQUxfS0lORF9DQU5ESURBVEUQAxIVChFTSUdOQUxfS0lORF9TVEFURRAEQnUKDGNvbS5sdWRyYS52MUILTW9kZWxzUHJvdG9QAVoXbHVkcmEvaW50ZXJuYWwvcHJvdG9jb2yiAgNMWFiqAghMdWRyYS5WMcoCCEx1ZHJhXFYx4gIUTHVkcmFcVjFcR1BCTWV0YWRhdGHqAglMdWRyYTo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("ChVsdWRyYS92MS9tb2RlbHMucHJvdG8SCGx1ZHJhLnYxIloKBFVzZXISCgoCaWQYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSJAoIcHJlc2VuY2UYAyABKA4yEi5sdWRyYS52MS5QcmVzZW5jZRIOCgZhdmF0YXIYBCABKAki4QEKCUdyb3VwQ2FsbBIKCgJpZBgBIAEoCRIXCg9wYXJ0aWNpcGFudF9pZHMYAiADKAkSLgoKc3RhcnRlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLcmluZ2luZ19pZHMYBSADKAkSEQoJbXV0ZWRfaWRzGAYgAygJEhQKDGRlYWZlbmVkX2lkcxgHIAMoCRITCgtzaGFyaW5nX2lkcxgIIAMoCRISCgpkaXJlY3RfaWRzGAkgAygJEhIKCmNhbWVyYV9pZHMYCiADKAlKBAgEEAUi5wMKB01lc3NhZ2USCgoCaWQYASABKAkSFwoPY29udmVyc2F0aW9uX2lkGAIgASgJEhEKCXNlbmRlcl9pZBgDIAEoCRIPCgdjb250ZW50GAQgASgJEisKB3NlbnRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiMKBGtpbmQYBiABKA4yFS5sdWRyYS52MS5NZXNzYWdlS2luZBIrCgxjYWxsX291dGNvbWUYByABKA4yFS5sdWRyYS52MS5DYWxsT3V0Y29tZRIVCg1jYWxsX2R1cmF0aW9uGAggASgNEiUKBWV2ZW50GAkgASgOMhYubHVkcmEudjEuTWVzc2FnZUV2ZW50EhEKCXRhcmdldF9pZBgKIAEoCRITCgtzZW5kZXJfbmFtZRgLIAEoCRITCgt0YXJnZXRfbmFtZRgMIAEoCRItCgllZGl0ZWRfYXQYDSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiEKBWltYWdlGA4gASgLMhIubHVkcmEudjEuSW1hZ2VSZWYSJgoHcHJldmlldxgPIAEoCzIVLmx1ZHJhLnYxLkxpbmtQcmV2aWV3Eh8KBGZpbGUYECABKAsyES5sdWRyYS52MS5GaWxlUmVmImAKB0ZpbGVSZWYSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzaXplGAMgASgEEgwKBG1pbWUYBCABKAkSDgoGZGlyZWN0GAUgASgIEg8KB2V4cGlyZWQYBiABKAgiqQEKCkZpbGVTaWduYWwSEgoKbWVzc2FnZV9pZBgBIAEoCRITCgt0cmFuc2Zlcl9pZBgCIAEoCRIPCgdwZWVyX2lkGAMgASgJEiYKBGtpbmQYBCABKA4yGC5sdWRyYS52MS5GaWxlU2lnbmFsS2luZBIPCgdwYXlsb2FkGAUgASgJEigKC2ljZV9zZXJ2ZXJzGAYgAygLMhMubHVkcmEudjEuSWNlU2VydmVyIkYKCEltYWdlUmVmEgoKAmlkGAEgASgJEg0KBXdpZHRoGAIgASgNEg4KBmhlaWdodBgDIAEoDRIPCgdleHBpcmVkGAQgASgIIm8KC0xpbmtQcmV2aWV3EgsKA3VybBgBIAEoCRIMCgRzaXRlGAIgASgJEg0KBXRpdGxlGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEiEKBWltYWdlGAUgASgLMhIubHVkcmEudjEuSW1hZ2VSZWYiTAoGRnJpZW5kEhwKBHVzZXIYASABKAsyDi5sdWRyYS52MS5Vc2VyEiQKBXN0YXRlGAIgASgOMhUubHVkcmEudjEuRnJpZW5kU3RhdGUi/wEKDENvbnZlcnNhdGlvbhIKCgJpZBgBIAEoCRIcCgRwZWVyGAIgASgLMg4ubHVkcmEudjEuVXNlchInCgxsYXN0X21lc3NhZ2UYAyABKAsyES5sdWRyYS52MS5NZXNzYWdlEigKBGtpbmQYBCABKA4yGi5sdWRyYS52MS5Db252ZXJzYXRpb25LaW5kEgwKBG5hbWUYBSABKAkSEAoIb3duZXJfaWQYBiABKAkSHwoHbWVtYmVycxgHIAMoCzIOLmx1ZHJhLnYxLlVzZXISIQoEY2FsbBgIIAEoCzITLmx1ZHJhLnYxLkdyb3VwQ2FsbBIOCgZhdmF0YXIYCSABKAkiPwoJSWNlU2VydmVyEgwKBHVybHMYASADKAkSEAoIdXNlcm5hbWUYAiABKAkSEgoKY3JlZGVudGlhbBgDIAEoCSJqCgRDYWxsEgoKAmlkGAEgASgJEhwKBHBlZXIYAiABKAsyDi5sdWRyYS52MS5Vc2VyEigKC2ljZV9zZXJ2ZXJzGAMgAygLMhMubHVkcmEudjEuSWNlU2VydmVyEg4KBmRpcmVjdBgEIAEoCCJjCgpDYWxsU2lnbmFsEg8KB2NhbGxfaWQYASABKAkSIgoEa2luZBgCIAEoDjIULmx1ZHJhLnYxLlNpZ25hbEtpbmQSDwoHcGF5bG9hZBgDIAEoCRIPCgdwZWVyX2lkGAQgASgJKnoKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASEwoPUFJFU0VOQ0VfT05MSU5FEAESFAoQUFJFU0VOQ0VfT0ZGTElORRACEhYKElBSRVNFTkNFX0lOVklTSUJMRRADEhEKDVBSRVNFTkNFX0JVU1kQBCp8CgtGcmllbmRTdGF0ZRIcChhGUklFTkRfU1RBVEVfVU5TUEVDSUZJRUQQABIZChVGUklFTkRfU1RBVEVfQUNDRVBURUQQARIZChVGUklFTkRfU1RBVEVfSU5DT01JTkcQAhIZChVGUklFTkRfU1RBVEVfT1VUR09JTkcQAyqgAQoLTWVzc2FnZUtpbmQSHAoYTUVTU0FHRV9LSU5EX1VOU1BFQ0lGSUVEEAASFQoRTUVTU0FHRV9LSU5EX1RFWFQQARIVChFNRVNTQUdFX0tJTkRfQ0FMTBACEhYKEk1FU1NBR0VfS0lORF9FVkVOVBADEhYKEk1FU1NBR0VfS0lORF9JTUFHRRAEEhUKEU1FU1NBR0VfS0lORF9GSUxFEAUqkgIKDE1lc3NhZ2VFdmVudBIdChlNRVNTQUdFX0VWRU5UX1VOU1BFQ0lGSUVEEAASHgoaTUVTU0FHRV9FVkVOVF9NRU1CRVJfQURERUQQARIgChxNRVNTQUdFX0VWRU5UX01FTUJFUl9SRU1PVkVEEAISHQoZTUVTU0FHRV9FVkVOVF9NRU1CRVJfTEVGVBADEh8KG01FU1NBR0VfRVZFTlRfT1dORVJfQ0hBTkdFRBAEEh8KG01FU1NBR0VfRVZFTlRfR1JPVVBfUkVOQU1FRBAFEh8KG01FU1NBR0VfRVZFTlRfUEhPVE9fQ0hBTkdFRBAGEh8KG01FU1NBR0VfRVZFTlRfUEhPVE9fUkVNT1ZFRBAHKnAKEENvbnZlcnNhdGlvbktpbmQSIQodQ09OVkVSU0FUSU9OX0tJTkRfVU5TUEVDSUZJRUQQABIcChhDT05WRVJTQVRJT05fS0lORF9ESVJFQ1QQARIbChdDT05WRVJTQVRJT05fS0lORF9HUk9VUBACKpUBCgtDYWxsT3V0Y29tZRIcChhDQUxMX09VVENPTUVfVU5TUEVDSUZJRUQQABIaChZDQUxMX09VVENPTUVfQ09NUExFVEVEEAESGQoVQ0FMTF9PVVRDT01FX0RFQ0xJTkVEEAISFwoTQ0FMTF9PVVRDT01FX01JU1NFRBADEhgKFENBTExfT1VUQ09NRV9PTkdPSU5HEAQqyAEKDkZpbGVTaWduYWxLaW5kEiAKHEZJTEVfU0lHTkFMX0tJTkRfVU5TUEVDSUZJRUQQABIcChhGSUxFX1NJR05BTF9LSU5EX1JFUVVFU1QQARIaChZGSUxFX1NJR05BTF9LSU5EX09GRkVSEAISGwoXRklMRV9TSUdOQUxfS0lORF9BTlNXRVIQAxIbChdGSUxFX1NJR05BTF9LSU5EX0NBTkNFTBAEEiAKHEZJTEVfU0lHTkFMX0tJTkRfVU5BVkFJTEFCTEUQBSqKAQoKU2lnbmFsS2luZBIbChdTSUdOQUxfS0lORF9VTlNQRUNJRklFRBAAEhUKEVNJR05BTF9LSU5EX09GRkVSEAESFgoSU0lHTkFMX0tJTkRfQU5TV0VSEAISGQoVU0lHTkFMX0tJTkRfQ0FORElEQVRFEAMSFQoRU0lHTkFMX0tJTkRfU1RBVEUQBEJ1Cgxjb20ubHVkcmEudjFCC01vZGVsc1Byb3RvUAFaF2x1ZHJhL2ludGVybmFsL3Byb3RvY29sogIDTFhYqgIITHVkcmEuVjHKAghMdWRyYVxWMeICFEx1ZHJhXFYxXEdQQk1ldGFkYXRh6gIJTHVkcmE6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message ludra.v1.User
@@ -171,6 +171,21 @@ export type Message = Message$1<"ludra.v1.Message"> & {
    * @generated from field: google.protobuf.Timestamp edited_at = 13;
    */
   editedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: ludra.v1.ImageRef image = 14;
+   */
+  image?: ImageRef | undefined;
+
+  /**
+   * @generated from field: ludra.v1.LinkPreview preview = 15;
+   */
+  preview?: LinkPreview | undefined;
+
+  /**
+   * @generated from field: ludra.v1.FileRef file = 16;
+   */
+  file?: FileRef | undefined;
 };
 
 /**
@@ -179,6 +194,159 @@ export type Message = Message$1<"ludra.v1.Message"> & {
  */
 export const MessageSchema: GenMessage<Message> = /*@__PURE__*/
   messageDesc(file_ludra_v1_models, 2);
+
+/**
+ * @generated from message ludra.v1.FileRef
+ */
+export type FileRef = Message$1<"ludra.v1.FileRef"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: uint64 size = 3;
+   */
+  size: bigint;
+
+  /**
+   * @generated from field: string mime = 4;
+   */
+  mime: string;
+
+  /**
+   * @generated from field: bool direct = 5;
+   */
+  direct: boolean;
+
+  /**
+   * @generated from field: bool expired = 6;
+   */
+  expired: boolean;
+};
+
+/**
+ * Describes the message ludra.v1.FileRef.
+ * Use `create(FileRefSchema)` to create a new message.
+ */
+export const FileRefSchema: GenMessage<FileRef> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 3);
+
+/**
+ * @generated from message ludra.v1.FileSignal
+ */
+export type FileSignal = Message$1<"ludra.v1.FileSignal"> & {
+  /**
+   * @generated from field: string message_id = 1;
+   */
+  messageId: string;
+
+  /**
+   * @generated from field: string transfer_id = 2;
+   */
+  transferId: string;
+
+  /**
+   * @generated from field: string peer_id = 3;
+   */
+  peerId: string;
+
+  /**
+   * @generated from field: ludra.v1.FileSignalKind kind = 4;
+   */
+  kind: FileSignalKind;
+
+  /**
+   * @generated from field: string payload = 5;
+   */
+  payload: string;
+
+  /**
+   * @generated from field: repeated ludra.v1.IceServer ice_servers = 6;
+   */
+  iceServers: IceServer[];
+};
+
+/**
+ * Describes the message ludra.v1.FileSignal.
+ * Use `create(FileSignalSchema)` to create a new message.
+ */
+export const FileSignalSchema: GenMessage<FileSignal> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 4);
+
+/**
+ * @generated from message ludra.v1.ImageRef
+ */
+export type ImageRef = Message$1<"ludra.v1.ImageRef"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: uint32 width = 2;
+   */
+  width: number;
+
+  /**
+   * @generated from field: uint32 height = 3;
+   */
+  height: number;
+
+  /**
+   * @generated from field: bool expired = 4;
+   */
+  expired: boolean;
+};
+
+/**
+ * Describes the message ludra.v1.ImageRef.
+ * Use `create(ImageRefSchema)` to create a new message.
+ */
+export const ImageRefSchema: GenMessage<ImageRef> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 5);
+
+/**
+ * @generated from message ludra.v1.LinkPreview
+ */
+export type LinkPreview = Message$1<"ludra.v1.LinkPreview"> & {
+  /**
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * @generated from field: string site = 2;
+   */
+  site: string;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string description = 4;
+   */
+  description: string;
+
+  /**
+   * @generated from field: ludra.v1.ImageRef image = 5;
+   */
+  image?: ImageRef | undefined;
+};
+
+/**
+ * Describes the message ludra.v1.LinkPreview.
+ * Use `create(LinkPreviewSchema)` to create a new message.
+ */
+export const LinkPreviewSchema: GenMessage<LinkPreview> = /*@__PURE__*/
+  messageDesc(file_ludra_v1_models, 6);
 
 /**
  * @generated from message ludra.v1.Friend
@@ -200,7 +368,7 @@ export type Friend = Message$1<"ludra.v1.Friend"> & {
  * Use `create(FriendSchema)` to create a new message.
  */
 export const FriendSchema: GenMessage<Friend> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 3);
+  messageDesc(file_ludra_v1_models, 7);
 
 /**
  * @generated from message ludra.v1.Conversation
@@ -257,7 +425,7 @@ export type Conversation = Message$1<"ludra.v1.Conversation"> & {
  * Use `create(ConversationSchema)` to create a new message.
  */
 export const ConversationSchema: GenMessage<Conversation> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 4);
+  messageDesc(file_ludra_v1_models, 8);
 
 /**
  * @generated from message ludra.v1.IceServer
@@ -284,7 +452,7 @@ export type IceServer = Message$1<"ludra.v1.IceServer"> & {
  * Use `create(IceServerSchema)` to create a new message.
  */
 export const IceServerSchema: GenMessage<IceServer> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 5);
+  messageDesc(file_ludra_v1_models, 9);
 
 /**
  * @generated from message ludra.v1.Call
@@ -316,7 +484,7 @@ export type Call = Message$1<"ludra.v1.Call"> & {
  * Use `create(CallSchema)` to create a new message.
  */
 export const CallSchema: GenMessage<Call> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 6);
+  messageDesc(file_ludra_v1_models, 10);
 
 /**
  * @generated from message ludra.v1.CallSignal
@@ -348,7 +516,7 @@ export type CallSignal = Message$1<"ludra.v1.CallSignal"> & {
  * Use `create(CallSignalSchema)` to create a new message.
  */
 export const CallSignalSchema: GenMessage<CallSignal> = /*@__PURE__*/
-  messageDesc(file_ludra_v1_models, 7);
+  messageDesc(file_ludra_v1_models, 11);
 
 /**
  * @generated from enum ludra.v1.Presence
@@ -440,6 +608,16 @@ export enum MessageKind {
    * @generated from enum value: MESSAGE_KIND_EVENT = 3;
    */
   EVENT = 3,
+
+  /**
+   * @generated from enum value: MESSAGE_KIND_IMAGE = 4;
+   */
+  IMAGE = 4,
+
+  /**
+   * @generated from enum value: MESSAGE_KIND_FILE = 5;
+   */
+  FILE = 5,
 }
 
 /**
@@ -562,6 +740,47 @@ export const CallOutcomeSchema: GenEnum<CallOutcome> = /*@__PURE__*/
   enumDesc(file_ludra_v1_models, 5);
 
 /**
+ * @generated from enum ludra.v1.FileSignalKind
+ */
+export enum FileSignalKind {
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_REQUEST = 1;
+   */
+  REQUEST = 1,
+
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_OFFER = 2;
+   */
+  OFFER = 2,
+
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_ANSWER = 3;
+   */
+  ANSWER = 3,
+
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_CANCEL = 4;
+   */
+  CANCEL = 4,
+
+  /**
+   * @generated from enum value: FILE_SIGNAL_KIND_UNAVAILABLE = 5;
+   */
+  UNAVAILABLE = 5,
+}
+
+/**
+ * Describes the enum ludra.v1.FileSignalKind.
+ */
+export const FileSignalKindSchema: GenEnum<FileSignalKind> = /*@__PURE__*/
+  enumDesc(file_ludra_v1_models, 6);
+
+/**
  * @generated from enum ludra.v1.SignalKind
  */
 export enum SignalKind {
@@ -595,5 +814,5 @@ export enum SignalKind {
  * Describes the enum ludra.v1.SignalKind.
  */
 export const SignalKindSchema: GenEnum<SignalKind> = /*@__PURE__*/
-  enumDesc(file_ludra_v1_models, 6);
+  enumDesc(file_ludra_v1_models, 7);
 

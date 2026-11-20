@@ -54,6 +54,13 @@ message ClientFrame {
     DeleteMessage delete_message = 45;
     SetUsername set_username = 46;
     RenameGroup rename_group = 47;
+    GetImage get_image = 49;
+    RemovePreview remove_preview = 50;
+    SearchGifs search_gifs = 51;
+    GetGifPreview get_gif_preview = 52;
+    SendGif send_gif = 53;
+    SendDirectFile send_direct_file = 55;
+    FileSignal file_signal = 57;
   }
 }
 
@@ -158,6 +165,37 @@ message LoadMessages {
 message SendMessage {
   string conversation_id = 1;
   string content = 2;
+}
+
+message GetImage {
+  string id = 1;
+  uint32 offset = 2;
+}
+
+message SendDirectFile {
+  string conversation_id = 1;
+  string name = 2;
+  uint64 size = 3;
+  string mime = 4;
+}
+
+message SearchGifs {
+  string query = 1;
+  string pos = 2;
+  string locale = 3;
+}
+
+message GetGifPreview {
+  string id = 1;
+}
+
+message SendGif {
+  string conversation_id = 1;
+  string id = 2;
+}
+
+message RemovePreview {
+  string message_id = 1;
 }
 
 message EditMessage {

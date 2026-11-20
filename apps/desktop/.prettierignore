@@ -1,3 +1,4 @@
 src/protocol
 src-tauri
 dist
+devkit/window/gen

@@ -27,6 +27,7 @@
   --surface-color: rgba(255, 255, 255, 0.04);
 
   --brand-color: #c77dff;
+  --neon-color: #dc8cff;
   --success-color: #1c9749;
   --warning-color: #ffc107;
   --danger-color: #801d1e;
@@ -88,6 +89,14 @@ button:disabled {
 :focus-visible {
   outline: 1px solid var(--muted-color);
   outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand-color) 35%, transparent);
 }
 
 input::placeholder {

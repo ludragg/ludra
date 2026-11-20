@@ -1,5 +1,42 @@
 [
   {
+    "version": "0.4.0",
+    "notes": {
+      "pt": {
+        "features": [
+          "Envie arquivos de qualquer tipo, de até 2 GB, pelo \"+\" ou arrastando da pasta para a conversa. Eles saem direto do seu PC, sem ficar guardados no servidor, e só seus amigos podem baixar.",
+          "Fotos e vídeos aparecem dentro do chat depois de baixados, com um player próprio (pausar, volume, barra de tempo e tela cheia) e um visualizador de fotos com zoom.",
+          "Botão de GIF ao lado de \"Enviar\", com busca da KLIPY (até 10 GIFs por dia).",
+          "Links ganham prévia com título, descrição e imagem. Vídeos e lives do YouTube tocam dentro do chat.",
+          "Menções com @: a lista de membros aparece ao digitar, o nome fica destacado em roxo e as mensagens que mencionam você ganham destaque. Um @ aparece na conversa e na caixa de entrada quando alguém menciona você.",
+          "O tempo da chamada aparece ao vivo na mensagem da chamada, e a duração agora vem por extenso, como em \"Chamada em grupo de 5 minutos.\".",
+          "A foto de perfil e a do grupo agora aceitam JPG."
+        ],
+        "fixes": [
+          "O texto selecionado agora fica na cor do Ludra.",
+          "O número da versão na barra de cima ficou centralizado.",
+          "Os botões não mostram mais um contorno branco depois de usar o teclado."
+        ]
+      },
+      "en": {
+        "features": [
+          "Send files of any type, up to 2 GB, with the \"+\" button or by dragging them from a folder onto the conversation. They go straight from your PC without being stored on the server, and only your friends can download them.",
+          "Photos and videos show up inside the chat once downloaded, with a built-in player (pause, volume, seek bar and fullscreen) and a photo viewer with zoom.",
+          "A GIF button next to \"Send\", with KLIPY search (up to 10 GIFs a day).",
+          "Links get a preview with title, description and image. YouTube videos and lives play inside the chat.",
+          "Mentions with @: the member list shows up while you type, the name is highlighted in purple and messages that mention you stand out. An @ shows on the conversation and on the inbox when someone mentions you.",
+          "The call time shows live on the call message, and the duration is now written out, like \"Group call of 5 minutes.\".",
+          "Profile and group photos now accept JPG."
+        ],
+        "fixes": [
+          "Selected text now uses Ludra's color.",
+          "The version number in the top bar is now centered.",
+          "Buttons no longer show a white outline after using the keyboard."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.3.5",
     "notes": {
       "pt": {

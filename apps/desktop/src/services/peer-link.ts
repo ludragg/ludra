@@ -50,7 +50,7 @@ function scrubLine(line: string): string {
   return line;
 }
 
-function describe(description: RTCSessionDescriptionInit | null): string {
+export function describe(description: RTCSessionDescriptionInit | null): string {
   const sdp = (description?.sdp ?? "")
     .split("\r\n")
     .filter((line) => !(line.startsWith("a=candidate:") && isHost(line)))
