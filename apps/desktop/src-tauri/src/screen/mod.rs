@@ -1,6 +1,7 @@
 mod audio;
 mod bridge;
 mod capture;
+mod fullscreen;
 mod sources;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -18,10 +19,11 @@ use windows_capture::settings::{
 use audio::SystemAudio;
 use bridge::Bridge;
 use capture::{Capture, Flags};
+use fullscreen::Capturing;
 use sources::{Source, Target};
 
 struct Session {
-    control: CaptureControl<Capture, String>,
+    capturing: Arc<Capturing>,
     watched: Arc<AtomicBool>,
     audio: Option<SystemAudio>,
 }
@@ -84,18 +86,17 @@ pub async fn screen_start(
             height,
             fps,
         };
-        let interval = MinimumUpdateIntervalSettings::Custom(Duration::from_millis(1));
-        let control = match target {
-            Target::Monitor(monitor) => {
-                Capture::start_free_threaded(settings(monitor, interval, flags))
-            }
-            Target::Window(window) => {
-                Capture::start_free_threaded(settings(window, interval, flags))
-            }
+        let window = match &target {
+            Target::Window(window) => Some(*window),
+            Target::Monitor(_) => None,
+        };
+        let control = begin(target, flags.clone())?;
+        let capturing = Arc::new(Capturing::new(control));
+        if let Some(window) = window {
+            fullscreen::watch(capturing.clone(), window, flags);
         }
-        .map_err(|error| error.to_string())?;
         Ok(Session {
-            control,
+            capturing,
             watched,
             audio: SystemAudio::start(audio, excluded).ok(),
         })
@@ -148,7 +149,18 @@ fn stop(state: &State<'_, ScreenState>) {
 
 fn halt(session: Session) {
     drop(session.audio);
-    let _ = session.control.stop();
+    session.capturing.stop();
+}
+
+fn begin(target: Target, flags: Flags) -> Result<CaptureControl<Capture, String>, String> {
+    let interval = MinimumUpdateIntervalSettings::Custom(Duration::from_millis(1));
+    match target {
+        Target::Monitor(monitor) => {
+            Capture::start_free_threaded(settings(monitor, interval, flags))
+        }
+        Target::Window(window) => Capture::start_free_threaded(settings(window, interval, flags)),
+    }
+    .map_err(|error| error.to_string())
 }
 
 fn settings<T: TryInto<windows_capture::settings::GraphicsCaptureItemType>>(

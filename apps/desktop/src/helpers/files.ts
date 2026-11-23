@@ -5,6 +5,10 @@ export type Picked = { path: string; name: string; size: number };
 export type FileCategory = "image" | "video" | "audio" | "archive" | "document" | "code" | "other";
 
 export const maxDirectBytes = 2 * 1024 * 1024 * 1024;
+export const autoDownloadBytes = 20 * 1024 * 1024;
+
+export const viewableTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/bmp"]);
+export const playableTypes = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 const types: Record<string, string> = {
   png: "image/png",
@@ -43,6 +47,14 @@ export function extensionFor(mime: string): string {
 
 export function mimeFor(name: string): string {
   return types[extensionOf(name)] ?? "application/octet-stream";
+}
+
+export function autoDownloads(name: string, mime: string, size: number): boolean {
+  return (
+    size <= autoDownloadBytes &&
+    (viewableTypes.has(mime) || playableTypes.has(mime)) &&
+    (viewableTypes.has(mimeFor(name)) || playableTypes.has(mimeFor(name)))
+  );
 }
 
 export function categoryOf(mime: string): FileCategory {

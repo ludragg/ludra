@@ -6,14 +6,17 @@ const openTimeout = 30_000;
 
 export class FileChannel {
   #connection: RTCPeerConnection;
+  #configuration: RTCConfiguration;
   #channel: Promise<RTCDataChannel>;
   #resolve: (channel: RTCDataChannel) => void = () => {};
 
-  constructor(iceServers: IceServer[], direct: boolean) {
-    this.#connection = new RTCPeerConnection({
+  constructor(iceServers: IceServer[], direct: boolean, warm = false) {
+    this.#configuration = {
       iceServers: iceServers.map(({ urls, username, credential }) => ({ urls, username, credential })),
       iceTransportPolicy: direct ? "all" : "relay",
-    });
+      iceCandidatePoolSize: warm ? 1 : 0,
+    };
+    this.#connection = new RTCPeerConnection(this.#configuration);
     this.#channel = new Promise((resolve, reject) => {
       this.#resolve = resolve;
       window.setTimeout(() => reject(new Error("channel timeout")), openTimeout);
@@ -37,6 +40,11 @@ export class FileChannel {
 
   async accept(answer: string) {
     await this.#connection.setRemoteDescription(JSON.parse(answer));
+  }
+
+  allowDirect() {
+    this.#configuration = { ...this.#configuration, iceTransportPolicy: "all" };
+    this.#connection.setConfiguration(this.#configuration);
   }
 
   open(): Promise<RTCDataChannel> {

@@ -1,5 +1,28 @@
 [
   {
+    "version": "0.4.2",
+    "notes": {
+      "pt": {
+        "features": [
+          "Fotos e vídeos de até 20 MB enviados por amigos baixam sozinhos assim que chegam, na pasta Downloads\\Ludra. Para não sobrecarregar a conexão, no máximo 8 por vez a cada 10 minutos; o resto continua com o botão de baixar.",
+          "O download de arquivos começa direto em \"Baixando…\", sem as etapas \"Aguardando\" e \"Conectando\", e a conexão é preparada antes, para começar mais rápido."
+        ],
+        "fixes": [
+          "Transmitir a janela de um jogo em tela cheia sem borda não trava mais a imagem em um frame quando você clica no jogo."
+        ]
+      },
+      "en": {
+        "features": [
+          "Photos and videos up to 20 MB sent by friends now download by themselves as soon as they arrive, into Downloads\\Ludra. To avoid overloading the connection, at most 8 every 10 minutes; the rest keep the download button.",
+          "File downloads start straight at \"Downloading…\", without the \"Waiting\" and \"Connecting\" steps, and the connection is prepared earlier so it starts faster."
+        ],
+        "fixes": [
+          "Sharing the window of a borderless fullscreen game no longer freezes the picture on a single frame when you click the game."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.4.1",
     "notes": {
       "pt": {

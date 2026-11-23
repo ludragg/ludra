@@ -693,6 +693,10 @@ class ChatStore {
       return;
     }
 
+    if (message.file && this.isFriend(message.senderId) && !this.isBlocked(message.senderId)) {
+      files.autoDownload(message);
+    }
+
     const watching = message.conversationId === this.activeId && windowFocused();
     if (message.conversationId !== this.activeId && !this.isBlocked(message.senderId)) {
       this.unread[message.conversationId] = (this.unread[message.conversationId] ?? 0) + 1;

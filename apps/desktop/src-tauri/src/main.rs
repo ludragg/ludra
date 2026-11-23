@@ -88,6 +88,7 @@ fn main() {
             files::reveal_file,
             files::read_shared,
             files::save_target,
+            files::auto_target,
             files::begin_download,
             files::write_download,
             files::finish_download,

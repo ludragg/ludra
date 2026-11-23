@@ -1,6 +1,6 @@
 use std::mem::ManuallyDrop;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter};
@@ -28,6 +28,12 @@ const IDLE_INTERVAL: Duration = Duration::from_secs(1);
 const FULL_RANGE_RGB: u32 = 0;
 const LIMITED_RANGE_BT709: u32 = 1 << 2 | 1 << 4;
 
+fn epoch() -> Instant {
+    static EPOCH: OnceLock<Instant> = OnceLock::new();
+    *EPOCH.get_or_init(Instant::now)
+}
+
+#[derive(Clone)]
 pub struct Flags {
     pub bridge: Arc<Bridge>,
     pub watched: Arc<AtomicBool>,
@@ -48,7 +54,6 @@ pub struct Capture {
     interval: Duration,
     pace: Duration,
     next: Option<Instant>,
-    started: Instant,
     scaler: Option<Scaler>,
     software: bool,
 }
@@ -150,7 +155,6 @@ impl GraphicsCaptureApiHandler for Capture {
             interval: Duration::from_secs_f64(1.0 / f64::from(flags.fps.max(1))),
             pace: Duration::ZERO,
             next: None,
-            started: Instant::now(),
             scaler: None,
             software: false,
         })
@@ -175,7 +179,7 @@ impl GraphicsCaptureApiHandler for Capture {
             return Ok(());
         }
 
-        let timestamp = now.duration_since(self.started).as_micros() as u64;
+        let timestamp = now.duration_since(epoch()).as_micros() as u64;
         if !self.software && self.scale_on_gpu(frame, width, height, timestamp).is_err() {
             self.software = true;
             self.scaler = None;

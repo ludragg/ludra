@@ -2,14 +2,11 @@
   import { convertFileSrc } from "@tauri-apps/api/core";
   import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
   import VideoPlayer from "@/components/video-player/video-player.svelte";
-  import { categoryOf, formatSize } from "@/helpers/files";
+  import { categoryOf, formatSize, playableTypes, viewableTypes } from "@/helpers/files";
   import { t } from "@/i18n";
   import type { Message } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
   import { files } from "@/stores/files.svelte";
-
-  const playable = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-  const viewable = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/bmp"]);
 
   let { message, sender, mine }: { message: Message; sender: string; mine: boolean } = $props();
 
@@ -21,11 +18,9 @@
   const file = $derived(message.file!);
   const size = $derived(Number(file.size));
   const category = $derived(categoryOf(file.mime));
-  const media = $derived(viewable.has(file.mime) ? "image" : playable.has(file.mime) ? "video" : null);
+  const media = $derived(viewableTypes.has(file.mime) ? "image" : playableTypes.has(file.mime) ? "video" : null);
   const transfer = $derived(files.transfers[message.id]);
-  const busy = $derived(
-    transfer?.state === "waiting" || transfer?.state === "connecting" || transfer?.state === "receiving",
-  );
+  const busy = $derived(transfer?.state === "waiting" || transfer?.state === "receiving");
   const expired = $derived(!file.direct || missing || transfer?.state === "expired");
   const friendsOnly = $derived(!mine && !expired && !chat.isFriend(message.senderId));
   const downloadable = $derived(!expired && !mine && !friendsOnly);
@@ -62,9 +57,7 @@
   function status(): string {
     switch (transfer?.state) {
       case "waiting":
-        return t("chat.fileWaiting", { name: sender });
-      case "connecting":
-        return t("chat.fileConnecting");
+        return t("chat.fileStarting");
       case "receiving":
         return `${Math.floor((transfer.received / Math.max(1, transfer.total)) * 100)}% (${formatSize(transfer.speed)}/s)`;
       case "done":

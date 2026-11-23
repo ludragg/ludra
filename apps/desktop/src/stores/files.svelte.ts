@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { autoDownloads } from "@/helpers/files";
 import { FileSignalKind, SignalKind, type FileSignal, type Message } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
@@ -7,16 +8,7 @@ import { preferences } from "@/stores/preferences.svelte";
 import { trust } from "@/stores/trust.svelte";
 
 export type TransferState =
-  | "waiting"
-  | "connecting"
-  | "receiving"
-  | "done"
-  | "offline"
-  | "friendsOnly"
-  | "unavailable"
-  | "expired"
-  | "failed"
-  | "canceled";
+  "waiting" | "receiving" | "done" | "offline" | "friendsOnly" | "unavailable" | "expired" | "failed" | "canceled";
 
 export type Transfer = { state: TransferState; received: number; total: number; speed: number; path: string };
 
@@ -32,6 +24,9 @@ const highWater = 8 * 1024 * 1024;
 const lowWater = 1024 * 1024;
 const maxServing = 3;
 const progressEvery = 100;
+const maxAutomatic = 2;
+const automaticBudget = 8;
+const automaticWindow = 10 * 60_000;
 
 class TimeoutError extends Error {}
 
@@ -137,6 +132,9 @@ class FileStore {
   #canceled = new Set<string>();
   #serving = 0;
   #updated = new Map<string, number>();
+  #queue: Message[] = [];
+  #automatic = 0;
+  #started: number[] = [];
 
   attach(client: Client) {
     this.#client = client;
@@ -148,6 +146,8 @@ class FileStore {
       cancel();
     }
     this.#client = null;
+    this.#queue = [];
+    this.#started = [];
     this.transfers = {};
   }
 
@@ -194,9 +194,52 @@ class FileStore {
     await this.#downloadDirect(message, path);
   }
 
+  autoDownload(message: Message) {
+    const file = message.file;
+    const size = Number(file?.size ?? 0);
+    if (!file?.direct || !this.#client || this.#busy(message.id) || !autoDownloads(file.name, file.mime, size)) {
+      return;
+    }
+    const now = Date.now();
+    this.#started = this.#started.filter((time) => now - time < automaticWindow);
+    if (this.#started.length >= automaticBudget) {
+      return;
+    }
+    this.#started.push(now);
+    this.#start(message.id, "waiting", size);
+    this.#cancels.set(message.id, () => {
+      this.#queue = this.#queue.filter(({ id }) => id !== message.id);
+      this.#cancels.delete(message.id);
+      this.#fail(message.id, "canceled");
+    });
+    this.#queue.push(message);
+    this.#pump();
+  }
+
+  #pump() {
+    while (this.#automatic < maxAutomatic && this.#queue.length > 0) {
+      const message = this.#queue.shift()!;
+      this.#automatic++;
+      void this.#downloadAutomatic(message).finally(() => {
+        this.#automatic--;
+        this.#pump();
+      });
+    }
+  }
+
+  async #downloadAutomatic(message: Message) {
+    try {
+      const path = await invoke<string>("auto_target", { name: message.file!.name });
+      await this.#downloadDirect(message, path);
+    } catch {
+      this.#cancels.delete(message.id);
+      this.#fail(message.id, "failed");
+    }
+  }
+
   #busy(messageId: string): boolean {
     const state = this.transfers[messageId]?.state;
-    return state === "waiting" || state === "connecting" || state === "receiving";
+    return state === "waiting" || state === "receiving";
   }
 
   async #downloadDirect(message: Message, path: string) {
@@ -221,15 +264,20 @@ class FileStore {
       offered.catch(() => undefined);
       const wantsDirect = direct();
       const { iceServers } = await client.requestFile(message.id, transferId, wantsDirect);
+      channel = new FileChannel(iceServers, false, true);
+      if (canceled) {
+        throw new Error("canceled");
+      }
       const offer = await offered;
       if (offer.kind === FileSignalKind.UNAVAILABLE) {
         this.#fail(message.id, "expired");
         return;
       }
 
-      this.#start(message.id, "connecting", total);
       const description = await trust.open(signed(transferId), senderId, SignalKind.OFFER, offer.payload);
-      channel = new FileChannel(iceServers, wantsDirect && agreed(description));
+      if (wantsDirect && agreed(description)) {
+        channel.allowDirect();
+      }
       const answer = await channel.answer(description);
       await client.fileSignal(
         message.id,

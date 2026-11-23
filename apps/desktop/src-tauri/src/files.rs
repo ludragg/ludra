@@ -13,6 +13,10 @@ use crate::registry::Registry;
 
 const MAX_CHUNK: u64 = 1 << 20;
 const IMAGE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
+const AUTO_EXTENSIONS: [&str; 9] = [
+    "png", "jpg", "jpeg", "gif", "webp", "bmp", "mp4", "webm", "mov",
+];
+const AUTO_FOLDER: &str = "Ludra";
 
 pub struct FilesState {
     picked: Mutex<HashSet<PathBuf>>,
@@ -191,14 +195,18 @@ pub fn stash_file(
 }
 
 fn unused_path(folder: &Path, name: &str) -> PathBuf {
+    unused_path_where(folder, name, |path| path.exists())
+}
+
+fn unused_path_where(folder: &Path, name: &str, taken: impl Fn(&Path) -> bool) -> PathBuf {
     let path = folder.join(name);
-    if !path.exists() {
+    if !taken(&path) {
         return path;
     }
     let (stem, extension) = name.rsplit_once('.').unwrap_or((name, ""));
     (1..)
         .map(|number| folder.join(format!("{stem} ({number}).{extension}")))
-        .find(|candidate| !candidate.exists())
+        .find(|candidate| !taken(candidate))
         .unwrap_or(path)
 }
 
@@ -265,6 +273,43 @@ pub async fn save_target(
         state.targets.lock().unwrap().insert(path.clone());
         path.to_string_lossy().into_owned()
     }))
+}
+
+#[tauri::command]
+pub fn auto_target(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    name: String,
+) -> Result<String, String> {
+    let name: String = Path::new(&name)
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default()
+        .chars()
+        .filter(|char| {
+            !char.is_control()
+                && !matches!(char, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+        })
+        .collect();
+    let name = name.trim().trim_end_matches('.').to_string();
+    let allowed = name.rsplit_once('.').is_some_and(|(stem, extension)| {
+        !stem.is_empty() && AUTO_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str())
+    });
+    if !allowed {
+        return Err("file type not allowed".into());
+    }
+    let folder = app
+        .path()
+        .download_dir()
+        .map_err(|error| error.to_string())?
+        .join(AUTO_FOLDER);
+    std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
+    let mut targets = state.targets.lock().unwrap();
+    let path = unused_path_where(&folder, &name, |path| {
+        path.exists() || targets.contains(path)
+    });
+    targets.insert(path.clone());
+    Ok(path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
