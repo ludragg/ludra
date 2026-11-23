@@ -82,8 +82,8 @@ pub async fn screen_start(
             bridge: Arc::new(Bridge::new(webview, size, session_id)?),
             watched: watched.clone(),
             app,
-            width,
-            height,
+            width: buffer_width,
+            height: buffer_height,
             fps,
         };
         let window = match &target {

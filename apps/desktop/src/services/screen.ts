@@ -12,15 +12,15 @@ export type ScreenQuality = {
 };
 
 const baseBitrates: Record<Resolution, number> = {
-  720: 2_500_000,
-  1080: 4_500_000,
-  1440: 8_000_000,
+  720: 4_000_000,
+  1080: 9_000_000,
+  1440: 16_000_000,
 };
 
 const fpsFactors: Record<FrameRate, number> = {
   30: 1,
   60: 1.5,
-  120: 2.2,
+  120: 2,
 };
 
 export function qualityLabel({ resolution, fps }: ScreenQuality): string {
@@ -73,7 +73,7 @@ export function tuneVideoBitrate(sdp: string): string {
       }
     }
   }
-  const tuning = "x-google-start-bitrate=6000;x-google-min-bitrate=600;x-google-max-bitrate=30000";
+  const tuning = "x-google-start-bitrate=4500;x-google-min-bitrate=600;x-google-max-bitrate=40000";
   const tuned = new Set<string>();
   const result = lines.map((line) => {
     const match = /^a=fmtp:(\d+) (.*)$/.exec(line);
@@ -101,8 +101,19 @@ const hardwareCodecs = ["video/VP9", "video/H264"];
 const softwareCodec = "video/VP8";
 const failedCodecs = new Set<string>();
 
-function bitrateOf(quality: ScreenQuality): number {
+export function screenBitrate(quality: ScreenQuality): number {
   return Math.round(baseBitrates[quality.resolution] * fpsFactors[quality.fps]);
+}
+
+export async function setScreenBitrate(sender: RTCRtpSender, bitrate: number) {
+  const parameters = sender.getParameters();
+  if (!parameters.encodings?.length) {
+    return;
+  }
+  for (const encoding of parameters.encodings) {
+    encoding.maxBitrate = bitrate;
+  }
+  await sender.setParameters(parameters).catch(() => undefined);
 }
 
 function negotiated(sender: RTCRtpSender, mimeType: string): RTCRtpCodec | null {
@@ -123,7 +134,7 @@ async function powerEfficient(mimeType: string, quality: ScreenQuality): Promise
         contentType: mimeType,
         width: Math.round((quality.resolution * 16) / 9),
         height: quality.resolution,
-        bitrate: bitrateOf(quality),
+        bitrate: screenBitrate(quality),
         framerate: quality.fps,
       },
     })
@@ -157,11 +168,15 @@ async function setCodec(sender: RTCRtpSender, codec: RTCRtpCodec | null) {
   await sender.setParameters(parameters).catch(() => undefined);
 }
 
-export async function applyScreenEncoding(sender: RTCRtpSender, quality: ScreenQuality) {
+export async function applyScreenEncoding(
+  sender: RTCRtpSender,
+  quality: ScreenQuality,
+  bitrate = screenBitrate(quality),
+) {
   const parameters = sender.getParameters();
   parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
   for (const encoding of parameters.encodings) {
-    encoding.maxBitrate = bitrateOf(quality);
+    encoding.maxBitrate = bitrate;
     encoding.maxFramerate = quality.fps;
   }
   parameters.degradationPreference = smooth(quality) ? "maintain-framerate" : "maintain-resolution";

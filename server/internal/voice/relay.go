@@ -17,7 +17,7 @@ import (
 const (
 	realm              = "ludra"
 	credentialLifetime = 12 * time.Hour
-	allocationsPerUser = 20
+	allocationsPerUser = 60
 	allocationWindow   = 10 * time.Minute
 )
 

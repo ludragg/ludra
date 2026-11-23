@@ -95,6 +95,16 @@ export async function killTree(pid) {
   }
 }
 
+export async function releaseBrowsers(folder) {
+  const script =
+    "Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | " +
+    "Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:LUDRA_PROFILE_FOLDER) } | " +
+    "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }";
+  await output("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], {
+    env: { ...process.env, LUDRA_PROFILE_FOLDER: folder },
+  });
+}
+
 export async function waitFor(check, timeout, interval = 500) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {

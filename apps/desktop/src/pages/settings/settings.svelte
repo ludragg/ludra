@@ -133,6 +133,7 @@
   }
 
   .settings__content {
+    position: relative;
     min-height: 0;
     padding: var(--page-gutter);
     flex-grow: 1;

@@ -441,7 +441,11 @@ func (s *session) loadMessages(ctx context.Context, req *protocol.LoadMessages) 
 	if err != nil {
 		return failed(err)
 	}
-	return messageHistoryFrame(req.ConversationId, messages, hasMore)
+	extras, err := s.chat.ExtraFiles(ctx, messages)
+	if err != nil {
+		return failed(err)
+	}
+	return messageHistoryFrame(req.ConversationId, messages, extras, hasMore)
 }
 
 func (s *session) openConversation(ctx context.Context, req *protocol.OpenConversation) *protocol.ServerFrame {
@@ -453,7 +457,7 @@ func (s *session) openConversation(ctx context.Context, req *protocol.OpenConver
 }
 
 func (s *session) sendMessage(ctx context.Context, req *protocol.SendMessage) *protocol.ServerFrame {
-	message, recipients, err := s.chat.SendMessage(ctx, s.user.Id, req.ConversationId, req.Content)
+	message, recipients, err := s.chat.SendMessage(ctx, s.user.Id, req.ConversationId, req.Content, req.ReplyToId)
 	if err != nil {
 		return failed(err)
 	}

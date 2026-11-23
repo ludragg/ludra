@@ -2,18 +2,22 @@
   import { invoke } from "@tauri-apps/api/core";
   import { tick } from "svelte";
   import { Avatar, Button } from "@/components";
+  import AttachmentTray from "@/components/attachment-tray/attachment-tray.svelte";
   import GifPicker from "@/components/gif-picker/gif-picker.svelte";
+  import VoiceRecorder from "@/components/voice-recorder/voice-recorder.svelte";
   import type { Picked } from "@/helpers/files";
   import { clean, markup } from "@/helpers/text";
   import { t } from "@/i18n";
   import { ConversationKind, type User } from "@/protocol/ludra/v1/models_pb";
   import type { Gif } from "@/protocol/ludra/v1/server_pb";
+  import type { Recording } from "@/services/voice-recorder";
   import { chat } from "@/stores/chat.svelte";
 
   let { recipient }: { recipient: string } = $props();
 
   let content = $state("");
   let menuOpen = $state(false);
+  let voiceOpen = $state(false);
   let attach = $state<HTMLElement>();
   let gifOpen = $state(false);
   let gifArea = $state<HTMLElement>();
@@ -43,11 +47,17 @@
   async function submit(event: SubmitEvent) {
     event.preventDefault();
     const text = clean(content);
-    if (!text) {
+    if (!text && chat.staged.length === 0) {
       return;
     }
 
     content = "";
+    if (chat.staged.length > 0) {
+      if (!(await chat.sendStaged(text))) {
+        content = text;
+      }
+      return;
+    }
     try {
       await chat.send(text);
     } catch {
@@ -109,6 +119,21 @@
   }
 
   const uploading = $derived(chat.sending !== "");
+  const replying = $derived(chat.replyTarget);
+  let activeConversation = chat.activeId;
+
+  $effect(() => {
+    if (chat.activeId !== activeConversation) {
+      activeConversation = chat.activeId;
+      chat.clearStaged();
+    }
+  });
+
+  $effect(() => {
+    if (replying) {
+      input?.focus();
+    }
+  });
 
   function toggleMenu() {
     chat.photoError = "";
@@ -129,6 +154,9 @@
 
   function escape(event: KeyboardEvent) {
     if (event.key === "Escape") {
+      if (!menuOpen && !gifOpen && !mention) {
+        chat.cancelReply();
+      }
       menuOpen = false;
       gifOpen = false;
     }
@@ -137,9 +165,19 @@
   async function pick() {
     menuOpen = false;
     const picked = await invoke<Picked[]>("pick_files").catch(() => []);
-    if (picked.length > 0) {
-      await chat.sendFiles(picked);
-    }
+    chat.stage(picked);
+    input?.focus();
+  }
+
+  function record() {
+    menuOpen = false;
+    chat.photoError = "";
+    voiceOpen = true;
+  }
+
+  function sendVoice({ blob, seconds }: Recording) {
+    voiceOpen = false;
+    void chat.sendVoice(blob, seconds);
   }
 
   function paste(event: ClipboardEvent) {
@@ -190,120 +228,175 @@
       {chat.photoError || t("chat.sending", { name: chat.sending })}
     </p>
   {/if}
-  <form class="chat-composer__form" onsubmit={submit}>
-    <div class="chat-composer__attach" bind:this={attach}>
+  {#if replying}
+    <div class="chat-composer__reply">
+      <span>{t("chat.replyingTo", { name: chat.nameOf(replying.senderId) })}</span>
       <button
         type="button"
-        class="chat-composer__plus"
-        aria-label={t("chat.attach")}
-        aria-expanded={menuOpen}
-        disabled={uploading}
-        onclick={toggleMenu}
+        class="chat-composer__reply-close"
+        aria-label={t("chat.cancelReply")}
+        data-tooltip={t("chat.cancelReply")}
+        onclick={() => chat.cancelReply()}
       >
         <svg
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2.6"
+          stroke-width="2"
           stroke-linecap="round"
           aria-hidden="true"
         >
-          <path d="M12 6v12M6 12h12" />
+          <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
-      {#if menuOpen}
-        <div class="chat-composer__menu" role="menu">
-          <button type="button" role="menuitem" class="chat-composer__option" onclick={pick}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-              <path d="M14 3v5h5" />
-            </svg>
-            {t("chat.files")}
-          </button>
-        </div>
-      {/if}
     </div>
-    <label for="message" class="sr-only">{t("chat.message")}</label>
-    <div class="chat-composer__field">
-      <div class="chat-composer__mirror" aria-hidden="true" bind:this={mirror}>
-        {#each markup(content, names) as span}{#if span.mention}<span class="chat-composer__highlight">{span.text}</span
-            >{:else}{span.text}{/if}{/each}
+  {/if}
+  {#if voiceOpen}
+    <VoiceRecorder
+      replying={replying !== null}
+      onsend={sendVoice}
+      oncancel={() => (voiceOpen = false)}
+      onerror={() => (chat.photoError = t("chat.voiceFailed"))}
+    />
+  {:else}
+    {#if chat.staged.length > 0}
+      <AttachmentTray items={chat.staged} squared={replying !== null} onremove={(path) => chat.unstage(path)} />
+    {/if}
+    <form
+      class="chat-composer__form"
+      class:chat-composer__form--replying={replying || chat.staged.length > 0}
+      onsubmit={submit}
+    >
+      <div class="chat-composer__attach" bind:this={attach}>
+        <button
+          type="button"
+          class="chat-composer__plus"
+          aria-label={t("chat.attach")}
+          aria-expanded={menuOpen}
+          disabled={uploading}
+          onclick={toggleMenu}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 6v12M6 12h12" />
+          </svg>
+        </button>
+        {#if menuOpen}
+          <div class="chat-composer__menu" role="menu">
+            <button type="button" role="menuitem" class="chat-composer__option" onclick={pick}>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                <path d="M14 3v5h5" />
+              </svg>
+              {t("chat.files")}
+            </button>
+            <button type="button" role="menuitem" class="chat-composer__option" onclick={record}>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+              {t("chat.recordVoice")}
+            </button>
+          </div>
+        {/if}
       </div>
-      <input
-        id="message"
-        class="chat-composer__input"
-        bind:this={input}
-        bind:value={content}
-        placeholder={t("chat.messageTo", { name: recipient })}
-        maxlength="4000"
-        autocomplete="off"
-        onpaste={paste}
-        oninput={() => {
-          chat.photoError = "";
-          detect();
-          sync();
-        }}
-        onkeydown={navigate}
-        onkeyup={(event) => {
-          moved(event);
-          sync();
-        }}
-        onclick={() => {
-          detect();
-          sync();
-        }}
-        onscroll={sync}
-        onblur={() => (mention = null)}
-        role="combobox"
-        aria-expanded={candidates.length > 0}
-        aria-controls="mention-list"
-        aria-autocomplete="list"
-        {@attach (input) => input.focus()}
-      />
-    </div>
-    <div class="chat-composer__gifs" bind:this={gifArea}>
-      <button
-        type="button"
-        class="chat-composer__gif"
-        class:chat-composer__gif--open={gifOpen}
-        aria-label={t("chat.gif")}
-        aria-expanded={gifOpen}
-        data-tooltip={t("chat.gif")}
-        disabled={uploading}
-        onclick={toggleGifs}
-      >
-        GIF
-      </button>
-      {#if gifOpen}
-        <div class="chat-composer__picker">
-          <GifPicker onpick={pickGif} />
+      <label for="message" class="sr-only">{t("chat.message")}</label>
+      <div class="chat-composer__field">
+        <div class="chat-composer__mirror" aria-hidden="true" bind:this={mirror}>
+          {#each markup(content, names) as span}{#if span.mention}<span class="chat-composer__highlight"
+                >{span.text}</span
+              >{:else}{span.text}{/if}{/each}
         </div>
-      {/if}
-    </div>
-    <Button type="submit" size="small" disabled={!clean(content)}>
-      {t("chat.send")}
-      <svg
-        class="chat-composer__icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.4"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M5 12h14M13 6l6 6-6 6" />
-      </svg>
-    </Button>
-  </form>
+        <input
+          id="message"
+          class="chat-composer__input"
+          bind:this={input}
+          bind:value={content}
+          placeholder={t("chat.messageTo", { name: recipient })}
+          maxlength="4000"
+          autocomplete="off"
+          onpaste={paste}
+          oninput={() => {
+            chat.photoError = "";
+            detect();
+            sync();
+          }}
+          onkeydown={navigate}
+          onkeyup={(event) => {
+            moved(event);
+            sync();
+          }}
+          onclick={() => {
+            detect();
+            sync();
+          }}
+          onscroll={sync}
+          onblur={() => (mention = null)}
+          role="combobox"
+          aria-expanded={candidates.length > 0}
+          aria-controls="mention-list"
+          aria-autocomplete="list"
+          {@attach (input) => input.focus()}
+        />
+      </div>
+      <div class="chat-composer__gifs" bind:this={gifArea}>
+        <button
+          type="button"
+          class="chat-composer__gif"
+          class:chat-composer__gif--open={gifOpen}
+          aria-label={t("chat.gif")}
+          aria-expanded={gifOpen}
+          data-tooltip={t("chat.gif")}
+          disabled={uploading}
+          onclick={toggleGifs}
+        >
+          GIF
+        </button>
+        {#if gifOpen}
+          <div class="chat-composer__picker">
+            <GifPicker onpick={pickGif} />
+          </div>
+        {/if}
+      </div>
+      <Button type="submit" size="small" disabled={!clean(content) && chat.staged.length === 0}>
+        {t("chat.send")}
+        <svg
+          class="chat-composer__icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </Button>
+    </form>
+  {/if}
 </div>
 
 <style>
@@ -376,6 +469,55 @@
     background: var(--dark-background-color);
     border: 1px solid var(--border-color);
     transition: border-color ease 0.2s;
+  }
+
+  .chat-composer__form--replying {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .chat-composer__reply {
+    margin-bottom: -6px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border-color);
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: var(--surface-color);
+    font-size: 13px;
+    color: var(--body-color);
+  }
+
+  .chat-composer__reply span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-composer__reply-close {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    margin-left: auto;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--subtle-color);
+  }
+
+  .chat-composer__reply-close:hover {
+    background: var(--active-color);
+    color: var(--muted-color);
+  }
+
+  .chat-composer__reply-close svg {
+    width: 16px;
   }
 
   .chat-composer__form:focus-within {

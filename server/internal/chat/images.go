@@ -26,7 +26,7 @@ type ImageData struct {
 	Mime  string
 }
 
-func (s *Service) SendImage(ctx context.Context, senderID, conversationID string, data []byte) (database.Message, Image, []string, error) {
+func (s *Service) SendImage(ctx context.Context, senderID, conversationID, replyToID string, data []byte) (database.Message, Image, []string, error) {
 	photo, ok := imaging.ReadPhoto(data)
 	if !ok {
 		return database.Message{}, Image{}, nil, ErrInvalidImage
@@ -72,7 +72,7 @@ func (s *Service) SendImage(ctx context.Context, senderID, conversationID string
 	if err != nil {
 		return database.Message{}, Image{}, nil, err
 	}
-	return message, Image(image), recipients, nil
+	return s.attachReply(ctx, message, replyToID), Image(image), recipients, nil
 }
 
 func (s *Service) GetImage(ctx context.Context, userID, imageID string, offset uint32) (ImageData, error) {

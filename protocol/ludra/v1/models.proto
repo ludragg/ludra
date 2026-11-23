@@ -90,6 +90,16 @@ message Message {
   ImageRef image = 14;
   LinkPreview preview = 15;
   FileRef file = 16;
+  ReplyRef reply = 17;
+  repeated FileRef files = 18;
+}
+
+message ReplyRef {
+  string message_id = 1;
+  string sender_id = 2;
+  MessageKind kind = 3;
+  string excerpt = 4;
+  bool voice = 5;
 }
 
 message FileRef {
@@ -118,6 +128,10 @@ message FileSignal {
   string payload = 5;
   repeated IceServer ice_servers = 6;
   bool direct = 7;
+  uint64 offset = 8;
+  uint64 length = 9;
+  bool ranged = 10;
+  uint32 file_index = 11;
 }
 
 message ImageRef {

@@ -97,7 +97,12 @@ func run() error {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return server.Shutdown(shutdownCtx)
+	err = server.Shutdown(shutdownCtx)
+
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer closeCancel()
+	gateway.Close(closeCtx)
+	return err
 }
 
 func cleanup(ctx context.Context, accounts *account.Service, chats *chat.Service) {

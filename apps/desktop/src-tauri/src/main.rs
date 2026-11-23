@@ -51,6 +51,11 @@ fn main() {
         .manage(files::FilesState::default())
         .manage(tray::TrayState::default())
         .setup(move |app| {
+            if launched_by_autostart()
+                && let Some(window) = app.get_webview_window("main")
+            {
+                let _ = window.hide();
+            }
             #[cfg(windows)]
             webview::setup(app);
             if let (Some(profile), Some(window)) = (&profile, app.get_webview_window("main")) {
@@ -82,13 +87,20 @@ fn main() {
             dev::dev_profile,
             files::pick_files,
             files::share_file,
+            files::stage_preview,
             files::shared_file,
             files::media_path,
             files::stash_file,
+            files::stash_voice,
             files::reveal_file,
             files::read_shared,
             files::save_target,
             files::auto_target,
+            files::folder_target,
+            files::voice_target,
+            files::download_folder,
+            files::choose_download_folder,
+            files::reset_download_folder,
             files::begin_download,
             files::write_download,
             files::finish_download,

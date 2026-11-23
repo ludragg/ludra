@@ -16,7 +16,17 @@ import { Client, ServerError, type Account, type SignIn } from "@/services/clien
 import { isCall } from "@/helpers/call-summary";
 import { avatarTypes, maxUploadBytes, toAvatar } from "@/helpers/image";
 import { messageText } from "@/helpers/message-text";
-import { extensionOf, maxDirectBytes, mimeFor, type Picked } from "@/helpers/files";
+import {
+  extensionOf,
+  fileKey,
+  fileMessages,
+  maxDirectBytes,
+  maxMessageFiles,
+  mimeFor,
+  voiceMime,
+  voiceName,
+  type Picked,
+} from "@/helpers/files";
 import { markup } from "@/helpers/text";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { playMessageSound, windowFocused } from "@/services/desktop";
@@ -68,6 +78,8 @@ class ChatStore {
   threads = $state<Record<string, Thread>>({});
   unread = $state<Record<string, number>>({});
   mentions = $state<Record<string, true>>({});
+  replyingTo = $state<Message | null>(null);
+  staged = $state<Picked[]>([]);
 
   active = $derived(this.conversations.find((conversation) => conversation.id === this.activeId) ?? null);
   thread = $derived(this.activeId ? this.threads[this.activeId] : undefined);
@@ -521,8 +533,21 @@ class ChatStore {
     await this.#load(this.activeId, thread.messages[0]?.id);
   }
 
+  get replyTarget(): Message | null {
+    return this.replyingTo?.conversationId === this.activeId ? this.replyingTo : null;
+  }
+
+  reply(message: Message) {
+    this.replyingTo = message;
+  }
+
+  cancelReply() {
+    this.replyingTo = null;
+  }
+
   async send(content: string) {
-    const message = await this.#client!.sendMessage(this.activeId!, content);
+    const message = await this.#client!.sendMessage(this.activeId!, content, this.replyTarget?.id);
+    this.replyingTo = null;
     this.#receive(message);
   }
 
@@ -535,34 +560,90 @@ class ChatStore {
       const picked = await invoke<Picked>("stash_file", new Uint8Array(await file.arrayBuffer()), {
         headers: { "x-file-name": `imagem.${extensionOf(file.name) || file.type.split("/")[1] || "png"}` },
       });
-      await this.sendFiles([picked]);
+      this.stage([picked]);
     } catch {
       this.photoError = t("chat.fileFailed", { name: file.name || t("chat.photo") });
     }
   }
 
-  async sendFiles(picked: Picked[]) {
-    const conversationId = this.activeId;
-    if (!conversationId || this.sending) {
+  async sendVoice(blob: Blob, seconds: number) {
+    if (!this.activeId || this.sending) {
       return;
     }
     this.photoError = "";
+    try {
+      const picked = await invoke<Picked>("stash_voice", new Uint8Array(await blob.arrayBuffer()), {
+        headers: { "x-file-name": voiceName(seconds) },
+      });
+      await this.#sendFileMessage([picked], "", voiceMime);
+    } catch {
+      this.photoError = t("chat.fileFailed", { name: t("chat.voiceMessage") });
+    }
+  }
+
+  stage(picked: Picked[]) {
+    this.photoError = "";
     for (const file of picked) {
+      if (this.staged.some(({ path }) => path === file.path)) {
+        continue;
+      }
+      if (this.staged.length >= maxMessageFiles) {
+        this.photoError = t("chat.tooManyFiles", { count: maxMessageFiles });
+        return;
+      }
       if (file.size > maxDirectBytes) {
         this.photoError = t("chat.fileTooLarge", { name: file.name });
-        return;
+        continue;
       }
-      this.sending = file.name;
-      try {
-        const message = await this.#client!.sendDirectFile(conversationId, file.name, file.size, mimeFor(file.name));
-        await invoke("share_file", { id: message.id, path: file.path });
-        this.#receive(message);
-      } catch (cause) {
-        this.photoError = this.#sendError(cause, t("chat.fileFailed", { name: file.name }));
-        return;
-      } finally {
-        this.sending = "";
+      this.staged.push(file);
+    }
+  }
+
+  unstage(path: string) {
+    this.staged = this.staged.filter((file) => file.path !== path);
+    this.photoError = "";
+  }
+
+  clearStaged() {
+    this.staged = [];
+  }
+
+  async sendStaged(content: string): Promise<boolean> {
+    if (this.staged.length === 0) {
+      return true;
+    }
+    const sent = await this.#sendFileMessage(this.staged, content);
+    if (sent) {
+      this.staged = [];
+    }
+    return sent;
+  }
+
+  async #sendFileMessage(picked: Picked[], content: string, mime?: string): Promise<boolean> {
+    const conversationId = this.activeId;
+    if (!conversationId || this.sending || picked.length === 0) {
+      return false;
+    }
+    this.photoError = "";
+    this.sending = picked.length === 1 ? picked[0].name : t("chat.files");
+    try {
+      const message = await this.#client!.sendDirectFiles(
+        conversationId,
+        picked.map((file) => ({ name: file.name, size: file.size, mime: mime ?? mimeFor(file.name) })),
+        content,
+        this.replyTarget?.id,
+      );
+      for (const [index, file] of picked.entries()) {
+        await invoke("share_file", { id: fileKey(message.id, index), path: file.path });
       }
+      this.replyingTo = null;
+      this.#receive(message);
+      return true;
+    } catch (cause) {
+      this.photoError = this.#sendError(cause, t("chat.fileFailed", { name: this.sending }));
+      return false;
+    } finally {
+      this.sending = "";
     }
   }
 
@@ -570,8 +651,8 @@ class ChatStore {
     const me = this.user?.username.toLowerCase();
     return (
       message.kind === MessageKind.TEXT &&
-      me !== undefined &&
-      markup(message.content, new Set([me])).some((span) => span.mention)
+      ((me !== undefined && markup(message.content, new Set([me])).some((span) => span.mention)) ||
+        (message.reply !== undefined && message.reply.senderId === this.user?.id))
     );
   }
 
@@ -609,7 +690,9 @@ class ChatStore {
     this.photoError = "";
     this.sending = "GIF";
     try {
-      this.#receive(await this.#client!.sendGif(conversationId, id));
+      const message = await this.#client!.sendGif(conversationId, id, this.replyTarget?.id);
+      this.replyingTo = null;
+      this.#receive(message);
     } catch (cause) {
       this.photoError = this.#sendError(cause, t("chat.gifFailed"));
     } finally {
@@ -694,7 +777,9 @@ class ChatStore {
     }
 
     if (message.file && this.isFriend(message.senderId) && !this.isBlocked(message.senderId)) {
-      files.autoDownload(message);
+      for (const item of fileMessages(message)) {
+        files.autoDownload(item);
+      }
     }
 
     const watching = message.conversationId === this.activeId && windowFocused();
@@ -772,6 +857,9 @@ class ChatStore {
     const thread = this.threads[conversationId];
     if (thread) {
       thread.messages = thread.messages.filter(({ id }) => id !== messageId);
+    }
+    if (this.replyingTo?.id === messageId) {
+      this.replyingTo = null;
     }
     const conversation = this.conversations.find(({ id }) => id === conversationId);
     if (conversation?.lastMessage?.id === messageId) {
@@ -937,6 +1025,7 @@ class ChatStore {
     this.threads = {};
     this.unread = {};
     this.mentions = {};
+    this.replyingTo = null;
     this.photoError = "";
     this.sending = "";
     for (const pending of this.#images.values()) {

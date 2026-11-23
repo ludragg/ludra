@@ -8,8 +8,8 @@ use windows::Win32::System::Com::{
 use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
 use windows::Win32::UI::Shell::{
     FOS_ALLOWMULTISELECT, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM, FOS_OVERWRITEPROMPT,
-    FileOpenDialog, FileSaveDialog, IFileDialog, IFileOpenDialog, IFileSaveDialog, IShellItem,
-    SHCreateItemFromParsingName, SIGDN_FILESYSPATH,
+    FOS_PATHMUSTEXIST, FOS_PICKFOLDERS, FileOpenDialog, FileSaveDialog, IFileDialog,
+    IFileOpenDialog, IFileSaveDialog, IShellItem, SHCreateItemFromParsingName, SIGDN_FILESYSPATH,
 };
 use windows::core::{HSTRING, PCWSTR};
 
@@ -54,6 +54,20 @@ pub fn open(owner: Option<isize>) -> Vec<PathBuf> {
         Ok(paths)
     })
     .unwrap_or_default()
+}
+
+pub fn folder(owner: Option<isize>, start: Option<PathBuf>) -> Option<PathBuf> {
+    with_com(|| unsafe {
+        let dialog: IFileOpenDialog =
+            CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER)?;
+        dialog.SetOptions(
+            dialog.GetOptions()? | FOS_PICKFOLDERS | FOS_PATHMUSTEXIST | FOS_FORCEFILESYSTEM,
+        )?;
+        default_folder(&dialog, start)?;
+        dialog.Show(owner.map(|handle| HWND(handle as _)))?;
+        path_of(&dialog.GetResult()?)
+    })
+    .ok()
 }
 
 fn with_com<T>(work: impl FnOnce() -> windows::core::Result<T>) -> windows::core::Result<T> {

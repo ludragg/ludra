@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Ludra",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -19,7 +19,6 @@
         "minHeight": 560,
         "center": true,
         "decorations": false,
-        "visible": false,
         "theme": "Dark",
         "backgroundColor": "#0D0D0D"
       }

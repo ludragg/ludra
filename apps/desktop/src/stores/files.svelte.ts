@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { autoDownloads } from "@/helpers/files";
+import { autoDownloads, fileKey, isVoice } from "@/helpers/files";
 import { FileSignalKind, SignalKind, type FileSignal, type Message } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
 import { ServerError, type Client } from "@/services/client";
@@ -20,15 +20,33 @@ const flushSize = 1024 * 1024;
 const offerTimeout = 20_000;
 const answerTimeout = 30_000;
 const closeTimeout = 60_000;
-const highWater = 8 * 1024 * 1024;
-const lowWater = 1024 * 1024;
-const maxServing = 3;
+const highWater = 2 * 1024 * 1024;
+const lowWater = 512 * 1024;
+const maxServing = 8;
+const parallelFrom = 4 * 1024 * 1024;
+const largeFile = 32 * 1024 * 1024;
+const maxConnections = 4;
+const segmentAttempts = 2;
 const progressEvery = 100;
 const maxAutomatic = 2;
 const automaticBudget = 8;
 const automaticWindow = 10 * 60_000;
 
 class TimeoutError extends Error {}
+class ExpiredError extends Error {}
+class CanceledError extends Error {}
+class AbandonedError extends Error {}
+
+type Segment = { offset: number; length: number };
+
+type Run = {
+  canceled: boolean;
+  byUser: boolean;
+  channels: Set<FileChannel>;
+  transferIds: Set<string>;
+  received: number[];
+  started: number | null;
+};
 
 function signed(transferId: string): string {
   return `file:${transferId}`;
@@ -42,8 +60,18 @@ function agreed(description: string): boolean {
   return description.includes(" typ srflx");
 }
 
-function write(download: number, data: Uint8Array) {
-  return invoke("write_download", data, { headers: { "x-download": String(download) } });
+function write(download: number, data: Uint8Array, offset: number) {
+  return invoke("write_download", data, { headers: { "x-download": String(download), "x-offset": String(offset) } });
+}
+
+function segmentsOf(total: number): Segment[] {
+  const count = total < parallelFrom ? 1 : total < largeFile ? 2 : maxConnections;
+  const size = Math.ceil(total / count / readSize) * readSize;
+  const segments: Segment[] = [];
+  for (let offset = 0; offset < total; offset += size) {
+    segments.push({ offset, length: Math.min(size, total - offset) });
+  }
+  return segments;
 }
 
 function join(parts: Uint8Array[], size: number): Uint8Array {
@@ -74,11 +102,12 @@ function closed(channel: RTCDataChannel): Promise<void> {
 function receive(
   channel: RTCDataChannel,
   download: number,
-  total: number,
+  segment: Segment,
   onProgress: (received: number) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     let received = 0;
+    let flushed = 0;
     let parts: Uint8Array[] = [];
     let pending = 0;
     let writing: Promise<unknown> = Promise.resolve();
@@ -88,15 +117,17 @@ function receive(
         return;
       }
       const data = join(parts, pending);
+      const at = segment.offset + flushed;
       parts = [];
+      flushed += pending;
       pending = 0;
-      writing = writing.then(() => write(download, data));
+      writing = writing.then(() => write(download, data, at));
       writing.catch(reject);
     };
 
     channel.onmessage = ({ data }) => {
       if (typeof data === "string") {
-        if (data === "done" && received === total) {
+        if (data === "done" && received === segment.length) {
           flush();
           writing.then(() => resolve(), reject);
         } else {
@@ -106,7 +137,7 @@ function receive(
       }
       const chunk = new Uint8Array(data as ArrayBuffer);
       received += chunk.length;
-      if (received > total) {
+      if (received > segment.length) {
         reject(new Error("too much data"));
         channel.close();
         return;
@@ -174,7 +205,7 @@ class FileStore {
     }
     const download = await invoke<number>("begin_download", { path });
     try {
-      await write(download, data);
+      await write(download, data, 0);
       return await invoke<string>("finish_download", { id: download });
     } catch (cause) {
       await invoke("abort_download", { id: download });
@@ -187,17 +218,48 @@ class FileStore {
     if (!file?.direct || !this.#client || this.#busy(message.id)) {
       return;
     }
-    const path = await invoke<string | null>("save_target", { name: file.name });
-    if (!path) {
+    if (preferences.values.askDownloadLocation) {
+      const path = await invoke<string | null>("save_target", { name: file.name });
+      if (path) {
+        await this.#downloadDirect(message, path);
+      }
       return;
     }
-    await this.#downloadDirect(message, path);
+    this.#start(message.id, "waiting", Number(file.size));
+    try {
+      await this.#downloadDirect(message, await invoke<string>("folder_target", { name: file.name }));
+    } catch {
+      this.#cancels.delete(message.id);
+      this.#fail(message.id, "failed");
+    }
+  }
+
+  async listen(message: Message) {
+    const file = message.file;
+    if (!file?.direct || !this.#client || this.#busy(message.id)) {
+      return;
+    }
+    this.#start(message.id, "waiting", Number(file.size));
+    try {
+      const target = isVoice(file.mime) ? "voice_target" : "auto_target";
+      const path = await invoke<string>(target, { name: file.name });
+      await this.#downloadDirect(message, path);
+    } catch {
+      this.#cancels.delete(message.id);
+      this.#fail(message.id, "failed");
+    }
   }
 
   autoDownload(message: Message) {
     const file = message.file;
     const size = Number(file?.size ?? 0);
-    if (!file?.direct || !this.#client || this.#busy(message.id) || !autoDownloads(file.name, file.mime, size)) {
+    if (
+      !preferences.values.autoDownload ||
+      !file?.direct ||
+      !this.#client ||
+      this.#busy(message.id) ||
+      !autoDownloads(file.name, file.mime, size, preferences.values.autoDownloadLimit)
+    ) {
       return;
     }
     const now = Date.now();
@@ -245,39 +307,126 @@ class FileStore {
   async #downloadDirect(message: Message, path: string) {
     const client = this.#client!;
     const total = Number(message.file!.size);
-    const senderId = message.senderId;
-    const transferId = crypto.randomUUID();
-    let channel: FileChannel | null = null;
+    const segments = segmentsOf(total);
+    const run: Run = {
+      canceled: false,
+      byUser: false,
+      channels: new Set(),
+      transferIds: new Set(),
+      received: segments.map(() => 0),
+      started: null,
+    };
     let download: number | null = null;
-    let canceled = false;
 
     this.#cancels.set(message.id, () => {
-      canceled = true;
-      channel?.close();
-      this.#waiting.get(transferId)?.reject(new Error("canceled"));
-      void client.fileSignal(message.id, transferId, senderId, FileSignalKind.CANCEL).catch(() => undefined);
+      run.canceled = true;
+      run.byUser = true;
+      for (const channel of run.channels) {
+        channel.close();
+      }
+      for (const transferId of run.transferIds) {
+        this.#waiting.get(transferId)?.reject(new CanceledError("canceled"));
+        void client.fileSignal(message.id, transferId, message.senderId, FileSignalKind.CANCEL).catch(() => undefined);
+      }
     });
     this.#start(message.id, "waiting", total);
+    void trust.prepare([message.senderId]).catch(() => undefined);
 
+    try {
+      download = await invoke<number>("begin_download", { path, key: message.id });
+      const id = download;
+      await Promise.all(segments.map((_, index) => this.#fetchSegment(message, run, id, segments, index)));
+      this.#done(message.id, await invoke<string>("finish_download", { id }));
+    } catch (cause) {
+      run.canceled = true;
+      for (const channel of run.channels) {
+        channel.close();
+      }
+      if (download !== null) {
+        await invoke("abort_download", { id: download });
+      }
+      this.#fail(
+        message.id,
+        run.byUser
+          ? "canceled"
+          : cause instanceof ExpiredError
+            ? "expired"
+            : cause instanceof ServerError && cause.code === ErrorCode.UNAVAILABLE
+              ? "offline"
+              : cause instanceof ServerError && cause.code === ErrorCode.FORBIDDEN
+                ? "friendsOnly"
+                : cause instanceof TimeoutError
+                  ? "unavailable"
+                  : "failed",
+      );
+    } finally {
+      this.#cancels.delete(message.id);
+    }
+  }
+
+  async #fetchSegment(message: Message, run: Run, download: number, segments: Segment[], index: number) {
+    let failure: unknown = null;
+    for (let attempt = 0; attempt < segmentAttempts; attempt++) {
+      try {
+        run.received[index] = 0;
+        await this.#attemptSegment(message, run, download, segments, index);
+        return;
+      } catch (cause) {
+        if (cause instanceof AbandonedError) {
+          return;
+        }
+        failure = cause;
+        if (run.canceled || cause instanceof CanceledError || cause instanceof ExpiredError || index === 0) {
+          break;
+        }
+      }
+    }
+    throw failure;
+  }
+
+  async #attemptSegment(message: Message, run: Run, download: number, segments: Segment[], index: number) {
+    const client = this.#client!;
+    const senderId = message.senderId;
+    const transferId = crypto.randomUUID();
+    const total = Number(message.file!.size);
+    const wantsDirect = direct();
+    const requested = segments[index];
+    const ranged = segments.length > 1;
+    let channel: FileChannel | null = null;
+
+    run.transferIds.add(transferId);
     try {
       const offered = this.#await(transferId, offerTimeout);
       offered.catch(() => undefined);
-      const wantsDirect = direct();
-      const { iceServers } = await client.requestFile(message.id, transferId, wantsDirect);
+      const { iceServers } = await client.requestFile(
+        message.id,
+        transferId,
+        wantsDirect,
+        ranged ? requested.offset : 0,
+        ranged ? requested.length : 0,
+      );
       channel = new FileChannel(iceServers, false, true);
-      if (canceled) {
-        throw new Error("canceled");
+      run.channels.add(channel);
+      if (run.canceled) {
+        throw new CanceledError("canceled");
       }
       const offer = await offered;
       if (offer.kind === FileSignalKind.UNAVAILABLE) {
-        this.#fail(message.id, "expired");
-        return;
+        throw new ExpiredError("expired");
       }
 
       const description = await trust.open(signed(transferId), senderId, SignalKind.OFFER, offer.payload);
       if (wantsDirect && agreed(description)) {
         channel.allowDirect();
       }
+      if (!offer.ranged) {
+        if (index > 0) {
+          void client.fileSignal(message.id, transferId, senderId, FileSignalKind.CANCEL).catch(() => undefined);
+          throw new AbandonedError("abandoned");
+        }
+        segments.splice(0, segments.length, { offset: 0, length: total });
+      }
+      const segment = segments[index];
       const answer = await channel.answer(description);
       await client.fileSignal(
         message.id,
@@ -287,44 +436,40 @@ class FileStore {
         await trust.seal(signed(transferId), senderId, SignalKind.ANSWER, answer),
       );
       const open = await channel.open();
-      download = await invoke<number>("begin_download", { path, key: message.id });
-      this.#start(message.id, "receiving", total);
-      const started = performance.now();
-      await receive(open, download, total, (received) => this.#progress(message.id, received, started));
-      this.#done(message.id, await invoke<string>("finish_download", { id: download }));
-      open.close();
-    } catch (cause) {
-      if (download !== null) {
-        await invoke("abort_download", { id: download });
+      if (this.transfers[message.id]?.state === "waiting") {
+        this.#start(message.id, "receiving", total);
       }
-      this.#fail(
-        message.id,
-        canceled
-          ? "canceled"
-          : cause instanceof ServerError && cause.code === ErrorCode.UNAVAILABLE
-            ? "offline"
-            : cause instanceof ServerError && cause.code === ErrorCode.FORBIDDEN
-              ? "friendsOnly"
-              : cause instanceof TimeoutError
-                ? "unavailable"
-                : "failed",
-      );
+      run.started ??= performance.now();
+      const started = run.started;
+      await receive(open, download, segment, (received) => {
+        run.received[index] = received;
+        this.#progress(
+          message.id,
+          run.received.reduce((sum, value) => sum + value, 0),
+          started,
+        );
+      });
+      open.close();
     } finally {
       channel?.close();
+      if (channel) {
+        run.channels.delete(channel);
+      }
+      run.transferIds.delete(transferId);
       this.#waiting.delete(transferId);
-      this.#cancels.delete(message.id);
     }
   }
 
   async #serve(signal: FileSignal) {
     const client = this.#client;
-    const shared = await this.shared(signal.messageId);
+    const messageId = fileKey(signal.messageId, signal.fileIndex);
+    const shared = await this.shared(messageId);
     if (!client || !shared) {
       return;
     }
     if (!shared.available) {
       await client
-        .fileSignal(signal.messageId, signal.transferId, signal.peerId, FileSignalKind.UNAVAILABLE)
+        .fileSignal(messageId, signal.transferId, signal.peerId, FileSignalKind.UNAVAILABLE)
         .catch(() => undefined);
       return;
     }
@@ -332,7 +477,14 @@ class FileStore {
       return;
     }
     this.#serving++;
-    const { messageId, transferId, peerId } = signal;
+    const { transferId, peerId } = signal;
+    void trust.prepare([peerId]).catch(() => undefined);
+    const start = Number(signal.offset);
+    const end = signal.length > 0n ? Math.min(shared.size, start + Number(signal.length)) : shared.size;
+    if (start >= end) {
+      this.#serving--;
+      return;
+    }
     const channel = new FileChannel(signal.iceServers, signal.direct && direct());
 
     try {
@@ -345,6 +497,7 @@ class FileStore {
         peerId,
         FileSignalKind.OFFER,
         await trust.seal(signed(transferId), peerId, SignalKind.OFFER, offer),
+        true,
       );
       const answer = await answered;
       if (answer.kind !== FileSignalKind.ANSWER) {
@@ -355,10 +508,12 @@ class FileStore {
       open.bufferedAmountLowThreshold = lowWater;
 
       const read = (offset: number) =>
-        offset < shared.size ? invoke<ArrayBuffer>("read_shared", { id: messageId, offset, length: readSize }) : null;
+        offset < end
+          ? invoke<ArrayBuffer>("read_shared", { id: messageId, offset, length: Math.min(readSize, end - offset) })
+          : null;
 
-      let pending = read(0);
-      for (let offset = 0; pending;) {
+      let pending = read(start);
+      for (let offset = start; pending;) {
         if (this.#canceled.has(transferId) || open.readyState !== "open") {
           return;
         }

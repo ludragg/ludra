@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -35,6 +36,7 @@ type Gateway struct {
 	proxies  []netip.Prefix
 	previews *unfurl.Fetcher
 	gifs     *gifs.Client
+	pending  *atomic.Int32
 }
 
 func NewGateway(
@@ -48,33 +50,42 @@ func NewGateway(
 	proxies []netip.Prefix,
 ) *Gateway {
 	hub := newHub()
+	pending := &atomic.Int32{}
 	finish := func(callerID, calleeID, messageID, outcome string, duration time.Duration) {
-		ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
-		defer cancel()
+		pending.Add(1)
+		go func() {
+			defer pending.Add(-1)
+			ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+			defer cancel()
 
-		message, err := chat.FinishCallMessage(ctx, messageID, outcome, duration)
-		if err != nil {
-			slog.Error("finish call message", "error", err)
-			return
-		}
-		hub.publish([]string{callerID, calleeID}, messageUpdatedFrame(toMessage(message)), nil)
+			message, err := chat.FinishCallMessage(ctx, messageID, outcome, duration)
+			if err != nil {
+				slog.Error("finish call message", "error", err)
+				return
+			}
+			hub.publish([]string{callerID, calleeID}, messageUpdatedFrame(toMessage(message)), nil)
+		}()
 	}
 
 	finishRoom := func(conversationID, messageID string, duration time.Duration) {
-		ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
-		defer cancel()
+		pending.Add(1)
+		go func() {
+			defer pending.Add(-1)
+			ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
+			defer cancel()
 
-		message, err := chat.FinishCallMessage(ctx, messageID, "completed", duration)
-		if err != nil {
-			slog.Error("finish group call message", "error", err)
-			return
-		}
-		members, err := chat.ParticipantIDs(ctx, conversationID)
-		if err != nil {
-			slog.Error("load group members", "error", err)
-			return
-		}
-		hub.publish(members, messageUpdatedFrame(toMessage(message)), nil)
+			message, err := chat.FinishCallMessage(ctx, messageID, "completed", duration)
+			if err != nil {
+				slog.Error("finish group call message", "error", err)
+				return
+			}
+			members, err := chat.ParticipantIDs(ctx, conversationID)
+			if err != nil {
+				slog.Error("load group members", "error", err)
+				return
+			}
+			hub.publish(members, messageUpdatedFrame(toMessage(message)), nil)
+		}()
 	}
 
 	return &Gateway{
@@ -91,6 +102,19 @@ func NewGateway(
 		guard:    newGuard(),
 		previews: previews,
 		gifs:     gifs,
+		pending:  pending,
+	}
+}
+
+func (g *Gateway) Close(ctx context.Context) {
+	g.calls.closeAll()
+	g.rooms.closeAll()
+	for g.pending.Load() > 0 {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(20 * time.Millisecond):
+		}
 	}
 }
 

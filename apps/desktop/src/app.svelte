@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TitleBar } from "@/components";
+  import ImageMenu from "@/components/image-menu/image-menu.svelte";
   import Tooltip from "@/components/tooltip/tooltip.svelte";
   import ForgotPassword from "@/pages/auth/forgot-password.svelte";
   import Login from "@/pages/auth/login.svelte";
@@ -74,6 +75,7 @@
 </div>
 
 <Tooltip />
+<ImageMenu />
 
 {#if gated}
   <UpdateGate />

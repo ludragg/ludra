@@ -1,5 +1,52 @@
 [
   {
+    "version": "0.4.3",
+    "notes": {
+      "pt": {
+        "features": [
+          "Responda uma mensagem específica: passe o mouse sobre ela e use o botão de responder. A citação aparece acima da sua mensagem, inclusive em respostas com arquivos, GIFs e voz.",
+          "Os anexos agora ficam parados no campo antes de enviar. Dá para mandar até 5 arquivos numa mensagem, com texto junto. Fotos e vídeos aparecem com a miniatura do primeiro e \"+N\", e abrem num carrossel com setas e zoom.",
+          "Mensagem de voz: grave pelo \"+\", ouça antes de enviar e escolha a velocidade e o volume ao reproduzir.",
+          "Player de áudio para arquivos mp3, wav, ogg, flac e m4a.",
+          "Copiar imagem com o botão direito, na miniatura, no visualizador e no carrossel.",
+          "Fotos e vídeos sem moldura: o nome e quem enviou aparecem ao passar o mouse, inclusive em tela cheia.",
+          "Novos ajustes em Configurações › Sistema › Downloads: pasta dos downloads automáticos, perguntar onde salvar a cada download e o tamanho máximo do download automático (padrão de 5 MB). As mensagens de voz ficam em Documentos\\Ludra\\Voice.",
+          "Downloads de arquivos em várias conexões ao mesmo tempo, e mais rápidos para começar.",
+          "A transmissão de tela tem bitrate maior e se ajusta sozinha quando o atraso aumenta.",
+          "A conexão direta com amigos agora vem ligada por padrão. O Ludra nunca mostra o IP de ninguém."
+        ],
+        "fixes": [
+          "O Ludra volta a abrir em PCs onde o Windows recusava criar a janela principal.",
+          "Chamadas encerradas por uma reinicialização do servidor mantêm a duração real, em vez de \"0 minutos\".",
+          "A transmissão não congela mais quando o jogo muda de resolução.",
+          "Vídeos verticais não ficam mais cortados em tela cheia.",
+          "Corrigida a rolagem duplicada nas Configurações."
+        ]
+      },
+      "en": {
+        "features": [
+          "Reply to a specific message: hover it and use the reply button. The quote shows above your message, including replies with files, GIFs and voice.",
+          "Attachments now wait in the message box before sending. You can send up to 5 files in one message, with text. Photos and videos show the first thumbnail and \"+N\", and open in a carousel with arrows and zoom.",
+          "Voice messages: record from the \"+\", listen before sending, and pick speed and volume when playing.",
+          "Audio player for mp3, wav, ogg, flac and m4a files.",
+          "Copy image with a right click, on the thumbnail, in the viewer and in the carousel.",
+          "Photos and videos without a frame: the name and sender show on hover, also in fullscreen.",
+          "New settings under Settings › System › Downloads: folder for automatic downloads, ask where to save on every download, and the maximum size for automatic downloads (5 MB by default). Voice messages are kept in Documents\\Ludra\\Voice.",
+          "File downloads use several connections at once and start faster.",
+          "Screen sharing has a higher bitrate and adjusts itself when the delay goes up.",
+          "Direct connection with friends is now on by default. Ludra never shows anyone's IP."
+        ],
+        "fixes": [
+          "Ludra opens again on PCs where Windows refused to create the main window.",
+          "Calls ended by a server restart keep their real duration instead of \"0 minutes\".",
+          "Screen sharing no longer freezes when the game changes resolution.",
+          "Vertical videos are no longer cropped in fullscreen.",
+          "Fixed the doubled scrolling in Settings."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.4.2",
     "notes": {
       "pt": {

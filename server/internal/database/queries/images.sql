@@ -43,7 +43,7 @@ RETURNING *;
 
 -- name: CreateFileMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, file_name, file_size, file_mime, file_direct)
-SELECT sqlc.arg(conversation_id)::uuid, sqlc.arg(sender_id)::uuid, '', 'file', sqlc.arg(file_name)::text,
+SELECT sqlc.arg(conversation_id)::uuid, sqlc.arg(sender_id)::uuid, sqlc.arg(content)::text, 'file', sqlc.arg(file_name)::text,
        sqlc.arg(file_size)::bigint, sqlc.arg(file_mime)::text, sqlc.arg(file_direct)::boolean
 WHERE EXISTS (
     SELECT 1 FROM participants
@@ -51,6 +51,16 @@ WHERE EXISTS (
       AND user_id = sqlc.arg(sender_id)::uuid
 )
 RETURNING *;
+
+-- name: AddMessageFile :one
+INSERT INTO message_files (message_id, position, name, size, mime)
+VALUES (sqlc.arg(message_id)::uuid, sqlc.arg(position)::smallint, sqlc.arg(name)::text, sqlc.arg(size)::bigint, sqlc.arg(mime)::text)
+RETURNING *;
+
+-- name: ListMessageFiles :many
+SELECT * FROM message_files
+WHERE message_id = ANY(sqlc.arg(ids)::uuid[])
+ORDER BY message_id, position;
 
 -- name: LockUploads :exec
 SELECT pg_advisory_xact_lock(hashtext(sqlc.arg(user_id)::text));

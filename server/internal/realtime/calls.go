@@ -186,7 +186,7 @@ func (c *calls) finishCall(ended *call, by *session, reason protocol.CallEndReas
 	byCaller := by != nil && by.user.Id == ended.callerID
 
 	if ended.messageID != "" {
-		go c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, by), duration(ended))
+		c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, by), duration(ended))
 	}
 
 	frame := callEndedFrame(ended.id, reason)
@@ -269,7 +269,7 @@ func (c *calls) displace(userID string) {
 		return
 	}
 	if ended.messageID != "" {
-		go c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, nil), duration(ended))
+		c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, nil), duration(ended))
 	}
 
 	frame := callEndedFrame(ended.id, protocol.CallEndReason_CALL_END_REASON_DISCONNECTED)
@@ -312,6 +312,22 @@ func (c *calls) remove(id string, by *session, onlyRinging bool) *call {
 		}
 	}
 	return current
+}
+
+func (c *calls) closeAll() {
+	c.mu.Lock()
+	ids := make([]string, 0, len(c.byID))
+	for id := range c.byID {
+		ids = append(ids, id)
+	}
+	c.mu.Unlock()
+
+	for _, id := range ids {
+		ended := c.remove(id, nil, false)
+		if ended != nil && ended.messageID != "" {
+			c.finish(ended.callerID, ended.calleeID, ended.messageID, outcome(ended, nil), duration(ended))
+		}
+	}
 }
 
 func outcome(ended *call, by *session) string {

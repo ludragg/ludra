@@ -25,6 +25,9 @@ export type Preferences = {
   callHeight: number;
   directCalls: boolean;
   directDownloads: boolean;
+  askDownloadLocation: boolean;
+  autoDownload: boolean;
+  autoDownloadLimit: number;
 };
 
 const storageKey = "ludra.preferences";
@@ -52,8 +55,11 @@ const defaults: Preferences = {
   shareFps: 60,
   watchHeight: 420,
   callHeight: 0,
-  directCalls: false,
+  directCalls: true,
   directDownloads: true,
+  askDownloadLocation: false,
+  autoDownload: true,
+  autoDownloadLimit: 5 * 1024 * 1024,
 };
 
 class PreferencesStore {

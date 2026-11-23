@@ -13,10 +13,14 @@ use crate::registry::Registry;
 
 const MAX_CHUNK: u64 = 1 << 20;
 const IMAGE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
-const AUTO_EXTENSIONS: [&str; 9] = [
-    "png", "jpg", "jpeg", "gif", "webp", "bmp", "mp4", "webm", "mov",
+const AUTO_EXTENSIONS: [&str; 14] = [
+    "png", "jpg", "jpeg", "gif", "webp", "bmp", "mp4", "webm", "mov", "mp3", "wav", "ogg", "flac",
+    "m4a",
 ];
-const AUTO_FOLDER: &str = "Ludra";
+const APP_FOLDER: &str = "Ludra";
+const VOICE_FOLDER: &str = "Voice";
+const FOLDER_FILE: &str = "download-folder.txt";
+const MAX_VOICE: usize = 32 << 20;
 
 pub struct FilesState {
     picked: Mutex<HashSet<PathBuf>>,
@@ -120,6 +124,16 @@ pub async fn pick_files(
 }
 
 #[tauri::command]
+pub fn stage_preview(app: AppHandle, state: State<'_, FilesState>, path: String) -> Option<String> {
+    let path = PathBuf::from(path);
+    if !state.picked.lock().unwrap().contains(&path) {
+        return None;
+    }
+    app.asset_protocol_scope().allow_file(&path).ok()?;
+    Some(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 pub fn share_file(
     app: AppHandle,
     state: State<'_, FilesState>,
@@ -168,11 +182,7 @@ pub fn stash_file(
         .headers()
         .get("x-file-name")
         .and_then(|value| value.to_str().ok())
-        .map(|name| {
-            name.chars()
-                .filter(|char| char.is_ascii_alphanumeric() || matches!(char, '.' | '-' | '_'))
-                .collect::<String>()
-        })
+        .map(sanitized)
         .filter(|name| {
             name.rsplit_once('.').is_some_and(|(stem, extension)| {
                 !stem.is_empty() && IMAGE_EXTENSIONS.contains(&extension)
@@ -189,6 +199,43 @@ pub fn stash_file(
     state.picked.lock().unwrap().insert(path.clone());
     Ok(Picked {
         name,
+        path: path.to_string_lossy().into_owned(),
+        size: data.len() as u64,
+    })
+}
+
+fn sanitized(name: &str) -> String {
+    name.chars()
+        .filter(|char| char.is_ascii_alphanumeric() || matches!(char, '.' | '-' | '_'))
+        .collect()
+}
+
+#[tauri::command]
+pub fn stash_voice(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    request: Request<'_>,
+) -> Result<Picked, String> {
+    let InvokeBody::Raw(data) = request.body() else {
+        return Err("expected raw bytes".into());
+    };
+    if data.is_empty() || data.len() > MAX_VOICE {
+        return Err("invalid recording".into());
+    }
+    let name = request
+        .headers()
+        .get("x-file-name")
+        .and_then(|value| value.to_str().ok())
+        .map(sanitized)
+        .filter(|name| name.starts_with("voz-") && name.ends_with(".webm"))
+        .ok_or("invalid recording name")?;
+    let folder = documents_folder(&app)?.join(VOICE_FOLDER);
+    std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
+    let path = unused_path(&folder, &name);
+    std::fs::write(&path, data).map_err(|error| error.to_string())?;
+    state.picked.lock().unwrap().insert(path.clone());
+    Ok(Picked {
+        name: name_of(&path),
         path: path.to_string_lossy().into_owned(),
         size: data.len() as u64,
     })
@@ -275,13 +322,68 @@ pub async fn save_target(
     }))
 }
 
+fn documents_folder(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app
+        .path()
+        .document_dir()
+        .map_err(|error| error.to_string())?
+        .join(APP_FOLDER))
+}
+
+fn download_folder_of(app: &AppHandle) -> Result<PathBuf, String> {
+    let configured = app
+        .path()
+        .app_local_data_dir()
+        .ok()
+        .and_then(|dir| std::fs::read_to_string(dir.join(FOLDER_FILE)).ok())
+        .map(|text| PathBuf::from(text.trim()))
+        .filter(|path| path.is_absolute());
+    match configured {
+        Some(path) => Ok(path),
+        None => documents_folder(app),
+    }
+}
+
 #[tauri::command]
-pub fn auto_target(
+pub fn download_folder(app: AppHandle) -> Result<String, String> {
+    Ok(download_folder_of(&app)?.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn choose_download_folder(
+    window: WebviewWindow,
     app: AppHandle,
-    state: State<'_, FilesState>,
-    name: String,
-) -> Result<String, String> {
-    let name: String = Path::new(&name)
+) -> Result<Option<String>, String> {
+    let handle = owner(&window);
+    let start = download_folder_of(&app).ok();
+    let chosen = tauri::async_runtime::spawn_blocking(move || dialog_folder(handle, start))
+        .await
+        .map_err(|error| error.to_string())?;
+    let Some(path) = chosen else {
+        return Ok(None);
+    };
+    let file = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|error| error.to_string())?
+        .join(FOLDER_FILE);
+    if let Some(dir) = file.parent() {
+        std::fs::create_dir_all(dir).map_err(|error| error.to_string())?;
+    }
+    std::fs::write(file, path.to_string_lossy().as_bytes()).map_err(|error| error.to_string())?;
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+pub fn reset_download_folder(app: AppHandle) -> Result<String, String> {
+    if let Ok(dir) = app.path().app_local_data_dir() {
+        let _ = std::fs::remove_file(dir.join(FOLDER_FILE));
+    }
+    Ok(documents_folder(&app)?.to_string_lossy().into_owned())
+}
+
+fn clean_file_name(name: &str) -> String {
+    let name: String = Path::new(name)
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_default()
@@ -292,17 +394,47 @@ pub fn auto_target(
         })
         .collect();
     let name = name.trim().trim_end_matches('.').to_string();
-    let allowed = name.rsplit_once('.').is_some_and(|(stem, extension)| {
-        !stem.is_empty() && AUTO_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str())
-    });
-    if !allowed {
+    let stem = name.split('.').next().unwrap_or("").to_ascii_uppercase();
+    let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || (stem.len() == 4
+            && (stem.starts_with("COM") || stem.starts_with("LPT"))
+            && stem.ends_with(|char: char| char.is_ascii_digit()));
+    if reserved { format!("_{name}") } else { name }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Destination {
+    Media,
+    Any,
+    Voice,
+}
+
+fn folder_target_for(
+    app: &AppHandle,
+    state: &FilesState,
+    name: &str,
+    destination: Destination,
+) -> Result<String, String> {
+    let name = clean_file_name(name);
+    if name.is_empty() {
+        return Err("invalid file name".into());
+    }
+    if destination == Destination::Voice && !name.ends_with(".webm") {
         return Err("file type not allowed".into());
     }
-    let folder = app
-        .path()
-        .download_dir()
-        .map_err(|error| error.to_string())?
-        .join(AUTO_FOLDER);
+    if destination == Destination::Media {
+        let allowed = name.rsplit_once('.').is_some_and(|(stem, extension)| {
+            !stem.is_empty() && AUTO_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str())
+        });
+        if !allowed {
+            return Err("file type not allowed".into());
+        }
+    }
+    let folder = if destination == Destination::Voice {
+        documents_folder(app)?.join(VOICE_FOLDER)
+    } else {
+        download_folder_of(app)?
+    };
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
     let mut targets = state.targets.lock().unwrap();
     let path = unused_path_where(&folder, &name, |path| {
@@ -310,6 +442,33 @@ pub fn auto_target(
     });
     targets.insert(path.clone());
     Ok(path.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub fn auto_target(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    name: String,
+) -> Result<String, String> {
+    folder_target_for(&app, &state, &name, Destination::Media)
+}
+
+#[tauri::command]
+pub fn folder_target(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    name: String,
+) -> Result<String, String> {
+    folder_target_for(&app, &state, &name, Destination::Any)
+}
+
+#[tauri::command]
+pub fn voice_target(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    name: String,
+) -> Result<String, String> {
+    folder_target_for(&app, &state, &name, Destination::Voice)
 }
 
 #[tauri::command]
@@ -353,8 +512,19 @@ pub async fn write_download(
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.parse::<u32>().ok())
         .ok_or("missing download")?;
+    let offset = request
+        .headers()
+        .get("x-offset")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok());
     let mut downloads = state.downloads.lock().unwrap();
     let download = downloads.get_mut(&id).ok_or("unknown download")?;
+    if let Some(offset) = offset {
+        download
+            .file
+            .seek(SeekFrom::Start(offset))
+            .map_err(|error| error.to_string())?;
+    }
     download
         .file
         .write_all(data)
@@ -425,6 +595,16 @@ fn mark_downloaded(path: &Path) {
 
 #[cfg(not(windows))]
 fn mark_downloaded(_: &Path) {}
+
+#[cfg(windows)]
+fn dialog_folder(owner: Option<isize>, start: Option<PathBuf>) -> Option<PathBuf> {
+    crate::dialog::folder(owner, start)
+}
+
+#[cfg(not(windows))]
+fn dialog_folder(_: Option<isize>, _: Option<PathBuf>) -> Option<PathBuf> {
+    None
+}
 
 #[cfg(windows)]
 fn dialog_open(owner: Option<isize>) -> Vec<PathBuf> {

@@ -14,8 +14,8 @@ import (
 
 const previewTimeout = 20 * time.Second
 
-func (s *session) sendImage(ctx context.Context, conversationID string, data []byte) *protocol.ServerFrame {
-	message, image, recipients, err := s.chat.SendImage(ctx, s.user.Id, conversationID, data)
+func (s *session) sendImage(ctx context.Context, conversationID, replyToID string, data []byte) *protocol.ServerFrame {
+	message, image, recipients, err := s.chat.SendImage(ctx, s.user.Id, conversationID, replyToID, data)
 	if err != nil {
 		return failed(err)
 	}
@@ -81,7 +81,7 @@ func (s *session) sendGif(ctx context.Context, req *protocol.SendGif) *protocol.
 	if err != nil {
 		return failed(err)
 	}
-	return s.sendImage(ctx, req.ConversationId, data)
+	return s.sendImage(ctx, req.ConversationId, req.ReplyToId, data)
 }
 
 func (s *session) removePreview(ctx context.Context, req *protocol.RemovePreview) *protocol.ServerFrame {

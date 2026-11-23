@@ -5,12 +5,13 @@
   import ChatImage from "@/components/chat-image/chat-image.svelte";
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import FileCard from "@/components/file-card/file-card.svelte";
+  import MediaGallery from "@/components/media-gallery/media-gallery.svelte";
   import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
   import LinkPreview from "@/components/link-preview/link-preview.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
   import { callSummary, isCall } from "@/helpers/call-summary";
   import { Elapsed } from "@/helpers/duration.svelte";
-  import { extensionFor } from "@/helpers/files";
+  import { extensionFor, fileMessages, isMediaFile } from "@/helpers/files";
   import { openExternal } from "@/helpers/external";
   import { eventSummary, groupCallSummary, isEvent } from "@/helpers/group-summary";
   import { clean, markup } from "@/helpers/text";
@@ -23,6 +24,7 @@
     MessageKind,
     type ImageRef,
     type Message,
+    type ReplyRef,
   } from "@/protocol/ludra/v1/models_pb";
   import { calls } from "@/stores/call.svelte";
   import { chat } from "@/stores/chat.svelte";
@@ -47,6 +49,7 @@
   let menu = $state<{ user: { id: string; username: string }; x: number; y: number } | null>(null);
   let editing = $state<{ id: string; content: string } | null>(null);
   let armed = $state<string | null>(null);
+  let flashed = $state<string | null>(null);
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
 
@@ -90,6 +93,46 @@
     );
   }
 
+  function replyable(message: Message): boolean {
+    return (
+      (message.kind === MessageKind.TEXT || message.kind === MessageKind.IMAGE || message.kind === MessageKind.FILE) &&
+      !chat.isBlocked(message.senderId)
+    );
+  }
+
+  function quoted(reply: ReplyRef): string {
+    if (chat.isBlocked(reply.senderId)) {
+      return t("chat.blockedMessage");
+    }
+    const live = thread?.messages.find(({ id }) => id === reply.messageId);
+    if (live?.kind === MessageKind.TEXT) {
+      return live.content;
+    }
+    if (reply.voice) {
+      return t("chat.voiceMessage");
+    }
+    if (reply.kind === MessageKind.IMAGE) {
+      return t("chat.photo");
+    }
+    if (reply.kind === MessageKind.FILE) {
+      return t("chat.file");
+    }
+    return reply.excerpt;
+  }
+
+  async function jump(messageId: string) {
+    const target = list.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`);
+    if (!target) {
+      return;
+    }
+    target.scrollIntoView({ block: "center", behavior: "smooth" });
+    flashed = messageId;
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+    if (flashed === messageId) {
+      flashed = null;
+    }
+  }
+
   function edited(message: Message): string {
     const date = toDate(message.editedAt);
     return t("chat.editedAt", { day: formatDay(date), time: formatTime(date) });
@@ -99,8 +142,8 @@
     const me = chat.user?.username.toLowerCase();
     return (
       message.kind === MessageKind.TEXT &&
-      me !== undefined &&
-      markup(message.content, new Set([me])).some((span) => span.mention)
+      ((me !== undefined && markup(message.content, new Set([me])).some((span) => span.mention)) ||
+        (message.reply !== undefined && message.reply.senderId === myId))
     );
   }
 
@@ -178,6 +221,7 @@
         !isCall(previous.message) &&
         !isEvent(message) &&
         !isEvent(previous.message) &&
+        !message.reply &&
         previous.message.senderId === message.senderId &&
         date.getTime() - previous.date.getTime() < groupGap;
 
@@ -296,7 +340,21 @@
       </p>
     {:else}
       {@const who = sender(group.senderId, group.messages[0].senderName)}
-      <article class="chat-messages__group">
+      {@const reply = group.messages[0].reply}
+      {#if reply}
+        {@const replied = sender(reply.senderId, "")}
+        <button
+          type="button"
+          class="chat-messages__reply"
+          aria-label={t("chat.replyOpen")}
+          onclick={() => jump(reply.messageId)}
+        >
+          <span class="chat-messages__reply-avatar"><Avatar user={replied} size="fill" /></span>
+          <span class="chat-messages__reply-author">{replied.username}</span>
+          <span class="chat-messages__reply-text">{quoted(reply)}</span>
+        </button>
+      {/if}
+      <article class="chat-messages__group" class:chat-messages__group--replying={reply}>
         <span class="chat-messages__avatar" role="presentation" oncontextmenu={(event) => openMenu(event, who)}>
           <Avatar user={who} />
         </span>
@@ -310,6 +368,8 @@
           {#each group.messages as message (message.id)}
             <div
               class="chat-messages__message"
+              data-message-id={message.id}
+              class:chat-messages__message--flash={flashed === message.id}
               class:chat-messages__message--editing={editing?.id === message.id}
               class:chat-messages__message--mentioned={mentionsMe(message)}
             >
@@ -364,7 +424,19 @@
                   {/if}
                 </div>
               {:else if message.kind === MessageKind.FILE && message.file}
-                <FileCard {message} sender={who.username} mine={message.senderId === myId} />
+                {@const items = fileMessages(message)}
+                {@const media = items.filter((item) => isMediaFile(item.file!))}
+                {#if message.content}
+                  <p class="chat-messages__text">{@render body(message.content)}</p>
+                {/if}
+                {#if media.length === 1}
+                  <FileCard message={media[0]} sender={who.username} mine={message.senderId === myId} />
+                {:else if media.length > 1}
+                  <MediaGallery items={media} mine={message.senderId === myId} />
+                {/if}
+                {#each items.filter((item) => !isMediaFile(item.file!)) as item (item.id)}
+                  <FileCard message={item} sender={who.username} mine={message.senderId === myId} />
+                {/each}
               {:else}
                 <p class="chat-messages__text">
                   {@render body(message.content)}
@@ -379,8 +451,30 @@
                   />
                 {/if}
               {/if}
-              {#if editing?.id !== message.id && (editable(message) || deletable(message))}
+              {#if editing?.id !== message.id && (replyable(message) || editable(message) || deletable(message))}
                 <div class="chat-messages__actions" role="toolbar" aria-label={t("chat.messageActions")}>
+                  {#if replyable(message)}
+                    <button
+                      type="button"
+                      class="chat-messages__action"
+                      aria-label={t("chat.reply")}
+                      data-tooltip={t("chat.reply")}
+                      onclick={() => chat.reply(message)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M9 14L4 9l5-5" />
+                        <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+                      </svg>
+                    </button>
+                  {/if}
                   {#if editable(message)}
                     <button
                       type="button"
@@ -536,6 +630,66 @@
   .chat-messages__group {
     display: flex;
     gap: 12px;
+  }
+
+  .chat-messages__reply {
+    position: relative;
+    max-width: calc(100% - 48px);
+    margin: 0 0 -12px 48px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    font-size: var(--small-font-size);
+    line-height: 1.3;
+    color: var(--subtle-color);
+    text-align: left;
+  }
+
+  .chat-messages__reply::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    width: 24px;
+    height: 10px;
+    border-top: 2px solid var(--border-color);
+    border-left: 2px solid var(--border-color);
+    border-top-left-radius: 8px;
+  }
+
+  .chat-messages__reply:hover .chat-messages__reply-text {
+    color: var(--muted-color);
+  }
+
+  .chat-messages__reply-avatar {
+    --size: 25px;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    display: flex;
+  }
+
+  .chat-messages__reply-author {
+    flex: none;
+    font-weight: 600;
+    color: var(--body-color);
+  }
+
+  .chat-messages__reply-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-messages__message--flash,
+  .chat-messages__message--flash:hover {
+    background: color-mix(in srgb, var(--brand-color) 18%, transparent);
+    transition: background ease 0.3s;
   }
 
   .chat-messages__content {

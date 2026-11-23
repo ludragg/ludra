@@ -1,5 +1,6 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/protobuf";
 import { timestampMs } from "@bufbuild/protobuf/wkt";
+import { splitKey } from "@/helpers/files";
 import { t } from "@/i18n";
 import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import {
@@ -150,9 +151,9 @@ export class Client {
     return this.#request({ case: "loadMessages", value: { conversationId, beforeId } }, "messageHistory");
   }
 
-  async sendMessage(conversationId: string, content: string): Promise<Message> {
+  async sendMessage(conversationId: string, content: string, replyToId = ""): Promise<Message> {
     const { message } = await this.#request(
-      { case: "sendMessage", value: { conversationId, content } },
+      { case: "sendMessage", value: { conversationId, content, replyToId } },
       "messageCreated",
     );
     return message!;
@@ -167,23 +168,60 @@ export class Client {
     return this.#request({ case: "getImage", value: { id, offset } }, "imageData");
   }
 
-  async sendDirectFile(conversationId: string, name: string, size: number, mime: string): Promise<Message> {
+  async sendDirectFiles(
+    conversationId: string,
+    files: { name: string; size: number; mime: string }[],
+    content = "",
+    replyToId = "",
+  ): Promise<Message> {
+    const [first, ...extra] = files;
     const { message } = await this.#request(
-      { case: "sendDirectFile", value: { conversationId, name, size: BigInt(size), mime } },
+      {
+        case: "sendDirectFile",
+        value: {
+          conversationId,
+          name: first.name,
+          size: BigInt(first.size),
+          mime: first.mime,
+          extra: extra.map(({ name, size, mime }) => ({ name, size: BigInt(size), mime })),
+          content,
+          replyToId,
+        },
+      },
       "messageCreated",
     );
     return message!;
   }
 
-  requestFile(messageId: string, transferId: string, direct: boolean) {
+  requestFile(key: string, transferId: string, direct: boolean, offset = 0, length = 0) {
+    const { messageId, index } = splitKey(key);
     return this.#request(
-      { case: "fileSignal", value: { messageId, transferId, direct, kind: FileSignalKind.REQUEST } },
+      {
+        case: "fileSignal",
+        value: {
+          messageId,
+          fileIndex: index,
+          transferId,
+          direct,
+          offset: BigInt(offset),
+          length: BigInt(length),
+          kind: FileSignalKind.REQUEST,
+        },
+      },
       "fileTransfer",
     );
   }
 
-  async fileSignal(messageId: string, transferId: string, peerId: string, kind: FileSignalKind, payload = "") {
-    await this.#request({ case: "fileSignal", value: { messageId, transferId, peerId, kind, payload } }, "ack");
+  async fileSignal(
+    key: string,
+    transferId: string,
+    peerId: string,
+    kind: FileSignalKind,
+    payload = "",
+    ranged = false,
+  ) {
+    const { messageId } = splitKey(key);
+    await this.#request({ case: "fileSignal", value: { messageId, transferId, peerId, kind, payload, ranged } }, "ack");
   }
 
   searchGifs(query: string, pos: string, locale: string) {
@@ -194,8 +232,11 @@ export class Client {
     return this.#request({ case: "getGifPreview", value: { id } }, "imageData");
   }
 
-  async sendGif(conversationId: string, id: string): Promise<Message> {
-    const { message } = await this.#request({ case: "sendGif", value: { conversationId, id } }, "messageCreated");
+  async sendGif(conversationId: string, id: string, replyToId = ""): Promise<Message> {
+    const { message } = await this.#request(
+      { case: "sendGif", value: { conversationId, id, replyToId } },
+      "messageCreated",
+    );
     return message!;
   }
 

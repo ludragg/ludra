@@ -193,9 +193,36 @@ func (r *rooms) leaveLocked(found *room, s *session) bool {
 	return empty
 }
 
+func (r *rooms) closeAll() {
+	r.mu.Lock()
+	closing := make([]*room, 0, len(r.byID))
+	for _, current := range r.byID {
+		closing = append(closing, current)
+		for _, userID := range current.sessions {
+			delete(r.byUser, userID)
+		}
+		if current.ringTimer != nil {
+			current.ringTimer.Stop()
+		}
+		if current.alone != nil {
+			current.alone.Stop()
+			current.alone = nil
+		}
+	}
+	clear(r.byID)
+	clear(r.byConversation)
+	r.mu.Unlock()
+
+	for _, current := range closing {
+		if current.messageID != "" {
+			r.finish(current.conversationID, current.messageID, time.Since(current.startedAt))
+		}
+	}
+}
+
 func (r *rooms) finishIfEmpty(found *room, empty bool) {
 	if empty && found.messageID != "" {
-		go r.finish(found.conversationID, found.messageID, time.Since(found.startedAt))
+		r.finish(found.conversationID, found.messageID, time.Since(found.startedAt))
 	}
 }
 

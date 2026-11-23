@@ -21,7 +21,7 @@
       listen<Picked[]>("files-dropped", ({ payload }) => {
         dragging = false;
         if (target) {
-          void chat.sendFiles(payload);
+          chat.stage(payload);
         }
       }),
     ];

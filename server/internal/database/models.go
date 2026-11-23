@@ -82,6 +82,18 @@ type Message struct {
 	FileSize           *int64
 	FileMime           *string
 	FileDirect         bool
+	ReplyTo            *string
+	ReplySenderID      *string
+	ReplyKind          *string
+	ReplyExcerpt       *string
+}
+
+type MessageFile struct {
+	MessageID string
+	Position  int16
+	Name      string
+	Size      int64
+	Mime      string
 }
 
 type Participant struct {

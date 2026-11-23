@@ -1,5 +1,6 @@
 import type { IceServer } from "@/protocol/ludra/v1/models_pb";
 import { SignalKind } from "@/protocol/ludra/v1/models_pb";
+import { BitrateGuard } from "@/services/bitrate-guard";
 import { cameraCarrier, cameraEncoding } from "@/services/camera";
 import {
   applyScreenEncoding,
@@ -93,6 +94,7 @@ export class PeerLink {
   #screenSenders: RTCRtpSender[] = [];
   #senderKinds = new Map<RTCRtpSender, string>();
   #screenQuality: ScreenQuality | null = null;
+  #guards = new Map<RTCRtpSender, BitrateGuard>();
   #negotiating = false;
   #restartWanted = false;
   #restartTimer: number | undefined;
@@ -342,6 +344,7 @@ export class PeerLink {
   async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
     this.#screenQuality = stream ? quality : null;
     window.clearInterval(this.#encoderCheck);
+    this.#stopGuards();
     if (!stream || !quality) {
       await Promise.all(this.#screenSenders.map((sender) => sender.replaceTrack(null).catch(() => undefined)));
       return;
@@ -360,11 +363,17 @@ export class PeerLink {
         preferScreenCodecs(transceiver);
       }
     }
+    for (const sender of this.#screenSenders) {
+      if (this.#senderKinds.get(sender) === "video") {
+        this.#guards.set(sender, new BitrateGuard(sender, quality));
+      }
+    }
     await this.#applyEncoding();
     window.clearInterval(this.#encoderCheck);
     if (this.#connection.connectionState === "closed") {
       return;
     }
+    this.#guards.forEach((guard) => guard.start());
     this.#encoderCheck = window.setInterval(() => {
       for (const sender of this.#screenSenders) {
         if (this.#senderKinds.get(sender) === "video" && this.#screenQuality) {
@@ -381,9 +390,14 @@ export class PeerLink {
     }
     for (const sender of this.#screenSenders) {
       if (this.#senderKinds.get(sender) === "video") {
-        await applyScreenEncoding(sender, quality);
+        await applyScreenEncoding(sender, quality, this.#guards.get(sender)?.cap);
       }
     }
+  }
+
+  #stopGuards() {
+    this.#guards.forEach((guard) => guard.stop());
+    this.#guards.clear();
   }
 
   level(): number {
@@ -422,6 +436,7 @@ export class PeerLink {
     window.clearTimeout(this.#switchTimer);
     window.clearInterval(this.#stats);
     window.clearInterval(this.#encoderCheck);
+    this.#stopGuards();
     this.#connection.close();
     this.#remote.pause();
     this.#remote.srcObject = null;

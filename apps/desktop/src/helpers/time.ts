@@ -42,3 +42,8 @@ function daysAgo(date: Date): number {
   day.setHours(0, 0, 0, 0);
   return Math.round((today.getTime() - day.getTime()) / 86_400_000);
 }
+
+export function clock(seconds: number): string {
+  const whole = Number.isFinite(seconds) ? Math.floor(seconds) : 0;
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}

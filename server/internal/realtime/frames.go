@@ -97,10 +97,11 @@ func conversationListFrame(list []*protocol.Conversation) *protocol.ServerFrame 
 	}
 }
 
-func messageHistoryFrame(conversationID string, messages []database.ListMessagesRow, hasMore bool) *protocol.ServerFrame {
+func messageHistoryFrame(conversationID string, messages []database.ListMessagesRow, extras map[string][]database.MessageFile, hasMore bool) *protocol.ServerFrame {
 	list := make([]*protocol.Message, len(messages))
 	for i, row := range messages {
 		list[i] = named(toMessage(row.Message), row.SenderName, row.TargetName)
+		withExtraFiles(list[i], extras[row.Message.ID])
 		if row.PhotoID != nil {
 			list[i].Image = imageRef(chat.Image{ID: *row.PhotoID, Width: *row.PhotoWidth, Height: *row.PhotoHeight})
 			list[i].Image.Expired = row.PhotoExpired != nil && *row.PhotoExpired
@@ -118,6 +119,21 @@ func messageHistoryFrame(conversationID string, messages []database.ListMessages
 		Payload: &protocol.ServerFrame_MessageHistory{
 			MessageHistory: &protocol.MessageHistory{ConversationId: conversationID, Messages: list, HasMore: hasMore},
 		},
+	}
+}
+
+func withExtraFiles(message *protocol.Message, extras []database.MessageFile) {
+	if message.File == nil {
+		return
+	}
+	message.Files = []*protocol.FileRef{message.File}
+	for _, extra := range extras {
+		message.Files = append(message.Files, &protocol.FileRef{
+			Name:   extra.Name,
+			Size:   uint64(extra.Size),
+			Mime:   extra.Mime,
+			Direct: true,
+		})
 	}
 }
 
@@ -322,6 +338,13 @@ func toGroupConversation(group chat.Group, call *protocol.GroupCall) *protocol.C
 	return result
 }
 
+var replyKinds = map[string]protocol.MessageKind{
+	"text":  protocol.MessageKind_MESSAGE_KIND_TEXT,
+	"image": protocol.MessageKind_MESSAGE_KIND_IMAGE,
+	"file":  protocol.MessageKind_MESSAGE_KIND_FILE,
+	"voice": protocol.MessageKind_MESSAGE_KIND_FILE,
+}
+
 var messageEvents = map[string]protocol.MessageEvent{
 	"member_added":   protocol.MessageEvent_MESSAGE_EVENT_MEMBER_ADDED,
 	"member_removed": protocol.MessageEvent_MESSAGE_EVENT_MEMBER_REMOVED,
@@ -343,6 +366,15 @@ func toMessage(message database.Message) *protocol.Message {
 	}
 	if message.EditedAt != nil {
 		result.EditedAt = timestamppb.New(*message.EditedAt)
+	}
+	if message.ReplyTo != nil && message.ReplySenderID != nil && message.ReplyKind != nil {
+		result.Reply = &protocol.ReplyRef{
+			MessageId: *message.ReplyTo,
+			SenderId:  *message.ReplySenderID,
+			Kind:      replyKinds[*message.ReplyKind],
+			Excerpt:   text(message.ReplyExcerpt),
+			Voice:     *message.ReplyKind == "voice",
+		}
 	}
 
 	if message.Kind == "event" {

@@ -1,7 +1,8 @@
 import type { IceServer } from "@/protocol/ludra/v1/models_pb";
 import { describe } from "@/services/peer-link";
 
-const gatherTimeout = 6000;
+const gatherTimeout = 4000;
+const relayGrace = 200;
 const openTimeout = 30_000;
 
 export class FileChannel {
@@ -65,18 +66,33 @@ export class FileChannel {
   }
 
   #gathered(): Promise<void> {
-    if (this.#connection.iceGatheringState === "complete") {
+    const connection = this.#connection;
+    if (connection.iceGatheringState === "complete") {
       return Promise.resolve();
     }
+    const relayOnly = this.#configuration.iceTransportPolicy === "relay";
     return new Promise((resolve) => {
-      const done = () => {
-        if (this.#connection.iceGatheringState === "complete") {
-          this.#connection.removeEventListener("icegatheringstatechange", done);
-          resolve();
+      let grace = 0;
+      const finish = () => {
+        window.clearTimeout(grace);
+        window.clearTimeout(limit);
+        connection.removeEventListener("icegatheringstatechange", state);
+        connection.removeEventListener("icecandidate", candidate);
+        resolve();
+      };
+      const state = () => {
+        if (connection.iceGatheringState === "complete") {
+          finish();
         }
       };
-      this.#connection.addEventListener("icegatheringstatechange", done);
-      window.setTimeout(resolve, gatherTimeout);
+      const candidate = ({ candidate }: RTCPeerConnectionIceEvent) => {
+        if (relayOnly && candidate?.type === "relay" && !grace) {
+          grace = window.setTimeout(finish, relayGrace);
+        }
+      };
+      const limit = window.setTimeout(finish, gatherTimeout);
+      connection.addEventListener("icegatheringstatechange", state);
+      connection.addEventListener("icecandidate", candidate);
     });
   }
 }

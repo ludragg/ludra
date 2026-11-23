@@ -3,11 +3,13 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { changed, log } from "./hub.mjs";
 import { appExe, profilesDir, serverPort } from "./paths.mjs";
-import { killTree, listening, run } from "./process.mjs";
+import { killTree, listening, releaseBrowsers, run } from "./process.mjs";
 import { applyStaged, ensureApp, startInterface, startServer } from "./services.mjs";
 import { saveSettings, settings } from "./settings.mjs";
 
 const guestId = "guest";
+const startupWindow = 15_000;
+const startupRetries = 3;
 const running = new Map();
 const opening = new Set();
 
@@ -68,6 +70,7 @@ export async function openProfile({ id }) {
     if (running.size === 0) {
       await applyStaged();
     }
+    await releaseBrowsers(join(profilesDir, id));
     launch(id, account);
   } finally {
     opening.delete(id);
@@ -75,7 +78,7 @@ export async function openProfile({ id }) {
   }
 }
 
-function launch(id, account) {
+function launch(id, account, attempt = 0) {
   const started = run(appExe, [], {
     channel: "app",
     env: {
@@ -86,12 +89,19 @@ function launch(id, account) {
       WEBVIEW2_USER_DATA_FOLDER: join(profilesDir, id),
     },
   });
+  const began = Date.now();
   running.set(id, started);
-  started.done.then(() => {
-    if (running.get(id) === started) {
-      running.delete(id);
-      changed();
+  started.done.then(async (code) => {
+    if (running.get(id) !== started) {
+      return;
     }
+    running.delete(id);
+    if (code !== 0 && Date.now() - began < startupWindow && attempt < startupRetries) {
+      log("app", "The app closed right after opening, so its profile may still be in use. Trying again.");
+      await releaseBrowsers(join(profilesDir, id));
+      launch(id, account, attempt + 1);
+    }
+    changed();
   });
 }
 
@@ -103,6 +113,7 @@ export async function closeProfile({ id }) {
   running.delete(id);
   await killTree(current.child.pid);
   await current.done;
+  await releaseBrowsers(join(profilesDir, id));
   changed();
 }
 

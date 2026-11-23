@@ -1,15 +1,23 @@
 <script lang="ts">
+  import MediaHint from "@/components/media-hint/media-hint.svelte";
+  import { clock } from "@/helpers/time";
   import { t } from "@/i18n";
 
   let {
     source,
     caption,
+    name = "",
+    detail = "",
+    pinned = false,
     autoplay = false,
     onrequest,
     onreveal,
   }: {
     source: string | null;
     caption: string;
+    name?: string;
+    detail?: string;
+    pinned?: boolean;
     autoplay?: boolean;
     onrequest?: () => void;
     onreveal?: () => void;
@@ -27,6 +35,7 @@
   let volume = $state(1);
   let muted = $state(false);
   let idle = $state(false);
+  let hovered = $state(false);
   let fullscreen = $state(false);
   let ratio = $state("16 / 9");
   let timer = 0;
@@ -107,11 +116,6 @@
       muted = video.muted;
     }
   }
-
-  function clock(seconds: number): string {
-    const whole = Number.isFinite(seconds) ? Math.floor(seconds) : 0;
-    return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
-  }
 </script>
 
 <svelte:document onfullscreenchange={() => (fullscreen = document.fullscreenElement === box)} />
@@ -120,10 +124,12 @@
   class="video-player"
   class:video-player--idle={idle}
   class:video-player--fullscreen={fullscreen}
-  style:aspect-ratio={ratio}
+  style:aspect-ratio={fullscreen ? "auto" : ratio}
   bind:this={box}
   role="presentation"
   onpointermove={awake}
+  onpointerenter={() => (hovered = true)}
+  onpointerleave={() => (hovered = false)}
 >
   {#if started && source && !failed}
     <video
@@ -254,7 +260,12 @@
         <path d="M8 6.5v11a1 1 0 0 0 1.5.86l9-5.5a1 1 0 0 0 0-1.72l-9-5.5A1 1 0 0 0 8 6.5z" />
       </svg>
     </button>
-    <span class="video-player__caption">{caption}</span>
+    {#if caption}
+      <span class="video-player__caption">{caption}</span>
+    {/if}
+  {/if}
+  {#if name}
+    <MediaHint {name} {detail} visible={pinned || (hovered && !idle)} />
   {/if}
 </div>
 
@@ -271,6 +282,8 @@
   }
 
   .video-player--fullscreen {
+    width: 100%;
+    height: 100%;
     max-height: none;
     overflow: visible;
     border-radius: 0;
@@ -286,6 +299,11 @@
     display: block;
     object-fit: contain;
     background: #000000;
+  }
+
+  .video-player--fullscreen .video-player__video {
+    position: absolute;
+    inset: 0;
   }
 
   .video-player__controls {

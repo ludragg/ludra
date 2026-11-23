@@ -2020,6 +2020,7 @@ type SendMessage struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
 	Content        string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	ReplyToId      string                 `protobuf:"bytes,3,opt,name=reply_to_id,json=replyToId,proto3" json:"reply_to_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2064,6 +2065,13 @@ func (x *SendMessage) GetConversationId() string {
 func (x *SendMessage) GetContent() string {
 	if x != nil {
 		return x.Content
+	}
+	return ""
+}
+
+func (x *SendMessage) GetReplyToId() string {
+	if x != nil {
+		return x.ReplyToId
 	}
 	return ""
 }
@@ -2126,6 +2134,9 @@ type SendDirectFile struct {
 	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Size           uint64                 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 	Mime           string                 `protobuf:"bytes,4,opt,name=mime,proto3" json:"mime,omitempty"`
+	ReplyToId      string                 `protobuf:"bytes,5,opt,name=reply_to_id,json=replyToId,proto3" json:"reply_to_id,omitempty"`
+	Extra          []*FileSpec            `protobuf:"bytes,6,rep,name=extra,proto3" json:"extra,omitempty"`
+	Content        string                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2188,6 +2199,87 @@ func (x *SendDirectFile) GetMime() string {
 	return ""
 }
 
+func (x *SendDirectFile) GetReplyToId() string {
+	if x != nil {
+		return x.ReplyToId
+	}
+	return ""
+}
+
+func (x *SendDirectFile) GetExtra() []*FileSpec {
+	if x != nil {
+		return x.Extra
+	}
+	return nil
+}
+
+func (x *SendDirectFile) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+type FileSpec struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Size          uint64                 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	Mime          string                 `protobuf:"bytes,3,opt,name=mime,proto3" json:"mime,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileSpec) Reset() {
+	*x = FileSpec{}
+	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileSpec) ProtoMessage() {}
+
+func (x *FileSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileSpec.ProtoReflect.Descriptor instead.
+func (*FileSpec) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *FileSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FileSpec) GetSize() uint64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileSpec) GetMime() string {
+	if x != nil {
+		return x.Mime
+	}
+	return ""
+}
+
 type SearchGifs struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
@@ -2199,7 +2291,7 @@ type SearchGifs struct {
 
 func (x *SearchGifs) Reset() {
 	*x = SearchGifs{}
-	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	mi := &file_ludra_v1_client_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2211,7 +2303,7 @@ func (x *SearchGifs) String() string {
 func (*SearchGifs) ProtoMessage() {}
 
 func (x *SearchGifs) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[26]
+	mi := &file_ludra_v1_client_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2224,7 +2316,7 @@ func (x *SearchGifs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchGifs.ProtoReflect.Descriptor instead.
 func (*SearchGifs) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{26}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *SearchGifs) GetQuery() string {
@@ -2257,7 +2349,7 @@ type GetGifPreview struct {
 
 func (x *GetGifPreview) Reset() {
 	*x = GetGifPreview{}
-	mi := &file_ludra_v1_client_proto_msgTypes[27]
+	mi := &file_ludra_v1_client_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2269,7 +2361,7 @@ func (x *GetGifPreview) String() string {
 func (*GetGifPreview) ProtoMessage() {}
 
 func (x *GetGifPreview) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[27]
+	mi := &file_ludra_v1_client_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2282,7 +2374,7 @@ func (x *GetGifPreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGifPreview.ProtoReflect.Descriptor instead.
 func (*GetGifPreview) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{27}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetGifPreview) GetId() string {
@@ -2296,13 +2388,14 @@ type SendGif struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
 	Id             string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	ReplyToId      string                 `protobuf:"bytes,3,opt,name=reply_to_id,json=replyToId,proto3" json:"reply_to_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SendGif) Reset() {
 	*x = SendGif{}
-	mi := &file_ludra_v1_client_proto_msgTypes[28]
+	mi := &file_ludra_v1_client_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2314,7 +2407,7 @@ func (x *SendGif) String() string {
 func (*SendGif) ProtoMessage() {}
 
 func (x *SendGif) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[28]
+	mi := &file_ludra_v1_client_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2327,7 +2420,7 @@ func (x *SendGif) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendGif.ProtoReflect.Descriptor instead.
 func (*SendGif) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{28}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SendGif) GetConversationId() string {
@@ -2344,6 +2437,13 @@ func (x *SendGif) GetId() string {
 	return ""
 }
 
+func (x *SendGif) GetReplyToId() string {
+	if x != nil {
+		return x.ReplyToId
+	}
+	return ""
+}
+
 type RemovePreview struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
@@ -2353,7 +2453,7 @@ type RemovePreview struct {
 
 func (x *RemovePreview) Reset() {
 	*x = RemovePreview{}
-	mi := &file_ludra_v1_client_proto_msgTypes[29]
+	mi := &file_ludra_v1_client_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2365,7 +2465,7 @@ func (x *RemovePreview) String() string {
 func (*RemovePreview) ProtoMessage() {}
 
 func (x *RemovePreview) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[29]
+	mi := &file_ludra_v1_client_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2378,7 +2478,7 @@ func (x *RemovePreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemovePreview.ProtoReflect.Descriptor instead.
 func (*RemovePreview) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{29}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *RemovePreview) GetMessageId() string {
@@ -2398,7 +2498,7 @@ type EditMessage struct {
 
 func (x *EditMessage) Reset() {
 	*x = EditMessage{}
-	mi := &file_ludra_v1_client_proto_msgTypes[30]
+	mi := &file_ludra_v1_client_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2410,7 +2510,7 @@ func (x *EditMessage) String() string {
 func (*EditMessage) ProtoMessage() {}
 
 func (x *EditMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[30]
+	mi := &file_ludra_v1_client_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2423,7 +2523,7 @@ func (x *EditMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EditMessage.ProtoReflect.Descriptor instead.
 func (*EditMessage) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{30}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *EditMessage) GetMessageId() string {
@@ -2449,7 +2549,7 @@ type DeleteMessage struct {
 
 func (x *DeleteMessage) Reset() {
 	*x = DeleteMessage{}
-	mi := &file_ludra_v1_client_proto_msgTypes[31]
+	mi := &file_ludra_v1_client_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2461,7 +2561,7 @@ func (x *DeleteMessage) String() string {
 func (*DeleteMessage) ProtoMessage() {}
 
 func (x *DeleteMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[31]
+	mi := &file_ludra_v1_client_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2474,7 +2574,7 @@ func (x *DeleteMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMessage.ProtoReflect.Descriptor instead.
 func (*DeleteMessage) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{31}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *DeleteMessage) GetMessageId() string {
@@ -2493,7 +2593,7 @@ type SetUsername struct {
 
 func (x *SetUsername) Reset() {
 	*x = SetUsername{}
-	mi := &file_ludra_v1_client_proto_msgTypes[32]
+	mi := &file_ludra_v1_client_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2505,7 +2605,7 @@ func (x *SetUsername) String() string {
 func (*SetUsername) ProtoMessage() {}
 
 func (x *SetUsername) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[32]
+	mi := &file_ludra_v1_client_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2518,7 +2618,7 @@ func (x *SetUsername) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUsername.ProtoReflect.Descriptor instead.
 func (*SetUsername) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{32}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *SetUsername) GetUsername() string {
@@ -2538,7 +2638,7 @@ type StartCall struct {
 
 func (x *StartCall) Reset() {
 	*x = StartCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[33]
+	mi := &file_ludra_v1_client_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2550,7 +2650,7 @@ func (x *StartCall) String() string {
 func (*StartCall) ProtoMessage() {}
 
 func (x *StartCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[33]
+	mi := &file_ludra_v1_client_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2563,7 +2663,7 @@ func (x *StartCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartCall.ProtoReflect.Descriptor instead.
 func (*StartCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{33}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *StartCall) GetUserId() string {
@@ -2590,7 +2690,7 @@ type AnswerCall struct {
 
 func (x *AnswerCall) Reset() {
 	*x = AnswerCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[34]
+	mi := &file_ludra_v1_client_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2602,7 +2702,7 @@ func (x *AnswerCall) String() string {
 func (*AnswerCall) ProtoMessage() {}
 
 func (x *AnswerCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[34]
+	mi := &file_ludra_v1_client_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2615,7 +2715,7 @@ func (x *AnswerCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnswerCall.ProtoReflect.Descriptor instead.
 func (*AnswerCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{34}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *AnswerCall) GetCallId() string {
@@ -2641,7 +2741,7 @@ type EndCall struct {
 
 func (x *EndCall) Reset() {
 	*x = EndCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[35]
+	mi := &file_ludra_v1_client_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2653,7 +2753,7 @@ func (x *EndCall) String() string {
 func (*EndCall) ProtoMessage() {}
 
 func (x *EndCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[35]
+	mi := &file_ludra_v1_client_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2666,7 +2766,7 @@ func (x *EndCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EndCall.ProtoReflect.Descriptor instead.
 func (*EndCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{35}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *EndCall) GetCallId() string {
@@ -2686,7 +2786,7 @@ type CreateGroup struct {
 
 func (x *CreateGroup) Reset() {
 	*x = CreateGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[36]
+	mi := &file_ludra_v1_client_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2698,7 +2798,7 @@ func (x *CreateGroup) String() string {
 func (*CreateGroup) ProtoMessage() {}
 
 func (x *CreateGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[36]
+	mi := &file_ludra_v1_client_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2711,7 +2811,7 @@ func (x *CreateGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGroup.ProtoReflect.Descriptor instead.
 func (*CreateGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{36}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *CreateGroup) GetName() string {
@@ -2738,7 +2838,7 @@ type AddGroupMembers struct {
 
 func (x *AddGroupMembers) Reset() {
 	*x = AddGroupMembers{}
-	mi := &file_ludra_v1_client_proto_msgTypes[37]
+	mi := &file_ludra_v1_client_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2750,7 +2850,7 @@ func (x *AddGroupMembers) String() string {
 func (*AddGroupMembers) ProtoMessage() {}
 
 func (x *AddGroupMembers) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[37]
+	mi := &file_ludra_v1_client_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2763,7 +2863,7 @@ func (x *AddGroupMembers) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddGroupMembers.ProtoReflect.Descriptor instead.
 func (*AddGroupMembers) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{37}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AddGroupMembers) GetConversationId() string {
@@ -2790,7 +2890,7 @@ type RemoveGroupMember struct {
 
 func (x *RemoveGroupMember) Reset() {
 	*x = RemoveGroupMember{}
-	mi := &file_ludra_v1_client_proto_msgTypes[38]
+	mi := &file_ludra_v1_client_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2802,7 +2902,7 @@ func (x *RemoveGroupMember) String() string {
 func (*RemoveGroupMember) ProtoMessage() {}
 
 func (x *RemoveGroupMember) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[38]
+	mi := &file_ludra_v1_client_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2815,7 +2915,7 @@ func (x *RemoveGroupMember) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveGroupMember.ProtoReflect.Descriptor instead.
 func (*RemoveGroupMember) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{38}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *RemoveGroupMember) GetConversationId() string {
@@ -2841,7 +2941,7 @@ type LeaveGroup struct {
 
 func (x *LeaveGroup) Reset() {
 	*x = LeaveGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[39]
+	mi := &file_ludra_v1_client_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2853,7 +2953,7 @@ func (x *LeaveGroup) String() string {
 func (*LeaveGroup) ProtoMessage() {}
 
 func (x *LeaveGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[39]
+	mi := &file_ludra_v1_client_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2866,7 +2966,7 @@ func (x *LeaveGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveGroup.ProtoReflect.Descriptor instead.
 func (*LeaveGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{39}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *LeaveGroup) GetConversationId() string {
@@ -2886,7 +2986,7 @@ type JoinGroupCall struct {
 
 func (x *JoinGroupCall) Reset() {
 	*x = JoinGroupCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[40]
+	mi := &file_ludra_v1_client_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2898,7 +2998,7 @@ func (x *JoinGroupCall) String() string {
 func (*JoinGroupCall) ProtoMessage() {}
 
 func (x *JoinGroupCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[40]
+	mi := &file_ludra_v1_client_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2911,7 +3011,7 @@ func (x *JoinGroupCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinGroupCall.ProtoReflect.Descriptor instead.
 func (*JoinGroupCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{40}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *JoinGroupCall) GetConversationId() string {
@@ -2937,7 +3037,7 @@ type LeaveGroupCall struct {
 
 func (x *LeaveGroupCall) Reset() {
 	*x = LeaveGroupCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[41]
+	mi := &file_ludra_v1_client_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2949,7 +3049,7 @@ func (x *LeaveGroupCall) String() string {
 func (*LeaveGroupCall) ProtoMessage() {}
 
 func (x *LeaveGroupCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[41]
+	mi := &file_ludra_v1_client_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2962,7 +3062,7 @@ func (x *LeaveGroupCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LeaveGroupCall.ProtoReflect.Descriptor instead.
 func (*LeaveGroupCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{41}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *LeaveGroupCall) GetCallId() string {
@@ -2981,7 +3081,7 @@ type DeclineGroupCall struct {
 
 func (x *DeclineGroupCall) Reset() {
 	*x = DeclineGroupCall{}
-	mi := &file_ludra_v1_client_proto_msgTypes[42]
+	mi := &file_ludra_v1_client_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2993,7 +3093,7 @@ func (x *DeclineGroupCall) String() string {
 func (*DeclineGroupCall) ProtoMessage() {}
 
 func (x *DeclineGroupCall) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[42]
+	mi := &file_ludra_v1_client_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3006,7 +3106,7 @@ func (x *DeclineGroupCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeclineGroupCall.ProtoReflect.Descriptor instead.
 func (*DeclineGroupCall) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{42}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *DeclineGroupCall) GetConversationId() string {
@@ -3025,7 +3125,7 @@ type DeleteGroup struct {
 
 func (x *DeleteGroup) Reset() {
 	*x = DeleteGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[43]
+	mi := &file_ludra_v1_client_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3037,7 +3137,7 @@ func (x *DeleteGroup) String() string {
 func (*DeleteGroup) ProtoMessage() {}
 
 func (x *DeleteGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[43]
+	mi := &file_ludra_v1_client_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3050,7 +3150,7 @@ func (x *DeleteGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteGroup.ProtoReflect.Descriptor instead.
 func (*DeleteGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{43}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *DeleteGroup) GetConversationId() string {
@@ -3069,7 +3169,7 @@ type BlockUser struct {
 
 func (x *BlockUser) Reset() {
 	*x = BlockUser{}
-	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	mi := &file_ludra_v1_client_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3081,7 +3181,7 @@ func (x *BlockUser) String() string {
 func (*BlockUser) ProtoMessage() {}
 
 func (x *BlockUser) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[44]
+	mi := &file_ludra_v1_client_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3094,7 +3194,7 @@ func (x *BlockUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockUser.ProtoReflect.Descriptor instead.
 func (*BlockUser) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{44}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *BlockUser) GetUserId() string {
@@ -3113,7 +3213,7 @@ type UnblockUser struct {
 
 func (x *UnblockUser) Reset() {
 	*x = UnblockUser{}
-	mi := &file_ludra_v1_client_proto_msgTypes[45]
+	mi := &file_ludra_v1_client_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3125,7 +3225,7 @@ func (x *UnblockUser) String() string {
 func (*UnblockUser) ProtoMessage() {}
 
 func (x *UnblockUser) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[45]
+	mi := &file_ludra_v1_client_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3138,7 +3238,7 @@ func (x *UnblockUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnblockUser.ProtoReflect.Descriptor instead.
 func (*UnblockUser) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{45}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *UnblockUser) GetUserId() string {
@@ -3156,7 +3256,7 @@ type ListBlocked struct {
 
 func (x *ListBlocked) Reset() {
 	*x = ListBlocked{}
-	mi := &file_ludra_v1_client_proto_msgTypes[46]
+	mi := &file_ludra_v1_client_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3168,7 +3268,7 @@ func (x *ListBlocked) String() string {
 func (*ListBlocked) ProtoMessage() {}
 
 func (x *ListBlocked) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[46]
+	mi := &file_ludra_v1_client_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3181,7 +3281,7 @@ func (x *ListBlocked) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBlocked.ProtoReflect.Descriptor instead.
 func (*ListBlocked) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{46}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{47}
 }
 
 type SetIdentityKey struct {
@@ -3193,7 +3293,7 @@ type SetIdentityKey struct {
 
 func (x *SetIdentityKey) Reset() {
 	*x = SetIdentityKey{}
-	mi := &file_ludra_v1_client_proto_msgTypes[47]
+	mi := &file_ludra_v1_client_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3205,7 +3305,7 @@ func (x *SetIdentityKey) String() string {
 func (*SetIdentityKey) ProtoMessage() {}
 
 func (x *SetIdentityKey) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[47]
+	mi := &file_ludra_v1_client_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3218,7 +3318,7 @@ func (x *SetIdentityKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetIdentityKey.ProtoReflect.Descriptor instead.
 func (*SetIdentityKey) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{47}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *SetIdentityKey) GetKey() string {
@@ -3237,7 +3337,7 @@ type ListIdentityKeys struct {
 
 func (x *ListIdentityKeys) Reset() {
 	*x = ListIdentityKeys{}
-	mi := &file_ludra_v1_client_proto_msgTypes[48]
+	mi := &file_ludra_v1_client_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3249,7 +3349,7 @@ func (x *ListIdentityKeys) String() string {
 func (*ListIdentityKeys) ProtoMessage() {}
 
 func (x *ListIdentityKeys) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[48]
+	mi := &file_ludra_v1_client_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3262,7 +3362,7 @@ func (x *ListIdentityKeys) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIdentityKeys.ProtoReflect.Descriptor instead.
 func (*ListIdentityKeys) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{48}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *ListIdentityKeys) GetUserIds() []string {
@@ -3282,7 +3382,7 @@ type SetGroupAvatar struct {
 
 func (x *SetGroupAvatar) Reset() {
 	*x = SetGroupAvatar{}
-	mi := &file_ludra_v1_client_proto_msgTypes[49]
+	mi := &file_ludra_v1_client_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3294,7 +3394,7 @@ func (x *SetGroupAvatar) String() string {
 func (*SetGroupAvatar) ProtoMessage() {}
 
 func (x *SetGroupAvatar) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[49]
+	mi := &file_ludra_v1_client_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3307,7 +3407,7 @@ func (x *SetGroupAvatar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetGroupAvatar.ProtoReflect.Descriptor instead.
 func (*SetGroupAvatar) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{49}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *SetGroupAvatar) GetConversationId() string {
@@ -3334,7 +3434,7 @@ type RenameGroup struct {
 
 func (x *RenameGroup) Reset() {
 	*x = RenameGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[50]
+	mi := &file_ludra_v1_client_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3346,7 +3446,7 @@ func (x *RenameGroup) String() string {
 func (*RenameGroup) ProtoMessage() {}
 
 func (x *RenameGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[50]
+	mi := &file_ludra_v1_client_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3359,7 +3459,7 @@ func (x *RenameGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RenameGroup.ProtoReflect.Descriptor instead.
 func (*RenameGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{50}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *RenameGroup) GetConversationId() string {
@@ -3386,7 +3486,7 @@ type TransferGroup struct {
 
 func (x *TransferGroup) Reset() {
 	*x = TransferGroup{}
-	mi := &file_ludra_v1_client_proto_msgTypes[51]
+	mi := &file_ludra_v1_client_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3398,7 +3498,7 @@ func (x *TransferGroup) String() string {
 func (*TransferGroup) ProtoMessage() {}
 
 func (x *TransferGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_client_proto_msgTypes[51]
+	mi := &file_ludra_v1_client_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3411,7 +3511,7 @@ func (x *TransferGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransferGroup.ProtoReflect.Descriptor instead.
 func (*TransferGroup) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_client_proto_rawDescGZIP(), []int{51}
+	return file_ludra_v1_client_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *TransferGroup) GetConversationId() string {
@@ -3552,28 +3652,37 @@ const file_ludra_v1_client_proto_rawDesc = "" +
 	"\fLoadMessages\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x1b\n" +
 	"\tbefore_id\x18\x02 \x01(\tR\bbeforeId\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\rR\x05limit\"P\n" +
+	"\x05limit\x18\x03 \x01(\rR\x05limit\"p\n" +
 	"\vSendMessage\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"2\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\x12\x1e\n" +
+	"\vreply_to_id\x18\x03 \x01(\tR\treplyToId\"2\n" +
 	"\bGetImage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\rR\x06offset\"u\n" +
+	"\x06offset\x18\x02 \x01(\rR\x06offset\"\xd9\x01\n" +
 	"\x0eSendDirectFile\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\x04R\x04size\x12\x12\n" +
-	"\x04mime\x18\x04 \x01(\tR\x04mime\"L\n" +
+	"\x04mime\x18\x04 \x01(\tR\x04mime\x12\x1e\n" +
+	"\vreply_to_id\x18\x05 \x01(\tR\treplyToId\x12(\n" +
+	"\x05extra\x18\x06 \x03(\v2\x12.ludra.v1.FileSpecR\x05extra\x12\x18\n" +
+	"\acontent\x18\a \x01(\tR\acontent\"F\n" +
+	"\bFileSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x04R\x04size\x12\x12\n" +
+	"\x04mime\x18\x03 \x01(\tR\x04mime\"L\n" +
 	"\n" +
 	"SearchGifs\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x10\n" +
 	"\x03pos\x18\x02 \x01(\tR\x03pos\x12\x16\n" +
 	"\x06locale\x18\x03 \x01(\tR\x06locale\"\x1f\n" +
 	"\rGetGifPreview\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"B\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"b\n" +
 	"\aSendGif\x12'\n" +
 	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\".\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x1e\n" +
+	"\vreply_to_id\x18\x03 \x01(\tR\treplyToId\".\n" +
 	"\rRemovePreview\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\"F\n" +
@@ -3654,7 +3763,7 @@ func file_ludra_v1_client_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_client_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_ludra_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 53)
 var file_ludra_v1_client_proto_goTypes = []any{
 	(CodePurpose)(0),          // 0: ludra.v1.CodePurpose
 	(*ClientFrame)(nil),       // 1: ludra.v1.ClientFrame
@@ -3683,35 +3792,36 @@ var file_ludra_v1_client_proto_goTypes = []any{
 	(*SendMessage)(nil),       // 24: ludra.v1.SendMessage
 	(*GetImage)(nil),          // 25: ludra.v1.GetImage
 	(*SendDirectFile)(nil),    // 26: ludra.v1.SendDirectFile
-	(*SearchGifs)(nil),        // 27: ludra.v1.SearchGifs
-	(*GetGifPreview)(nil),     // 28: ludra.v1.GetGifPreview
-	(*SendGif)(nil),           // 29: ludra.v1.SendGif
-	(*RemovePreview)(nil),     // 30: ludra.v1.RemovePreview
-	(*EditMessage)(nil),       // 31: ludra.v1.EditMessage
-	(*DeleteMessage)(nil),     // 32: ludra.v1.DeleteMessage
-	(*SetUsername)(nil),       // 33: ludra.v1.SetUsername
-	(*StartCall)(nil),         // 34: ludra.v1.StartCall
-	(*AnswerCall)(nil),        // 35: ludra.v1.AnswerCall
-	(*EndCall)(nil),           // 36: ludra.v1.EndCall
-	(*CreateGroup)(nil),       // 37: ludra.v1.CreateGroup
-	(*AddGroupMembers)(nil),   // 38: ludra.v1.AddGroupMembers
-	(*RemoveGroupMember)(nil), // 39: ludra.v1.RemoveGroupMember
-	(*LeaveGroup)(nil),        // 40: ludra.v1.LeaveGroup
-	(*JoinGroupCall)(nil),     // 41: ludra.v1.JoinGroupCall
-	(*LeaveGroupCall)(nil),    // 42: ludra.v1.LeaveGroupCall
-	(*DeclineGroupCall)(nil),  // 43: ludra.v1.DeclineGroupCall
-	(*DeleteGroup)(nil),       // 44: ludra.v1.DeleteGroup
-	(*BlockUser)(nil),         // 45: ludra.v1.BlockUser
-	(*UnblockUser)(nil),       // 46: ludra.v1.UnblockUser
-	(*ListBlocked)(nil),       // 47: ludra.v1.ListBlocked
-	(*SetIdentityKey)(nil),    // 48: ludra.v1.SetIdentityKey
-	(*ListIdentityKeys)(nil),  // 49: ludra.v1.ListIdentityKeys
-	(*SetGroupAvatar)(nil),    // 50: ludra.v1.SetGroupAvatar
-	(*RenameGroup)(nil),       // 51: ludra.v1.RenameGroup
-	(*TransferGroup)(nil),     // 52: ludra.v1.TransferGroup
-	(*CallSignal)(nil),        // 53: ludra.v1.CallSignal
-	(*FileSignal)(nil),        // 54: ludra.v1.FileSignal
-	(Presence)(0),             // 55: ludra.v1.Presence
+	(*FileSpec)(nil),          // 27: ludra.v1.FileSpec
+	(*SearchGifs)(nil),        // 28: ludra.v1.SearchGifs
+	(*GetGifPreview)(nil),     // 29: ludra.v1.GetGifPreview
+	(*SendGif)(nil),           // 30: ludra.v1.SendGif
+	(*RemovePreview)(nil),     // 31: ludra.v1.RemovePreview
+	(*EditMessage)(nil),       // 32: ludra.v1.EditMessage
+	(*DeleteMessage)(nil),     // 33: ludra.v1.DeleteMessage
+	(*SetUsername)(nil),       // 34: ludra.v1.SetUsername
+	(*StartCall)(nil),         // 35: ludra.v1.StartCall
+	(*AnswerCall)(nil),        // 36: ludra.v1.AnswerCall
+	(*EndCall)(nil),           // 37: ludra.v1.EndCall
+	(*CreateGroup)(nil),       // 38: ludra.v1.CreateGroup
+	(*AddGroupMembers)(nil),   // 39: ludra.v1.AddGroupMembers
+	(*RemoveGroupMember)(nil), // 40: ludra.v1.RemoveGroupMember
+	(*LeaveGroup)(nil),        // 41: ludra.v1.LeaveGroup
+	(*JoinGroupCall)(nil),     // 42: ludra.v1.JoinGroupCall
+	(*LeaveGroupCall)(nil),    // 43: ludra.v1.LeaveGroupCall
+	(*DeclineGroupCall)(nil),  // 44: ludra.v1.DeclineGroupCall
+	(*DeleteGroup)(nil),       // 45: ludra.v1.DeleteGroup
+	(*BlockUser)(nil),         // 46: ludra.v1.BlockUser
+	(*UnblockUser)(nil),       // 47: ludra.v1.UnblockUser
+	(*ListBlocked)(nil),       // 48: ludra.v1.ListBlocked
+	(*SetIdentityKey)(nil),    // 49: ludra.v1.SetIdentityKey
+	(*ListIdentityKeys)(nil),  // 50: ludra.v1.ListIdentityKeys
+	(*SetGroupAvatar)(nil),    // 51: ludra.v1.SetGroupAvatar
+	(*RenameGroup)(nil),       // 52: ludra.v1.RenameGroup
+	(*TransferGroup)(nil),     // 53: ludra.v1.TransferGroup
+	(*CallSignal)(nil),        // 54: ludra.v1.CallSignal
+	(*FileSignal)(nil),        // 55: ludra.v1.FileSignal
+	(Presence)(0),             // 56: ludra.v1.Presence
 }
 var file_ludra_v1_client_proto_depIdxs = []int32{
 	4,  // 0: ludra.v1.ClientFrame.login:type_name -> ludra.v1.Login
@@ -3736,44 +3846,45 @@ var file_ludra_v1_client_proto_depIdxs = []int32{
 	11, // 19: ludra.v1.ClientFrame.set_two_factor:type_name -> ludra.v1.SetTwoFactor
 	12, // 20: ludra.v1.ClientFrame.set_avatar:type_name -> ludra.v1.SetAvatar
 	13, // 21: ludra.v1.ClientFrame.remove_avatar:type_name -> ludra.v1.RemoveAvatar
-	34, // 22: ludra.v1.ClientFrame.start_call:type_name -> ludra.v1.StartCall
-	35, // 23: ludra.v1.ClientFrame.answer_call:type_name -> ludra.v1.AnswerCall
-	36, // 24: ludra.v1.ClientFrame.end_call:type_name -> ludra.v1.EndCall
-	53, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
-	37, // 26: ludra.v1.ClientFrame.create_group:type_name -> ludra.v1.CreateGroup
-	38, // 27: ludra.v1.ClientFrame.add_group_members:type_name -> ludra.v1.AddGroupMembers
-	39, // 28: ludra.v1.ClientFrame.remove_group_member:type_name -> ludra.v1.RemoveGroupMember
-	40, // 29: ludra.v1.ClientFrame.leave_group:type_name -> ludra.v1.LeaveGroup
-	41, // 30: ludra.v1.ClientFrame.join_group_call:type_name -> ludra.v1.JoinGroupCall
-	42, // 31: ludra.v1.ClientFrame.leave_group_call:type_name -> ludra.v1.LeaveGroupCall
-	43, // 32: ludra.v1.ClientFrame.decline_group_call:type_name -> ludra.v1.DeclineGroupCall
-	44, // 33: ludra.v1.ClientFrame.delete_group:type_name -> ludra.v1.DeleteGroup
-	52, // 34: ludra.v1.ClientFrame.transfer_group:type_name -> ludra.v1.TransferGroup
-	45, // 35: ludra.v1.ClientFrame.block_user:type_name -> ludra.v1.BlockUser
-	46, // 36: ludra.v1.ClientFrame.unblock_user:type_name -> ludra.v1.UnblockUser
-	47, // 37: ludra.v1.ClientFrame.list_blocked:type_name -> ludra.v1.ListBlocked
-	50, // 38: ludra.v1.ClientFrame.set_group_avatar:type_name -> ludra.v1.SetGroupAvatar
-	48, // 39: ludra.v1.ClientFrame.set_identity_key:type_name -> ludra.v1.SetIdentityKey
-	49, // 40: ludra.v1.ClientFrame.list_identity_keys:type_name -> ludra.v1.ListIdentityKeys
+	35, // 22: ludra.v1.ClientFrame.start_call:type_name -> ludra.v1.StartCall
+	36, // 23: ludra.v1.ClientFrame.answer_call:type_name -> ludra.v1.AnswerCall
+	37, // 24: ludra.v1.ClientFrame.end_call:type_name -> ludra.v1.EndCall
+	54, // 25: ludra.v1.ClientFrame.call_signal:type_name -> ludra.v1.CallSignal
+	38, // 26: ludra.v1.ClientFrame.create_group:type_name -> ludra.v1.CreateGroup
+	39, // 27: ludra.v1.ClientFrame.add_group_members:type_name -> ludra.v1.AddGroupMembers
+	40, // 28: ludra.v1.ClientFrame.remove_group_member:type_name -> ludra.v1.RemoveGroupMember
+	41, // 29: ludra.v1.ClientFrame.leave_group:type_name -> ludra.v1.LeaveGroup
+	42, // 30: ludra.v1.ClientFrame.join_group_call:type_name -> ludra.v1.JoinGroupCall
+	43, // 31: ludra.v1.ClientFrame.leave_group_call:type_name -> ludra.v1.LeaveGroupCall
+	44, // 32: ludra.v1.ClientFrame.decline_group_call:type_name -> ludra.v1.DeclineGroupCall
+	45, // 33: ludra.v1.ClientFrame.delete_group:type_name -> ludra.v1.DeleteGroup
+	53, // 34: ludra.v1.ClientFrame.transfer_group:type_name -> ludra.v1.TransferGroup
+	46, // 35: ludra.v1.ClientFrame.block_user:type_name -> ludra.v1.BlockUser
+	47, // 36: ludra.v1.ClientFrame.unblock_user:type_name -> ludra.v1.UnblockUser
+	48, // 37: ludra.v1.ClientFrame.list_blocked:type_name -> ludra.v1.ListBlocked
+	51, // 38: ludra.v1.ClientFrame.set_group_avatar:type_name -> ludra.v1.SetGroupAvatar
+	49, // 39: ludra.v1.ClientFrame.set_identity_key:type_name -> ludra.v1.SetIdentityKey
+	50, // 40: ludra.v1.ClientFrame.list_identity_keys:type_name -> ludra.v1.ListIdentityKeys
 	2,  // 41: ludra.v1.ClientFrame.ping:type_name -> ludra.v1.Ping
-	31, // 42: ludra.v1.ClientFrame.edit_message:type_name -> ludra.v1.EditMessage
-	32, // 43: ludra.v1.ClientFrame.delete_message:type_name -> ludra.v1.DeleteMessage
-	33, // 44: ludra.v1.ClientFrame.set_username:type_name -> ludra.v1.SetUsername
-	51, // 45: ludra.v1.ClientFrame.rename_group:type_name -> ludra.v1.RenameGroup
+	32, // 42: ludra.v1.ClientFrame.edit_message:type_name -> ludra.v1.EditMessage
+	33, // 43: ludra.v1.ClientFrame.delete_message:type_name -> ludra.v1.DeleteMessage
+	34, // 44: ludra.v1.ClientFrame.set_username:type_name -> ludra.v1.SetUsername
+	52, // 45: ludra.v1.ClientFrame.rename_group:type_name -> ludra.v1.RenameGroup
 	25, // 46: ludra.v1.ClientFrame.get_image:type_name -> ludra.v1.GetImage
-	30, // 47: ludra.v1.ClientFrame.remove_preview:type_name -> ludra.v1.RemovePreview
-	27, // 48: ludra.v1.ClientFrame.search_gifs:type_name -> ludra.v1.SearchGifs
-	28, // 49: ludra.v1.ClientFrame.get_gif_preview:type_name -> ludra.v1.GetGifPreview
-	29, // 50: ludra.v1.ClientFrame.send_gif:type_name -> ludra.v1.SendGif
+	31, // 47: ludra.v1.ClientFrame.remove_preview:type_name -> ludra.v1.RemovePreview
+	28, // 48: ludra.v1.ClientFrame.search_gifs:type_name -> ludra.v1.SearchGifs
+	29, // 49: ludra.v1.ClientFrame.get_gif_preview:type_name -> ludra.v1.GetGifPreview
+	30, // 50: ludra.v1.ClientFrame.send_gif:type_name -> ludra.v1.SendGif
 	26, // 51: ludra.v1.ClientFrame.send_direct_file:type_name -> ludra.v1.SendDirectFile
-	54, // 52: ludra.v1.ClientFrame.file_signal:type_name -> ludra.v1.FileSignal
+	55, // 52: ludra.v1.ClientFrame.file_signal:type_name -> ludra.v1.FileSignal
 	0,  // 53: ludra.v1.SendCode.purpose:type_name -> ludra.v1.CodePurpose
-	55, // 54: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
-	55, // [55:55] is the sub-list for method output_type
-	55, // [55:55] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	56, // 54: ludra.v1.SetPresence.presence:type_name -> ludra.v1.Presence
+	27, // 55: ludra.v1.SendDirectFile.extra:type_name -> ludra.v1.FileSpec
+	56, // [56:56] is the sub-list for method output_type
+	56, // [56:56] is the sub-list for method input_type
+	56, // [56:56] is the sub-list for extension type_name
+	56, // [56:56] is the sub-list for extension extendee
+	0,  // [0:56] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_client_proto_init() }
@@ -3843,7 +3954,7 @@ func file_ludra_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_client_proto_rawDesc), len(file_ludra_v1_client_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   52,
+			NumMessages:   53,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

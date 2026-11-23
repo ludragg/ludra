@@ -165,6 +165,7 @@ message LoadMessages {
 message SendMessage {
   string conversation_id = 1;
   string content = 2;
+  string reply_to_id = 3;
 }
 
 message GetImage {
@@ -177,6 +178,15 @@ message SendDirectFile {
   string name = 2;
   uint64 size = 3;
   string mime = 4;
+  string reply_to_id = 5;
+  repeated FileSpec extra = 6;
+  string content = 7;
+}
+
+message FileSpec {
+  string name = 1;
+  uint64 size = 2;
+  string mime = 3;
 }
 
 message SearchGifs {
@@ -192,6 +202,7 @@ message GetGifPreview {
 message SendGif {
   string conversation_id = 1;
   string id = 2;
+  string reply_to_id = 3;
 }
 
 message RemovePreview {

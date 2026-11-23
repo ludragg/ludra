@@ -662,6 +662,8 @@ type Message struct {
 	Image          *ImageRef              `protobuf:"bytes,14,opt,name=image,proto3" json:"image,omitempty"`
 	Preview        *LinkPreview           `protobuf:"bytes,15,opt,name=preview,proto3" json:"preview,omitempty"`
 	File           *FileRef               `protobuf:"bytes,16,opt,name=file,proto3" json:"file,omitempty"`
+	Reply          *ReplyRef              `protobuf:"bytes,17,opt,name=reply,proto3" json:"reply,omitempty"`
+	Files          []*FileRef             `protobuf:"bytes,18,rep,name=files,proto3" json:"files,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -808,6 +810,96 @@ func (x *Message) GetFile() *FileRef {
 	return nil
 }
 
+func (x *Message) GetReply() *ReplyRef {
+	if x != nil {
+		return x.Reply
+	}
+	return nil
+}
+
+func (x *Message) GetFiles() []*FileRef {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+type ReplyRef struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	SenderId      string                 `protobuf:"bytes,2,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
+	Kind          MessageKind            `protobuf:"varint,3,opt,name=kind,proto3,enum=ludra.v1.MessageKind" json:"kind,omitempty"`
+	Excerpt       string                 `protobuf:"bytes,4,opt,name=excerpt,proto3" json:"excerpt,omitempty"`
+	Voice         bool                   `protobuf:"varint,5,opt,name=voice,proto3" json:"voice,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplyRef) Reset() {
+	*x = ReplyRef{}
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplyRef) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplyRef) ProtoMessage() {}
+
+func (x *ReplyRef) ProtoReflect() protoreflect.Message {
+	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplyRef.ProtoReflect.Descriptor instead.
+func (*ReplyRef) Descriptor() ([]byte, []int) {
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReplyRef) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *ReplyRef) GetSenderId() string {
+	if x != nil {
+		return x.SenderId
+	}
+	return ""
+}
+
+func (x *ReplyRef) GetKind() MessageKind {
+	if x != nil {
+		return x.Kind
+	}
+	return MessageKind_MESSAGE_KIND_UNSPECIFIED
+}
+
+func (x *ReplyRef) GetExcerpt() string {
+	if x != nil {
+		return x.Excerpt
+	}
+	return ""
+}
+
+func (x *ReplyRef) GetVoice() bool {
+	if x != nil {
+		return x.Voice
+	}
+	return false
+}
+
 type FileRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -822,7 +914,7 @@ type FileRef struct {
 
 func (x *FileRef) Reset() {
 	*x = FileRef{}
-	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	mi := &file_ludra_v1_models_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -834,7 +926,7 @@ func (x *FileRef) String() string {
 func (*FileRef) ProtoMessage() {}
 
 func (x *FileRef) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[3]
+	mi := &file_ludra_v1_models_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +939,7 @@ func (x *FileRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileRef.ProtoReflect.Descriptor instead.
 func (*FileRef) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{3}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *FileRef) GetId() string {
@@ -901,13 +993,17 @@ type FileSignal struct {
 	Payload       string                 `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`
 	IceServers    []*IceServer           `protobuf:"bytes,6,rep,name=ice_servers,json=iceServers,proto3" json:"ice_servers,omitempty"`
 	Direct        bool                   `protobuf:"varint,7,opt,name=direct,proto3" json:"direct,omitempty"`
+	Offset        uint64                 `protobuf:"varint,8,opt,name=offset,proto3" json:"offset,omitempty"`
+	Length        uint64                 `protobuf:"varint,9,opt,name=length,proto3" json:"length,omitempty"`
+	Ranged        bool                   `protobuf:"varint,10,opt,name=ranged,proto3" json:"ranged,omitempty"`
+	FileIndex     uint32                 `protobuf:"varint,11,opt,name=file_index,json=fileIndex,proto3" json:"file_index,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileSignal) Reset() {
 	*x = FileSignal{}
-	mi := &file_ludra_v1_models_proto_msgTypes[4]
+	mi := &file_ludra_v1_models_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -919,7 +1015,7 @@ func (x *FileSignal) String() string {
 func (*FileSignal) ProtoMessage() {}
 
 func (x *FileSignal) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[4]
+	mi := &file_ludra_v1_models_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -932,7 +1028,7 @@ func (x *FileSignal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileSignal.ProtoReflect.Descriptor instead.
 func (*FileSignal) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{4}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *FileSignal) GetMessageId() string {
@@ -984,6 +1080,34 @@ func (x *FileSignal) GetDirect() bool {
 	return false
 }
 
+func (x *FileSignal) GetOffset() uint64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *FileSignal) GetLength() uint64 {
+	if x != nil {
+		return x.Length
+	}
+	return 0
+}
+
+func (x *FileSignal) GetRanged() bool {
+	if x != nil {
+		return x.Ranged
+	}
+	return false
+}
+
+func (x *FileSignal) GetFileIndex() uint32 {
+	if x != nil {
+		return x.FileIndex
+	}
+	return 0
+}
+
 type ImageRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -996,7 +1120,7 @@ type ImageRef struct {
 
 func (x *ImageRef) Reset() {
 	*x = ImageRef{}
-	mi := &file_ludra_v1_models_proto_msgTypes[5]
+	mi := &file_ludra_v1_models_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1008,7 +1132,7 @@ func (x *ImageRef) String() string {
 func (*ImageRef) ProtoMessage() {}
 
 func (x *ImageRef) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[5]
+	mi := &file_ludra_v1_models_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1021,7 +1145,7 @@ func (x *ImageRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageRef.ProtoReflect.Descriptor instead.
 func (*ImageRef) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{5}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ImageRef) GetId() string {
@@ -1065,7 +1189,7 @@ type LinkPreview struct {
 
 func (x *LinkPreview) Reset() {
 	*x = LinkPreview{}
-	mi := &file_ludra_v1_models_proto_msgTypes[6]
+	mi := &file_ludra_v1_models_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1077,7 +1201,7 @@ func (x *LinkPreview) String() string {
 func (*LinkPreview) ProtoMessage() {}
 
 func (x *LinkPreview) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[6]
+	mi := &file_ludra_v1_models_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1090,7 +1214,7 @@ func (x *LinkPreview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkPreview.ProtoReflect.Descriptor instead.
 func (*LinkPreview) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{6}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LinkPreview) GetUrl() string {
@@ -1138,7 +1262,7 @@ type Friend struct {
 
 func (x *Friend) Reset() {
 	*x = Friend{}
-	mi := &file_ludra_v1_models_proto_msgTypes[7]
+	mi := &file_ludra_v1_models_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1150,7 +1274,7 @@ func (x *Friend) String() string {
 func (*Friend) ProtoMessage() {}
 
 func (x *Friend) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[7]
+	mi := &file_ludra_v1_models_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1163,7 +1287,7 @@ func (x *Friend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Friend.ProtoReflect.Descriptor instead.
 func (*Friend) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{7}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Friend) GetUser() *User {
@@ -1197,7 +1321,7 @@ type Conversation struct {
 
 func (x *Conversation) Reset() {
 	*x = Conversation{}
-	mi := &file_ludra_v1_models_proto_msgTypes[8]
+	mi := &file_ludra_v1_models_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1209,7 +1333,7 @@ func (x *Conversation) String() string {
 func (*Conversation) ProtoMessage() {}
 
 func (x *Conversation) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[8]
+	mi := &file_ludra_v1_models_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1222,7 +1346,7 @@ func (x *Conversation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Conversation.ProtoReflect.Descriptor instead.
 func (*Conversation) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{8}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Conversation) GetId() string {
@@ -1299,7 +1423,7 @@ type IceServer struct {
 
 func (x *IceServer) Reset() {
 	*x = IceServer{}
-	mi := &file_ludra_v1_models_proto_msgTypes[9]
+	mi := &file_ludra_v1_models_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1311,7 +1435,7 @@ func (x *IceServer) String() string {
 func (*IceServer) ProtoMessage() {}
 
 func (x *IceServer) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[9]
+	mi := &file_ludra_v1_models_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1324,7 +1448,7 @@ func (x *IceServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IceServer.ProtoReflect.Descriptor instead.
 func (*IceServer) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{9}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *IceServer) GetUrls() []string {
@@ -1360,7 +1484,7 @@ type Call struct {
 
 func (x *Call) Reset() {
 	*x = Call{}
-	mi := &file_ludra_v1_models_proto_msgTypes[10]
+	mi := &file_ludra_v1_models_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1372,7 +1496,7 @@ func (x *Call) String() string {
 func (*Call) ProtoMessage() {}
 
 func (x *Call) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[10]
+	mi := &file_ludra_v1_models_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1385,7 +1509,7 @@ func (x *Call) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Call.ProtoReflect.Descriptor instead.
 func (*Call) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{10}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Call) GetId() string {
@@ -1428,7 +1552,7 @@ type CallSignal struct {
 
 func (x *CallSignal) Reset() {
 	*x = CallSignal{}
-	mi := &file_ludra_v1_models_proto_msgTypes[11]
+	mi := &file_ludra_v1_models_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1440,7 +1564,7 @@ func (x *CallSignal) String() string {
 func (*CallSignal) ProtoMessage() {}
 
 func (x *CallSignal) ProtoReflect() protoreflect.Message {
-	mi := &file_ludra_v1_models_proto_msgTypes[11]
+	mi := &file_ludra_v1_models_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1453,7 +1577,7 @@ func (x *CallSignal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CallSignal.ProtoReflect.Descriptor instead.
 func (*CallSignal) Descriptor() ([]byte, []int) {
-	return file_ludra_v1_models_proto_rawDescGZIP(), []int{11}
+	return file_ludra_v1_models_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CallSignal) GetCallId() string {
@@ -1509,7 +1633,7 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"direct_ids\x18\t \x03(\tR\tdirectIds\x12\x1d\n" +
 	"\n" +
 	"camera_ids\x18\n" +
-	" \x03(\tR\tcameraIdsJ\x04\b\x04\x10\x05\"\x80\x05\n" +
+	" \x03(\tR\tcameraIdsJ\x04\b\x04\x10\x05\"\xd3\x05\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
@@ -1529,14 +1653,23 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\tedited_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\beditedAt\x12(\n" +
 	"\x05image\x18\x0e \x01(\v2\x12.ludra.v1.ImageRefR\x05image\x12/\n" +
 	"\apreview\x18\x0f \x01(\v2\x15.ludra.v1.LinkPreviewR\apreview\x12%\n" +
-	"\x04file\x18\x10 \x01(\v2\x11.ludra.v1.FileRefR\x04file\"\x87\x01\n" +
+	"\x04file\x18\x10 \x01(\v2\x11.ludra.v1.FileRefR\x04file\x12(\n" +
+	"\x05reply\x18\x11 \x01(\v2\x12.ludra.v1.ReplyRefR\x05reply\x12'\n" +
+	"\x05files\x18\x12 \x03(\v2\x11.ludra.v1.FileRefR\x05files\"\xa1\x01\n" +
+	"\bReplyRef\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +
+	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12)\n" +
+	"\x04kind\x18\x03 \x01(\x0e2\x15.ludra.v1.MessageKindR\x04kind\x12\x18\n" +
+	"\aexcerpt\x18\x04 \x01(\tR\aexcerpt\x12\x14\n" +
+	"\x05voice\x18\x05 \x01(\bR\x05voice\"\x87\x01\n" +
 	"\aFileRef\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\x04R\x04size\x12\x12\n" +
 	"\x04mime\x18\x04 \x01(\tR\x04mime\x12\x16\n" +
 	"\x06direct\x18\x05 \x01(\bR\x06direct\x12\x18\n" +
-	"\aexpired\x18\x06 \x01(\bR\aexpired\"\xfb\x01\n" +
+	"\aexpired\x18\x06 \x01(\bR\aexpired\"\xe2\x02\n" +
 	"\n" +
 	"FileSignal\x12\x1d\n" +
 	"\n" +
@@ -1548,7 +1681,13 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\apayload\x18\x05 \x01(\tR\apayload\x124\n" +
 	"\vice_servers\x18\x06 \x03(\v2\x13.ludra.v1.IceServerR\n" +
 	"iceServers\x12\x16\n" +
-	"\x06direct\x18\a \x01(\bR\x06direct\"b\n" +
+	"\x06direct\x18\a \x01(\bR\x06direct\x12\x16\n" +
+	"\x06offset\x18\b \x01(\x04R\x06offset\x12\x16\n" +
+	"\x06length\x18\t \x01(\x04R\x06length\x12\x16\n" +
+	"\x06ranged\x18\n" +
+	" \x01(\bR\x06ranged\x12\x1d\n" +
+	"\n" +
+	"file_index\x18\v \x01(\rR\tfileIndex\"b\n" +
 	"\bImageRef\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05width\x18\x02 \x01(\rR\x05width\x12\x16\n" +
@@ -1657,7 +1796,7 @@ func file_ludra_v1_models_proto_rawDescGZIP() []byte {
 }
 
 var file_ludra_v1_models_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_ludra_v1_models_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_ludra_v1_models_proto_goTypes = []any{
 	(Presence)(0),                 // 0: ludra.v1.Presence
 	(FriendState)(0),              // 1: ludra.v1.FriendState
@@ -1670,46 +1809,50 @@ var file_ludra_v1_models_proto_goTypes = []any{
 	(*User)(nil),                  // 8: ludra.v1.User
 	(*GroupCall)(nil),             // 9: ludra.v1.GroupCall
 	(*Message)(nil),               // 10: ludra.v1.Message
-	(*FileRef)(nil),               // 11: ludra.v1.FileRef
-	(*FileSignal)(nil),            // 12: ludra.v1.FileSignal
-	(*ImageRef)(nil),              // 13: ludra.v1.ImageRef
-	(*LinkPreview)(nil),           // 14: ludra.v1.LinkPreview
-	(*Friend)(nil),                // 15: ludra.v1.Friend
-	(*Conversation)(nil),          // 16: ludra.v1.Conversation
-	(*IceServer)(nil),             // 17: ludra.v1.IceServer
-	(*Call)(nil),                  // 18: ludra.v1.Call
-	(*CallSignal)(nil),            // 19: ludra.v1.CallSignal
-	(*timestamppb.Timestamp)(nil), // 20: google.protobuf.Timestamp
+	(*ReplyRef)(nil),              // 11: ludra.v1.ReplyRef
+	(*FileRef)(nil),               // 12: ludra.v1.FileRef
+	(*FileSignal)(nil),            // 13: ludra.v1.FileSignal
+	(*ImageRef)(nil),              // 14: ludra.v1.ImageRef
+	(*LinkPreview)(nil),           // 15: ludra.v1.LinkPreview
+	(*Friend)(nil),                // 16: ludra.v1.Friend
+	(*Conversation)(nil),          // 17: ludra.v1.Conversation
+	(*IceServer)(nil),             // 18: ludra.v1.IceServer
+	(*Call)(nil),                  // 19: ludra.v1.Call
+	(*CallSignal)(nil),            // 20: ludra.v1.CallSignal
+	(*timestamppb.Timestamp)(nil), // 21: google.protobuf.Timestamp
 }
 var file_ludra_v1_models_proto_depIdxs = []int32{
 	0,  // 0: ludra.v1.User.presence:type_name -> ludra.v1.Presence
-	20, // 1: ludra.v1.GroupCall.started_at:type_name -> google.protobuf.Timestamp
-	20, // 2: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
+	21, // 1: ludra.v1.GroupCall.started_at:type_name -> google.protobuf.Timestamp
+	21, // 2: ludra.v1.Message.sent_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: ludra.v1.Message.kind:type_name -> ludra.v1.MessageKind
 	5,  // 4: ludra.v1.Message.call_outcome:type_name -> ludra.v1.CallOutcome
 	3,  // 5: ludra.v1.Message.event:type_name -> ludra.v1.MessageEvent
-	20, // 6: ludra.v1.Message.edited_at:type_name -> google.protobuf.Timestamp
-	13, // 7: ludra.v1.Message.image:type_name -> ludra.v1.ImageRef
-	14, // 8: ludra.v1.Message.preview:type_name -> ludra.v1.LinkPreview
-	11, // 9: ludra.v1.Message.file:type_name -> ludra.v1.FileRef
-	6,  // 10: ludra.v1.FileSignal.kind:type_name -> ludra.v1.FileSignalKind
-	17, // 11: ludra.v1.FileSignal.ice_servers:type_name -> ludra.v1.IceServer
-	13, // 12: ludra.v1.LinkPreview.image:type_name -> ludra.v1.ImageRef
-	8,  // 13: ludra.v1.Friend.user:type_name -> ludra.v1.User
-	1,  // 14: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
-	8,  // 15: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
-	10, // 16: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
-	4,  // 17: ludra.v1.Conversation.kind:type_name -> ludra.v1.ConversationKind
-	8,  // 18: ludra.v1.Conversation.members:type_name -> ludra.v1.User
-	9,  // 19: ludra.v1.Conversation.call:type_name -> ludra.v1.GroupCall
-	8,  // 20: ludra.v1.Call.peer:type_name -> ludra.v1.User
-	17, // 21: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
-	7,  // 22: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	21, // 6: ludra.v1.Message.edited_at:type_name -> google.protobuf.Timestamp
+	14, // 7: ludra.v1.Message.image:type_name -> ludra.v1.ImageRef
+	15, // 8: ludra.v1.Message.preview:type_name -> ludra.v1.LinkPreview
+	12, // 9: ludra.v1.Message.file:type_name -> ludra.v1.FileRef
+	11, // 10: ludra.v1.Message.reply:type_name -> ludra.v1.ReplyRef
+	12, // 11: ludra.v1.Message.files:type_name -> ludra.v1.FileRef
+	2,  // 12: ludra.v1.ReplyRef.kind:type_name -> ludra.v1.MessageKind
+	6,  // 13: ludra.v1.FileSignal.kind:type_name -> ludra.v1.FileSignalKind
+	18, // 14: ludra.v1.FileSignal.ice_servers:type_name -> ludra.v1.IceServer
+	14, // 15: ludra.v1.LinkPreview.image:type_name -> ludra.v1.ImageRef
+	8,  // 16: ludra.v1.Friend.user:type_name -> ludra.v1.User
+	1,  // 17: ludra.v1.Friend.state:type_name -> ludra.v1.FriendState
+	8,  // 18: ludra.v1.Conversation.peer:type_name -> ludra.v1.User
+	10, // 19: ludra.v1.Conversation.last_message:type_name -> ludra.v1.Message
+	4,  // 20: ludra.v1.Conversation.kind:type_name -> ludra.v1.ConversationKind
+	8,  // 21: ludra.v1.Conversation.members:type_name -> ludra.v1.User
+	9,  // 22: ludra.v1.Conversation.call:type_name -> ludra.v1.GroupCall
+	8,  // 23: ludra.v1.Call.peer:type_name -> ludra.v1.User
+	18, // 24: ludra.v1.Call.ice_servers:type_name -> ludra.v1.IceServer
+	7,  // 25: ludra.v1.CallSignal.kind:type_name -> ludra.v1.SignalKind
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_ludra_v1_models_proto_init() }
@@ -1723,7 +1866,7 @@ func file_ludra_v1_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_ludra_v1_models_proto_rawDesc), len(file_ludra_v1_models_proto_rawDesc)),
 			NumEnums:      8,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

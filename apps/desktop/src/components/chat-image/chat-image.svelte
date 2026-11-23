@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { copyMenu } from "@/helpers/image-menu";
   import type { ImageRef } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
 
@@ -38,13 +39,13 @@
     onclick={onopen}
   >
     {#if url}
-      <img class="chat-image__img" src={url} alt="" draggable="false" />
+      <img class="chat-image__img" src={url} alt="" draggable="false" {@attach copyMenu(() => url)} />
     {/if}
   </button>
 {:else}
   <span class="chat-image" style:width="min(100%, {width}px)" style:aspect-ratio="{image.width} / {image.height}">
     {#if url}
-      <img class="chat-image__img" src={url} alt={label} draggable="false" />
+      <img class="chat-image__img" src={url} alt={label} draggable="false" {@attach copyMenu(() => url)} />
     {/if}
   </span>
 {/if}

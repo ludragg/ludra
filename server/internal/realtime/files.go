@@ -4,10 +4,14 @@ import (
 	"context"
 	"slices"
 
+	"ludra/internal/chat"
 	"ludra/internal/protocol"
 )
 
-const maxTransferID = 64
+const (
+	maxTransferID = 64
+	maxFileBytes  = 1 << 32
+)
 
 var fileSignalKinds = map[protocol.FileSignalKind]bool{
 	protocol.FileSignalKind_FILE_SIGNAL_KIND_REQUEST:     true,
@@ -18,18 +22,27 @@ var fileSignalKinds = map[protocol.FileSignalKind]bool{
 }
 
 func (s *session) sendDirectFile(ctx context.Context, req *protocol.SendDirectFile) *protocol.ServerFrame {
-	message, recipients, err := s.chat.SendDirectFile(ctx, s.user.Id, req.ConversationId, req.Name, req.Mime, req.Size)
+	if len(req.Extra) >= chat.MaxMessageFiles {
+		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "too many files")
+	}
+	specs := []chat.FileSpec{{Name: req.Name, Mime: req.Mime, Size: req.Size}}
+	for _, extra := range req.Extra {
+		specs = append(specs, chat.FileSpec{Name: extra.Name, Mime: extra.Mime, Size: extra.Size})
+	}
+	message, extras, recipients, err := s.chat.SendDirectFile(ctx, s.user.Id, req.ConversationId, specs, req.Content, req.ReplyToId)
 	if err != nil {
 		return failed(err)
 	}
 
-	frame := messageCreatedFrame(named(toMessage(message), s.user.Username, nil))
+	result := named(toMessage(message), s.user.Username, nil)
+	withExtraFiles(result, extras)
+	frame := messageCreatedFrame(result)
 	s.hub.publish(recipients, frame, s)
 	return frame
 }
 
 func (s *session) fileSignal(ctx context.Context, req *protocol.FileSignal) *protocol.ServerFrame {
-	if !fileSignalKinds[req.Kind] || req.TransferId == "" || len(req.TransferId) > maxTransferID || len(req.Payload) > maxSignalSize {
+	if !fileSignalKinds[req.Kind] || req.TransferId == "" || len(req.TransferId) > maxTransferID || len(req.Payload) > maxSignalSize || req.Offset > maxFileBytes || req.Length > maxFileBytes || req.FileIndex >= chat.MaxMessageFiles {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "invalid signal")
 	}
 
@@ -66,6 +79,10 @@ func (s *session) fileSignal(ctx context.Context, req *protocol.FileSignal) *pro
 		Kind:       req.Kind,
 		Payload:    req.Payload,
 		Direct:     req.Direct,
+		FileIndex:  req.FileIndex,
+		Offset:     req.Offset,
+		Length:     req.Length,
+		Ranged:     req.Ranged,
 	}
 	if req.Kind != protocol.FileSignalKind_FILE_SIGNAL_KIND_REQUEST {
 		s.hub.publish([]string{target}, fileSignalFrame(forwarded), s)

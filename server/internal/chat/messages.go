@@ -18,10 +18,12 @@ import (
 const (
 	maxMessageLength = 4000
 	defaultPageSize  = 50
+	maxExcerptLength = 140
+	voiceMime        = "audio/webm"
 	maxPageSize      = 100
 )
 
-func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, content string) (database.Message, []string, error) {
+func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, content, replyToID string) (database.Message, []string, error) {
 	content = strings.TrimFunc(content, invisible)
 	if content == "" {
 		return database.Message{}, nil, ErrEmptyMessage
@@ -37,11 +39,23 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 		return database.Message{}, nil, err
 	}
 
-	message, err := s.queries.CreateMessage(ctx, database.CreateMessageParams{
+	params := database.CreateMessageParams{
 		ConversationID: conversationID,
 		SenderID:       senderID,
 		Content:        content,
-	})
+	}
+	if replyToID != "" {
+		quoted, err := s.quote(ctx, conversationID, replyToID)
+		if err != nil {
+			return database.Message{}, nil, err
+		}
+		params.ReplyTo = &quoted.id
+		params.ReplySenderID = &quoted.senderID
+		params.ReplyKind = &quoted.kind
+		params.ReplyExcerpt = &quoted.excerpt
+	}
+
+	message, err := s.queries.CreateMessage(ctx, params)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return database.Message{}, nil, ErrConversationNotFound
 	}
@@ -55,6 +69,68 @@ func (s *Service) SendMessage(ctx context.Context, senderID, conversationID, con
 	}
 
 	return message, recipients, nil
+}
+
+type quotation struct {
+	id       string
+	senderID string
+	kind     string
+	excerpt  string
+}
+
+func (s *Service) quote(ctx context.Context, conversationID, replyToID string) (quotation, error) {
+	if !ids.Valid(replyToID) {
+		return quotation{}, ErrMessageNotFound
+	}
+	target, err := s.queries.GetReplyTarget(ctx, replyToID)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && target.ConversationID != conversationID) {
+		return quotation{}, ErrMessageNotFound
+	}
+	if err != nil {
+		return quotation{}, err
+	}
+
+	result := quotation{id: target.ID, senderID: target.SenderID, kind: "text", excerpt: truncate(target.Content, maxExcerptLength)}
+	switch target.Kind {
+	case "call", "event":
+		return quotation{}, ErrMessageNotFound
+	case "image":
+		result.kind, result.excerpt = "image", ""
+	case "file":
+		result.kind, result.excerpt = "file", ""
+		if target.FileMime != nil && *target.FileMime == voiceMime {
+			result.kind = "voice"
+		}
+	}
+	return result, nil
+}
+
+func (s *Service) attachReply(ctx context.Context, message database.Message, replyToID string) database.Message {
+	if replyToID == "" {
+		return message
+	}
+	quoted, err := s.quote(ctx, message.ConversationID, replyToID)
+	if err != nil {
+		return message
+	}
+	updated, err := s.queries.SetMessageReply(ctx, database.SetMessageReplyParams{
+		ID:            message.ID,
+		ReplyTo:       quoted.id,
+		ReplySenderID: quoted.senderID,
+		ReplyKind:     quoted.kind,
+		ReplyExcerpt:  quoted.excerpt,
+	})
+	if err != nil {
+		return message
+	}
+	return updated
+}
+
+func truncate(value string, limit int) string {
+	if utf8.RuneCountInString(value) <= limit {
+		return value
+	}
+	return string([]rune(value)[:limit])
 }
 
 func (s *Service) EditMessage(ctx context.Context, userID, messageID, content string) (database.Message, []string, error) {

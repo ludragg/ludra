@@ -1,16 +1,24 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import CarouselControls from "@/components/carousel-controls/carousel-controls.svelte";
+  import { copyMenu } from "@/helpers/image-menu";
   import { t } from "@/i18n";
 
   let {
     load,
     label,
     save,
+    position,
+    onprevious,
+    onnext,
     onclose,
   }: {
     load: () => Promise<string>;
     label: string;
     save?: () => Promise<string | null>;
+    position?: string;
+    onprevious?: () => void;
+    onnext?: () => void;
     onclose: () => void;
   } = $props();
 
@@ -58,6 +66,14 @@
   }
 
   function keydown(event: KeyboardEvent) {
+    if (!zoomed && event.key === "ArrowLeft" && onprevious) {
+      onprevious();
+      return;
+    }
+    if (!zoomed && event.key === "ArrowRight" && onnext) {
+      onnext();
+      return;
+    }
     if (event.key !== "Escape") {
       return;
     }
@@ -122,6 +138,7 @@
           alt={label}
           draggable="false"
           style:width="{zoomWidth}px"
+          {@attach copyMenu(() => url)}
           onpointerdown={pointerdown}
           onpointermove={pointermove}
           onpointerup={pointerup}
@@ -133,6 +150,7 @@
             src={url}
             alt={label}
             draggable="false"
+            {@attach copyMenu(() => url)}
             onload={(event) => (natural = (event.currentTarget as HTMLImageElement).naturalWidth)}
           />
         </button>
@@ -160,6 +178,9 @@
       </svg>
     </button>
   {:else}
+    {#if position && onprevious && onnext}
+      <CarouselControls {position} {onprevious} {onnext} />
+    {/if}
     <div class="image-viewer__toolbar">
       <div class="image-viewer__tools">
         <button
@@ -243,7 +264,7 @@
   .image-viewer__stage {
     width: 100%;
     height: 100%;
-    padding: 72px 48px 48px;
+    padding: 72px 64px 48px;
     display: flex;
     overflow: auto;
   }
