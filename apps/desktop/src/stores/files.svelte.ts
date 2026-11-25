@@ -1,3 +1,4 @@
+import { report } from "@/services/diagnostics";
 import { invoke } from "@tauri-apps/api/core";
 import { autoDownloads, fileKey, isVoice } from "@/helpers/files";
 import { FileSignalKind, SignalKind, type FileSignal, type Message } from "@/protocol/ludra/v1/models_pb";
@@ -190,8 +191,9 @@ class FileStore {
     void invoke("reveal_file", { id: messageId }).catch(() => undefined);
   }
 
-  mediaPath(messageId: string): Promise<string | null> {
-    return invoke<string | null>("media_path", { id: messageId }).catch(() => null);
+  mediaPath(message: Message): Promise<string | null> {
+    const size = Number(message.file?.size ?? 0);
+    return invoke<string | null>("media_path", { id: message.id, size }).catch(() => null);
   }
 
   shared(messageId: string): Promise<Shared | null> {
@@ -338,6 +340,9 @@ class FileStore {
       await Promise.all(segments.map((_, index) => this.#fetchSegment(message, run, id, segments, index)));
       this.#done(message.id, await invoke<string>("finish_download", { id }));
     } catch (cause) {
+      if (!run.byUser && !(cause instanceof ExpiredError)) {
+        report("warning", "files", "download failed", cause);
+      }
       run.canceled = true;
       for (const channel of run.channels) {
         channel.close();

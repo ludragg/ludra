@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use tauri::{AppHandle, Manager};
 
@@ -15,6 +15,10 @@ impl Registry {
 
     pub fn get(&mut self, app: &AppHandle, id: &str) -> Option<PathBuf> {
         self.load(app).get(id).filter(|path| path.exists()).cloned()
+    }
+
+    pub fn refers(&mut self, app: &AppHandle, path: &Path) -> bool {
+        self.load(app).values().any(|known| known == path)
     }
 
     pub fn known(&mut self, app: &AppHandle, id: &str) -> bool {

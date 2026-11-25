@@ -74,17 +74,19 @@
 
 <style>
   .auth {
-    min-height: 100%;
+    height: 100%;
+    overflow-y: auto;
     padding: 32px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     gap: 24px;
     background: linear-gradient(0deg, var(--dark-background-color) 50%, var(--background-color) 100%);
   }
 
   .auth__card {
+    flex: none;
     width: 100%;
     max-width: 360px;
     padding: 32px 24px 24px;

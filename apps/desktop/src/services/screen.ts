@@ -3,13 +3,72 @@ import { NativeScreen } from "@/services/native-screen";
 export const resolutions = [720, 1080, 1440] as const;
 export const frameRates = [30, 60, 120] as const;
 
+export const shareModes = ["performance", "balanced", "quality", "extreme"] as const;
+export const shareEncoders = ["auto", "amf", "nvenc", "windows", "compatibility"] as const;
+
+export type ShareMode = (typeof shareModes)[number];
+export type ShareEncoder = (typeof shareEncoders)[number];
 export type Resolution = (typeof resolutions)[number];
 export type FrameRate = (typeof frameRates)[number];
 
 export type ScreenQuality = {
   resolution: Resolution;
   fps: FrameRate;
+  mode: ShareMode;
+  encoder: ShareEncoder;
 };
+
+const modeFactors: Record<ShareMode, number> = {
+  performance: 0.67,
+  balanced: 1,
+  quality: 1.55,
+  extreme: 2.2,
+};
+
+const directOnlyModes: ShareMode[] = ["quality", "extreme"];
+const relayResolution: Resolution = 720;
+const relayFrameRate: FrameRate = 30;
+
+export function modeLocked(mode: ShareMode, direct: boolean): boolean {
+  return !direct && directOnlyModes.includes(mode);
+}
+
+export function allowedMode(mode: ShareMode, direct: boolean): ShareMode {
+  return modeLocked(mode, direct) ? "balanced" : mode;
+}
+
+export function resolutionLocked(resolution: Resolution, direct: boolean): boolean {
+  return !direct && resolution > relayResolution;
+}
+
+export function frameRateLocked(fps: FrameRate, direct: boolean): boolean {
+  return !direct && fps > relayFrameRate;
+}
+
+export function allowedResolution(resolution: Resolution, direct: boolean): Resolution {
+  return resolutionLocked(resolution, direct) ? relayResolution : resolution;
+}
+
+export function allowedFrameRate(fps: FrameRate, direct: boolean): FrameRate {
+  return frameRateLocked(fps, direct) ? relayFrameRate : fps;
+}
+
+export function allowedQuality(quality: ScreenQuality, direct: boolean): ScreenQuality {
+  return {
+    ...quality,
+    resolution: allowedResolution(quality.resolution, direct),
+    fps: allowedFrameRate(quality.fps, direct),
+    mode: allowedMode(quality.mode, direct),
+  };
+}
+
+export function withinLimits({ resolution, fps, mode }: ScreenQuality, direct: boolean): boolean {
+  return !resolutionLocked(resolution, direct) && !frameRateLocked(fps, direct) && !modeLocked(mode, direct);
+}
+
+export function needsDirect(quality: ScreenQuality | null, direct: boolean): boolean {
+  return !!quality && !withinLimits(allowedQuality(quality, direct), false);
+}
 
 const baseBitrates: Record<Resolution, number> = {
   720: 4_000_000,
@@ -30,7 +89,13 @@ export function qualityLabel({ resolution, fps }: ScreenQuality): string {
 export async function captureScreen(sourceId: string, quality: ScreenQuality): Promise<NativeScreen> {
   const height = quality.resolution;
   const width = Math.round((height * 16) / 9);
-  return NativeScreen.start(sourceId, width, height, quality.fps);
+  return NativeScreen.start(sourceId, {
+    width,
+    height,
+    fps: quality.fps,
+    encoder: quality.encoder,
+    mode: quality.mode,
+  });
 }
 
 const videoCodecs = ["video/VP9", "video/VP8", "video/H264", "video/AV1"];
@@ -102,7 +167,7 @@ const softwareCodec = "video/VP8";
 const failedCodecs = new Set<string>();
 
 export function screenBitrate(quality: ScreenQuality): number {
-  return Math.round(baseBitrates[quality.resolution] * fpsFactors[quality.fps]);
+  return Math.round(baseBitrates[quality.resolution] * fpsFactors[quality.fps] * modeFactors[quality.mode]);
 }
 
 export async function setScreenBitrate(sender: RTCRtpSender, bitrate: number) {

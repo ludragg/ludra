@@ -9,6 +9,7 @@ import {
   verifyScreenEncoder,
   type ScreenQuality,
 } from "@/services/screen";
+import { report, trail } from "@/services/diagnostics";
 
 type SinkElement = HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
 type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
@@ -86,6 +87,7 @@ export class PeerLink {
   #deafened = false;
   #voice: MediaStream | null = null;
   #screen: MediaStream | null = null;
+  #screenAudio: MediaStream | null = null;
   #camera: MediaStream | null = null;
   #streams = new Map<string, MediaStream>();
   #remoteCamera = "";
@@ -94,6 +96,7 @@ export class PeerLink {
   #screenSenders: RTCRtpSender[] = [];
   #senderKinds = new Map<RTCRtpSender, string>();
   #screenQuality: ScreenQuality | null = null;
+  #sending = "";
   #guards = new Map<RTCRtpSender, BitrateGuard>();
   #negotiating = false;
   #restartWanted = false;
@@ -190,6 +193,7 @@ export class PeerLink {
     this.#emitStatus();
     if (!this.#negotiating) {
       if (state === "failed") {
+        report("warning", "call", "a peer connection never connected");
         this.onFailed();
       }
       return;
@@ -223,6 +227,11 @@ export class PeerLink {
     this.#giveUpTimer = window.setTimeout(() => {
       this.#giveUpTimer = undefined;
       if (!this.#linked && this.#connection.connectionState !== "closed") {
+        report(
+          "warning",
+          "call",
+          this.#negotiating ? "a peer connection did not recover" : "a peer connection timed out while connecting",
+        );
         this.onFailed();
       }
     }, giveUpAfter);
@@ -313,6 +322,10 @@ export class PeerLink {
     return this.#screen;
   }
 
+  get screenAudio(): MediaStream | null {
+    return this.#screenAudio;
+  }
+
   get camera(): MediaStream | null {
     return this.#camera;
   }
@@ -341,7 +354,8 @@ export class PeerLink {
     this.#classify();
   }
 
-  async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
+  async setScreen(stream: MediaStream | null, quality: ScreenQuality | null, video = true) {
+    trail("stream", `link: screen share=${!!stream} sendsVideo=${!!stream && video}`);
     this.#screenQuality = stream ? quality : null;
     window.clearInterval(this.#encoderCheck);
     this.#stopGuards();
@@ -349,7 +363,11 @@ export class PeerLink {
       await Promise.all(this.#screenSenders.map((sender) => sender.replaceTrack(null).catch(() => undefined)));
       return;
     }
-    for (const track of stream.getTracks()) {
+    if (!video) {
+      const videoSenders = this.#screenSenders.filter((sender) => this.#senderKinds.get(sender) === "video");
+      await Promise.all(videoSenders.map((sender) => sender.replaceTrack(null).catch(() => undefined)));
+    }
+    for (const track of stream.getTracks().filter((item) => video || item.kind !== "video")) {
       const existing = this.#screenSenders.find((sender) => this.#senderKinds.get(sender) === track.kind);
       if (existing) {
         await existing.replaceTrack(track).catch(() => undefined);
@@ -364,7 +382,7 @@ export class PeerLink {
       }
     }
     for (const sender of this.#screenSenders) {
-      if (this.#senderKinds.get(sender) === "video") {
+      if (video && this.#senderKinds.get(sender) === "video") {
         this.#guards.set(sender, new BitrateGuard(sender, quality));
       }
     }
@@ -375,12 +393,34 @@ export class PeerLink {
     }
     this.#guards.forEach((guard) => guard.start());
     this.#encoderCheck = window.setInterval(() => {
+      void this.#noteSending();
       for (const sender of this.#screenSenders) {
         if (this.#senderKinds.get(sender) === "video" && this.#screenQuality) {
           verifyScreenEncoder(sender, this.#screenQuality);
         }
       }
     }, encoderCheckEvery);
+  }
+
+  async #noteSending() {
+    const stats = await this.#connection.getStats().catch(() => null);
+    stats?.forEach((entry) => {
+      if (entry.type !== "outbound-rtp" || entry.kind !== "video" || !entry.framesEncoded) {
+        return;
+      }
+      const sending =
+        `compatibility video ${entry.frameHeight}p, encoder ${entry.encoderImplementation ?? "unknown"}, ` +
+        `hardware ${entry.powerEfficientEncoder ?? "unknown"}`;
+      if (sending === this.#sending) {
+        return;
+      }
+      this.#sending = sending;
+      if (entry.powerEfficientEncoder === false) {
+        report("warning", "stream", `software encoding: ${sending}`);
+      } else {
+        trail("stream", sending);
+      }
+    });
   }
 
   async #applyEncoding() {
@@ -482,16 +522,16 @@ export class PeerLink {
 
   #classify() {
     const camera = (this.#remoteCamera && this.#streams.get(this.#remoteCamera)) || null;
-    const screen =
-      [...this.#streams.values()].find(
-        (stream) => !this.#cameraIds.has(stream.id) && stream.getVideoTracks().length > 0,
-      ) ?? null;
+    const shared = [...this.#streams.values()].filter((stream) => !this.#cameraIds.has(stream.id));
+    const screen = shared.find((stream) => stream.getVideoTracks().length > 0) ?? null;
+    const screenAudio = shared.find((stream) => !stream.getVideoTracks().length) ?? null;
     if (camera !== this.#camera) {
       this.#camera = camera;
       this.onCamera(camera);
     }
-    if (screen !== this.#screen) {
+    if (screen !== this.#screen || screenAudio !== this.#screenAudio) {
       this.#screen = screen;
+      this.#screenAudio = screenAudio;
       this.onScreen(screen);
     }
   }

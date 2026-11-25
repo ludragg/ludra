@@ -19,10 +19,12 @@ const (
 )
 
 var signalKinds = map[protocol.SignalKind]bool{
-	protocol.SignalKind_SIGNAL_KIND_OFFER:     true,
-	protocol.SignalKind_SIGNAL_KIND_ANSWER:    true,
-	protocol.SignalKind_SIGNAL_KIND_CANDIDATE: true,
-	protocol.SignalKind_SIGNAL_KIND_STATE:     true,
+	protocol.SignalKind_SIGNAL_KIND_OFFER:         true,
+	protocol.SignalKind_SIGNAL_KIND_ANSWER:        true,
+	protocol.SignalKind_SIGNAL_KIND_CANDIDATE:     true,
+	protocol.SignalKind_SIGNAL_KIND_STATE:         true,
+	protocol.SignalKind_SIGNAL_KIND_STREAM_OFFER:  true,
+	protocol.SignalKind_SIGNAL_KIND_STREAM_ANSWER: true,
 }
 
 func (s *session) startCall(ctx context.Context, req *protocol.StartCall) *protocol.ServerFrame {

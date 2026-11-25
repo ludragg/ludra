@@ -86,12 +86,14 @@
 <style>
   .app {
     height: 100%;
+    overflow: clip;
     display: flex;
     flex-direction: column;
   }
 
   .app__content {
     position: relative;
+    overflow: clip;
     min-height: 0;
     flex-grow: 1;
   }

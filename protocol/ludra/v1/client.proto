@@ -61,7 +61,30 @@ message ClientFrame {
     SendGif send_gif = 53;
     SendDirectFile send_direct_file = 55;
     FileSignal file_signal = 57;
+    ReportDiagnostics report_diagnostics = 58;
   }
+}
+
+enum DiagnosticLevel {
+  DIAGNOSTIC_LEVEL_UNSPECIFIED = 0;
+  DIAGNOSTIC_LEVEL_WARNING = 1;
+  DIAGNOSTIC_LEVEL_ERROR = 2;
+  DIAGNOSTIC_LEVEL_CRASH = 3;
+}
+
+message DiagnosticReport {
+  DiagnosticLevel level = 1;
+  string area = 2;
+  string message = 3;
+  string detail = 4;
+  uint32 occurrences = 5;
+  string app_version = 6;
+  int64 occurred_at_ms = 7;
+}
+
+message ReportDiagnostics {
+  repeated DiagnosticReport reports = 1;
+  string system = 2;
 }
 
 message Ping {}

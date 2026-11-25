@@ -1,3 +1,4 @@
+import { report, trail } from "@/services/diagnostics";
 import { t } from "@/i18n";
 import { SignalKind, type Call, type CallSignal, type IceServer, type User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
@@ -7,7 +8,19 @@ import { playCue, setRingtone } from "@/services/ringtone";
 import { cameraCarrier, cameraError, openCamera } from "@/services/camera";
 import { callTarget, showToast } from "@/services/toast";
 import { VoiceSession } from "@/services/voice";
-import { captureScreen, hintScreenTracks, qualityLabel, type ScreenQuality } from "@/services/screen";
+import { composeScreen } from "@/helpers/screen-stream";
+import { StreamReceiver } from "@/services/stream-receiver";
+import { StreamSender } from "@/services/stream-sender";
+import { closesStream } from "@/services/stream-signal";
+import {
+  allowedQuality,
+  captureScreen,
+  needsDirect,
+  withinLimits,
+  hintScreenTracks,
+  qualityLabel,
+  type ScreenQuality,
+} from "@/services/screen";
 import type { NativeScreen } from "@/services/native-screen";
 import { parseVoiceMessage, previewMessage, stateMessage, watchMessage } from "@/helpers/voice-state";
 import { focus } from "@/stores/focus";
@@ -41,6 +54,7 @@ class CallStore {
   sharing = $state(false);
   shareSettings = $state<{ sourceId: string; quality: ScreenQuality } | null>(null);
   peerSharing = $state<string | null>(null);
+  peerLocked = $state(false);
   peerPreview = $state<string | null>(null);
   ownPreview = $state<string | null>(null);
   watching = $state(false);
@@ -67,8 +81,12 @@ class CallStore {
   #peerDirect = false;
   #share: MediaStream | null = null;
   #capture: NativeScreen | null = null;
+  #sender: StreamSender | null = null;
+  #wantedEncoder = "auto";
+  #receiver: StreamReceiver | null = null;
   #shareQuality: ScreenQuality | null = null;
   #shareBusy = false;
+  #announcedLock = false;
   #cameraBusy = false;
   #signalsOut: Promise<void> = Promise.resolve();
   #signalsIn: Promise<void> = Promise.resolve();
@@ -135,6 +153,7 @@ class CallStore {
       if (mine && this.current?.id !== mine) {
         return;
       }
+      report("error", "call", "could not start the call", cause);
       this.#showError(describe(cause, peer.username));
       if (mine) {
         await this.hangUp();
@@ -177,6 +196,7 @@ class CallStore {
       if (this.current?.id !== current.id) {
         return;
       }
+      report("error", "call", "could not answer the call", cause);
       this.#showError(describe(cause, current.peer.username));
       await this.hangUp();
     }
@@ -261,13 +281,50 @@ class CallStore {
     }
   }
 
+  #limitShare(direct: boolean) {
+    const share = this.shareSettings;
+    if (share && !withinLimits(share.quality, direct)) {
+      this.startShare(share.sourceId, share.quality);
+    }
+  }
+
   setDirect(enabled: boolean) {
+    this.#limitShare(enabled);
     if (this.#direct === enabled) {
       return;
     }
     this.#direct = enabled;
     this.#shareState();
     this.#voice?.setDirect(this.#direct && this.#peerDirect, true);
+    this.#enforceLock();
+    this.#redirectStream();
+  }
+
+  #viewerLocked(): boolean {
+    return needsDirect(this.#shareQuality, preferences.values.directCalls) && !(this.#direct && this.#peerDirect);
+  }
+
+  async #enforceLock() {
+    const locked = this.#viewerLocked();
+    const dropped = locked && this.peerWatching;
+    if (dropped) {
+      this.peerWatching = false;
+      this.#sender?.remove(this.current?.peer.id ?? "");
+      this.#syncCapture();
+    }
+    if (locked !== this.#announcedLock) {
+      this.#shareState();
+    }
+    if (dropped) {
+      await this.#voice?.setScreen(null, null).catch(() => undefined);
+    }
+  }
+
+  #redirectStream() {
+    const peerId = this.current?.peer.id;
+    if (peerId && !this.#shareBusy) {
+      this.#sender?.redirect(peerId, this.#iceServers, this.#direct && this.#peerDirect);
+    }
   }
 
   #apply(muted: boolean, deafened: boolean) {
@@ -284,7 +341,9 @@ class CallStore {
       return;
     }
     const sharing = this.#shareQuality ? qualityLabel(this.#shareQuality) : null;
+    this.#announcedLock = this.#viewerLocked();
     const payload = stateMessage({
+      locked: this.#announcedLock ? [current.peer.id] : [],
       muted: this.muted,
       deafened: this.deafened,
       sharing,
@@ -322,6 +381,7 @@ class CallStore {
       await this.#voice?.setCamera(track);
       this.#shareState();
     } catch (cause) {
+      report("warning", "camera", "the camera did not start", cause);
       this.#showError(cameraError(cause));
     } finally {
       this.#cameraBusy = false;
@@ -338,13 +398,17 @@ class CallStore {
     this.#voice?.setCamera(null).catch(() => undefined);
   }
 
-  async startShare(sourceId: string, quality: ScreenQuality) {
+  async startShare(sourceId: string, requested: ScreenQuality) {
+    const quality = allowedQuality(requested, preferences.values.directCalls);
     const call = this.current;
     if (!call || call.status !== "active" || this.#shareBusy) {
       return;
     }
     this.#shareBusy = true;
     try {
+      this.#sender ??= this.#createSender(call.id, call.peer.id);
+      this.#wantedEncoder = quality.encoder;
+      await this.#sender.prepare();
       const capture = await captureScreen(sourceId, quality);
       if (this.current !== call) {
         capture.stop();
@@ -361,6 +425,8 @@ class CallStore {
       this.#shareQuality = quality;
       this.shareSettings = { sourceId, quality };
       this.sharing = true;
+      trail("screen", `sharing at ${qualityLabel(quality)}, mode ${quality.mode}, encoder ${quality.encoder}`);
+      await this.#enforceLock();
       capture.onPreview = (image) => {
         this.ownPreview = image;
         this.#sendPreview(image);
@@ -370,15 +436,21 @@ class CallStore {
           this.stopShare();
         }
       };
-      capture.setWatched(this.peerWatching);
+      this.#sender?.apply(quality);
+      this.#syncCapture();
       if (this.peerWatching) {
-        await this.#voice?.setScreen(stream, quality);
+        await this.#serve(call.peer.id);
       }
       this.#shareState();
-    } catch {
+    } catch (cause) {
+      report("error", "screen", "screen sharing did not start", cause);
       this.#showError(t("screen.failed"));
     } finally {
       this.#shareBusy = false;
+      if (!this.#share) {
+        this.#sender?.stop();
+        this.#sender = null;
+      }
     }
   }
 
@@ -393,12 +465,99 @@ class CallStore {
     this.sharing = false;
     this.ownPreview = null;
     this.peerWatching = false;
+    this.#announcedLock = false;
+    this.#sender?.stop();
+    this.#sender = null;
     this.#capture?.stop();
     this.#capture = null;
     this.#voice?.setScreen(null, null).catch(() => undefined);
     if (announce) {
       playCue("streamEnd");
       this.#shareState();
+    }
+  }
+
+  #createSender(callId: string, peerId: string): StreamSender {
+    const sender = new StreamSender();
+    sender.onBroken = () => this.#encoderFailed();
+    sender.onSignal = (_, kind, payload) => this.#send(callId, peerId, kind, payload);
+    sender.onFallback = () => {
+      if (this.#viewerLocked()) {
+        return;
+      }
+      this.#voice?.setScreen(this.#share, this.#shareQuality).catch(() => undefined);
+      this.#syncCapture();
+    };
+    return sender;
+  }
+
+  #encoderFailed() {
+    if (this.#wantedEncoder !== "auto" && this.#wantedEncoder !== "compatibility") {
+      this.#showError(t("screen.encoderFailed"));
+    }
+  }
+
+  async #serve(peerId: string) {
+    const share = this.#share;
+    const sender = this.#sender;
+    if (!share || !sender || this.#viewerLocked()) {
+      return;
+    }
+    const direct = this.#direct && this.#peerDirect;
+    const native = sender.has(peerId) || (await sender.add(peerId, this.#iceServers, direct));
+    if (this.#share !== share || !this.peerWatching) {
+      return;
+    }
+    await this.#voice?.setScreen(share, this.#shareQuality, !native).catch(() => undefined);
+    this.#syncCapture();
+  }
+
+  #syncCapture() {
+    const peerId = this.current?.peer.id ?? "";
+    this.#capture?.setWatched(this.peerWatching && !this.#sender?.has(peerId));
+  }
+
+  #send(callId: string, peerId: string, kind: SignalKind, payload: string) {
+    this.#signalsOut = this.#signalsOut
+      .then(async () => {
+        const sealed = await trust.seal(callId, peerId, kind, payload);
+        await this.#client?.sendSignal(callId, kind, sealed);
+      })
+      .catch(() => undefined);
+  }
+
+  #refreshScreen() {
+    const native = this.#receiver?.stream ?? null;
+    this.screen = this.watching
+      ? composeScreen(native, this.#voice?.screen ?? null, this.#voice?.screenAudio ?? null)
+      : null;
+  }
+
+  #closeReceiver() {
+    this.#receiver?.close();
+    this.#receiver = null;
+  }
+
+  async #streamSignal(callId: string, peerId: string, kind: SignalKind, payload: string) {
+    if (kind === SignalKind.STREAM_ANSWER) {
+      await this.#sender?.answer(peerId, payload);
+      return;
+    }
+    this.#closeReceiver();
+    if (closesStream(payload) || !this.watching) {
+      this.#refreshScreen();
+      return;
+    }
+    const receiver = new StreamReceiver(this.#iceServers, this.#direct && this.#peerDirect);
+    this.#receiver = receiver;
+    receiver.onStream = () => this.#refreshScreen();
+    receiver.onFailed = () => {
+      this.#closeReceiver();
+      this.#refreshScreen();
+    };
+    const answer = await receiver.answer(payload);
+    if (this.#receiver === receiver) {
+      this.#send(callId, peerId, SignalKind.STREAM_ANSWER, answer);
     }
   }
 
@@ -414,8 +573,12 @@ class CallStore {
     if (!current || !this.peerSharing || this.watching) {
       return;
     }
+    if (this.peerLocked) {
+      this.#showError(t("screen.locked", { name: current.peer.username }));
+      return;
+    }
     this.watching = true;
-    this.screen = this.#voice?.screen ?? null;
+    this.#refreshScreen();
     this.#client?.sendSignal(current.id, SignalKind.STATE, watchMessage(true)).catch(() => undefined);
   }
 
@@ -425,6 +588,7 @@ class CallStore {
       return;
     }
     this.watching = false;
+    this.#closeReceiver();
     this.screen = null;
     if (current) {
       this.#client?.sendSignal(current.id, SignalKind.STATE, watchMessage(false)).catch(() => undefined);
@@ -468,20 +632,14 @@ class CallStore {
     const voice = new VoiceSession(this.#iceServers, answering, answering && this.#direct && this.#peerDirect);
     this.#voice = voice;
 
-    voice.onSignal = (kind, payload) => {
-      this.#signalsOut = this.#signalsOut
-        .then(async () => {
-          const sealed = await trust.seal(current.id, current.peer.id, kind, payload);
-          await this.#client?.sendSignal(current.id, kind, sealed);
-        })
-        .catch(() => undefined);
-    };
+    voice.onSignal = (kind, payload) => this.#send(current.id, current.peer.id, kind, payload);
     voice.onSpeaking = (self, peer) => {
       this.selfSpeaking = self;
       this.peerSpeaking = peer;
     };
     voice.onConnected = () => {
       if (this.current?.id === current.id) {
+        trail("call", "direct call connected");
         this.current.status = "active";
         this.current.startedAt ??= Date.now();
         this.#shareState();
@@ -491,7 +649,7 @@ class CallStore {
     voice.onStatus = (connecting) => (this.connecting = connecting);
     this.connecting = true;
     voice.onLatency = (milliseconds) => (this.latency = milliseconds);
-    voice.onScreen = (stream) => (this.screen = this.watching ? stream : null);
+    voice.onScreen = () => this.#refreshScreen();
     voice.onCamera = (stream) => (this.peerCamera = stream);
 
     await trust.prepare([current.peer.id]);
@@ -546,7 +704,8 @@ class CallStore {
       this.#peerDirect = direct;
       this.#voice.setDirect(this.#direct && direct, false);
       await this.#voice.offer();
-    } catch {
+    } catch (cause) {
+      report("error", "call", "could not offer the call", cause);
       await this.hangUp();
     }
   }
@@ -569,10 +728,15 @@ class CallStore {
     if (signal.kind === SignalKind.STATE) {
       const message = parseVoiceMessage(signal.payload);
       if (message.kind === "watch") {
-        this.peerWatching = message.watching && !!this.#share;
-        this.#capture?.setWatched(this.peerWatching);
-        if (this.#share) {
-          await this.#voice.setScreen(message.watching ? this.#share : null, this.#shareQuality).catch(() => undefined);
+        this.peerWatching = message.watching && !!this.#share && !this.#viewerLocked();
+        if (message.watching && this.#viewerLocked()) {
+          this.#shareState();
+        } else if (this.peerWatching) {
+          await this.#serve(this.current.peer.id);
+        } else if (this.#share) {
+          this.#sender?.remove(this.current.peer.id);
+          this.#syncCapture();
+          await this.#voice.setScreen(null, null).catch(() => undefined);
         }
         return;
       }
@@ -583,6 +747,8 @@ class CallStore {
       if (message.direct !== undefined && message.direct !== this.#peerDirect) {
         this.#peerDirect = message.direct;
         this.#voice.setDirect(this.#direct && this.#peerDirect, false);
+        this.#enforceLock();
+        this.#redirectStream();
       }
       if (!!message.sharing !== !!this.peerSharing) {
         playCue(message.sharing ? "streamStart" : "streamEnd");
@@ -594,7 +760,17 @@ class CallStore {
       if (!message.sharing) {
         this.peerPreview = null;
       }
+      if (!message.sharing) {
+        this.#closeReceiver();
+      }
       if (!message.sharing && this.watching) {
+        this.watching = false;
+        this.screen = null;
+      }
+      this.peerLocked = !!message.sharing && !!message.locked?.length;
+      if (this.peerLocked && this.watching) {
+        this.#showError(t("screen.locked", { name: this.current.peer.username }));
+        this.#closeReceiver();
         this.watching = false;
         this.screen = null;
       }
@@ -606,12 +782,23 @@ class CallStore {
       let payload: string;
       try {
         payload = await trust.open(signal.callId, peerId, signal.kind, signal.payload);
-      } catch {
+      } catch (cause) {
+        report("error", "call", "could not verify a call signature", cause);
         this.#showError(t("call.insecure"));
         await this.hangUp();
         return;
       }
-      await voice.receive(signal.kind, payload).catch(() => this.hangUp());
+      if (signal.kind === SignalKind.STREAM_OFFER || signal.kind === SignalKind.STREAM_ANSWER) {
+        this.#streamSignal(signal.callId, peerId, signal.kind, payload).catch((cause) => {
+          report("error", "stream", "could not handle a stream signal", cause);
+          this.#closeReceiver();
+        });
+        return;
+      }
+      await voice.receive(signal.kind, payload).catch((cause) => {
+        report("error", "call", "could not handle a call signal", cause);
+        return this.hangUp();
+      });
     });
   }
 
@@ -622,10 +809,13 @@ class CallStore {
     this.peerCamera = null;
     this.peerWatching = false;
     this.peerSharing = null;
+    this.peerLocked = false;
     this.peerPreview = null;
+    this.#closeReceiver();
     this.watching = false;
     this.screen = null;
     if (this.current) {
+      trail("call", "direct call ended");
       playCue("ended");
     }
     this.#voice?.close();

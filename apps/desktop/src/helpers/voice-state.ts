@@ -5,6 +5,7 @@ export type VoiceState = {
   direct?: boolean;
   viewers?: string[];
   camera?: string;
+  locked?: string[];
 };
 
 export type VoiceMessage =
@@ -13,6 +14,10 @@ export type VoiceMessage =
 const previewPrefix = "data:image/jpeg;base64,";
 const maxPreviewLength = 14_000;
 const maxViewers = 16;
+
+function ids(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((id) => typeof id === "string").slice(0, maxViewers) : [];
+}
 
 export function stateMessage(state: VoiceState): string {
   return JSON.stringify({
@@ -23,6 +28,7 @@ export function stateMessage(state: VoiceState): string {
     direct: state.direct,
     viewers: state.viewers,
     camera: state.camera ?? "",
+    locked: state.locked,
   });
 }
 
@@ -58,9 +64,8 @@ export function parseVoiceMessage(payload: string): VoiceMessage {
       deafened: data?.deafened === true,
       sharing: data?.sharing === true ? quality : null,
       direct: typeof data?.direct === "boolean" ? data.direct : undefined,
-      viewers: Array.isArray(data?.viewers)
-        ? data.viewers.filter((id: unknown) => typeof id === "string").slice(0, maxViewers)
-        : [],
+      viewers: ids(data?.viewers),
+      locked: ids(data?.locked),
       camera: typeof data?.camera === "string" ? data.camera.slice(0, 64) : "",
     };
   } catch {

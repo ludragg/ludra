@@ -78,8 +78,12 @@ export class VoiceRoom {
     return this.#links.get(peerId)?.screen ?? null;
   }
 
-  async setScreen(peerId: string, stream: MediaStream | null, quality: ScreenQuality | null) {
-    await this.#links.get(peerId)?.setScreen(stream, quality);
+  screenAudio(peerId: string): MediaStream | null {
+    return this.#links.get(peerId)?.screenAudio ?? null;
+  }
+
+  async setScreen(peerId: string, stream: MediaStream | null, quality: ScreenQuality | null, video = true) {
+    await this.#links.get(peerId)?.setScreen(stream, quality, video);
   }
 
   async setCamera(track: MediaStreamTrack | null) {

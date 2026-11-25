@@ -1,11 +1,21 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
+import { trail } from "@/services/diagnostics";
+
 export type ScreenSource = {
   id: string;
   kind: "screen" | "window";
   name: string;
   thumbnail: string | null;
+};
+
+export type CaptureOptions = {
+  width: number;
+  height: number;
+  fps: number;
+  encoder: string;
+  mode: string;
 };
 
 type FrameInfo = {
@@ -84,7 +94,7 @@ export class NativeScreen {
     this.#audioWriter = this.#audio.writable.getWriter();
   }
 
-  static async start(sourceId: string, width: number, height: number, fps: number): Promise<NativeScreen> {
+  static async start(sourceId: string, options: CaptureOptions): Promise<NativeScreen> {
     const webview = host();
     if (!webview) {
       throw new Error("native screen capture unavailable");
@@ -96,7 +106,7 @@ export class NativeScreen {
     audio.onmessage = (chunk) => screen.#sound(chunk);
     try {
       screen.#session = await invoke<number>("screen_start", {
-        options: { source: sourceId, width, height, fps },
+        options: { source: sourceId, ...options },
         audio,
       });
     } catch (cause) {
@@ -112,6 +122,7 @@ export class NativeScreen {
 
   setWatched(watched: boolean) {
     if (!this.#stopped) {
+      trail("stream", `capture: compatibility viewer=${watched}`);
       invoke("screen_watched", { watched }).catch(() => undefined);
     }
   }

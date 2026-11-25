@@ -8,7 +8,9 @@
   import { localeTag, t } from "@/i18n";
   import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
   import { ServerError } from "@/services/client";
+  import { setDiagnosticsEnabled } from "@/services/diagnostics";
   import { chat } from "@/stores/chat.svelte";
+  import { preferences } from "@/stores/preferences.svelte";
   import SettingsGroup from "./settings-group.svelte";
 
   type PasswordField = "current" | "next";
@@ -230,6 +232,11 @@
     } finally {
       changingTwoFactor = false;
     }
+  }
+
+  function toggleErrorReports(enabled: boolean) {
+    preferences.set("errorReports", enabled);
+    setDiagnosticsEnabled(enabled);
   }
 
   function cancelDisable() {
@@ -461,6 +468,19 @@
         </div>
       </div>
     </SettingsGroup>
+
+    <SettingsGroup title={t("settings.privacy")}>
+      <div class="settings-account__section settings-account__section--tight">
+        <Checkbox
+          label={t("settings.errorReports")}
+          checked={preferences.values.errorReports}
+          onchange={toggleErrorReports}
+        />
+        <span class="settings-account__message settings-account__message--indented">
+          {t("settings.errorReportsHint")}
+        </span>
+      </div>
+    </SettingsGroup>
   </div>
 {/if}
 
@@ -632,6 +652,12 @@
   .settings-account__message {
     font-size: var(--small-font-size);
     color: var(--subtle-color);
+  }
+
+  .settings-account__message--indented {
+    margin-top: -6px;
+    padding-left: 32px;
+    line-height: 1.5;
   }
 
   .settings-account__message--success {

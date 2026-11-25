@@ -1,3 +1,5 @@
+import { report, trail } from "@/services/diagnostics";
+import { startDiagnosticsUpload, stopDiagnosticsUpload } from "@/services/diagnostics-upload";
 import { invoke } from "@tauri-apps/api/core";
 import { t } from "@/i18n";
 import type { CodePurpose } from "@/protocol/ludra/v1/client_pb";
@@ -251,11 +253,15 @@ class ChatStore {
     client.onUpdateAvailable = () => updates.check();
     client.onClose = () => this.#reconnect();
     updates.check();
-    await trust.attach(client, account.user.id).catch(() => undefined);
+    await trust
+      .attach(client, account.user.id)
+      .catch((cause) => report("error", "call", "could not set up the identity key", cause));
+    startDiagnosticsUpload(client);
     calls.attach(client);
     groupCall.attach(client);
     files.attach(client);
     groupCall.friendly = (userId) => this.isFriend(userId);
+    groupCall.nameOf = (userId) => this.nameOf(userId);
 
     this.#client = client;
     this.user = account.user;
@@ -292,6 +298,7 @@ class ChatStore {
       return;
     }
 
+    trail("network", "connection lost, reconnecting");
     const voice = groupCall.snapshot();
     this.#suspend();
     const generation = this.#generation;
@@ -322,6 +329,7 @@ class ChatStore {
       return;
     }
     this.#online();
+    trail("network", "reconnected");
 
     const user = this.user;
     if (!user) {
@@ -640,6 +648,7 @@ class ChatStore {
       this.#receive(message);
       return true;
     } catch (cause) {
+      report("error", "chat", "could not send files", cause);
       this.photoError = this.#sendError(cause, t("chat.fileFailed", { name: this.sending }));
       return false;
     } finally {
@@ -694,6 +703,7 @@ class ChatStore {
       this.replyingTo = null;
       this.#receive(message);
     } catch (cause) {
+      report("error", "chat", "could not send a GIF", cause);
       this.photoError = this.#sendError(cause, t("chat.gifFailed"));
     } finally {
       this.sending = "";
@@ -990,6 +1000,7 @@ class ChatStore {
   }
 
   #suspend() {
+    stopDiagnosticsUpload();
     calls.detach();
     groupCall.detach();
     trust.detach();
@@ -1006,6 +1017,7 @@ class ChatStore {
     this.#generation++;
     this.#online();
     focus.busy = false;
+    stopDiagnosticsUpload();
     this.groupPhotoError = null;
     window.clearTimeout(this.#photoTimer);
     calls.detach();

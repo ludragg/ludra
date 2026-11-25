@@ -1,8 +1,27 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import Select from "@/components/select/select.svelte";
+  import { encoderOptions } from "@/helpers/encoder-options";
   import { t } from "@/i18n";
   import { listScreenSources, type ScreenSource } from "@/services/native-screen";
-  import { frameRates, resolutions, type FrameRate, type Resolution, type ScreenQuality } from "@/services/screen";
+  import {
+    allowedFrameRate,
+    allowedMode,
+    allowedResolution,
+    frameRateLocked,
+    frameRates,
+    modeLocked,
+    resolutionLocked,
+    resolutions,
+    shareEncoders,
+    shareModes,
+    type FrameRate,
+    type Resolution,
+    type ScreenQuality,
+    type ShareEncoder,
+    type ShareMode,
+  } from "@/services/screen";
+  import { hardwareEncoders, type DetectedEncoder } from "@/services/stream-encoders";
   import { preferences } from "@/stores/preferences.svelte";
 
   type Tab = "screen" | "window";
@@ -30,6 +49,28 @@
     initial?.quality.resolution ?? pick(resolutions, preferences.values.shareResolution, 1080),
   );
   let fps = $state<FrameRate>(initial?.quality.fps ?? pick(frameRates, preferences.values.shareFps, 60));
+  let mode = $state<ShareMode>(initial?.quality.mode ?? pick(shareModes, preferences.values.shareMode, "balanced"));
+  let encoder = $state<ShareEncoder>(
+    initial?.quality.encoder ?? pick(shareEncoders, preferences.values.shareEncoder, "auto"),
+  );
+  let detected = $state<DetectedEncoder[] | null>(null);
+  let modeChosen = false;
+
+  const encoders = $derived(encoderOptions(detected ?? []));
+  const shownEncoder = $derived(encoders.some(({ value }) => value === encoder) ? encoder : "auto");
+  const direct = $derived(preferences.values.directCalls);
+  const shownResolution = $derived(allowedResolution(resolution, direct));
+  const shownFps = $derived(allowedFrameRate(fps, direct));
+  const shownMode = $derived(allowedMode(mode, direct));
+  const modes = $derived(
+    shareModes.map((value) => ({
+      value,
+      label: t(`screen.modes.${value}`),
+      locked: modeLocked(value, direct) ? t("screen.directRequired") : undefined,
+    })),
+  );
+
+  hardwareEncoders().then((list) => (detected = list));
 
   const visible = $derived((sources ?? []).filter(({ kind }) => kind === tab));
 
@@ -80,7 +121,7 @@
     };
   });
 
-  function pick<T extends number>(options: readonly T[], value: number, fallback: T): T {
+  function pick<T extends number | string>(options: readonly T[], value: number | string, fallback: T): T {
     return options.find((option) => option === value) ?? fallback;
   }
 
@@ -89,12 +130,23 @@
     if (!selected) {
       return;
     }
-    preferences.set("shareResolution", resolution);
-    preferences.set("shareFps", fps);
+    if (direct) {
+      preferences.set("shareResolution", resolution);
+      preferences.set("shareFps", fps);
+    }
+    if (direct || modeChosen) {
+      preferences.set("shareMode", mode);
+    }
+    const chosen = detected ? shownEncoder : encoder;
+    preferences.set("shareEncoder", chosen);
     const unchanged =
-      initial?.sourceId === selected && initial.quality.resolution === resolution && initial.quality.fps === fps;
+      initial?.sourceId === selected &&
+      initial.quality.resolution === shownResolution &&
+      initial.quality.fps === shownFps &&
+      initial.quality.mode === shownMode &&
+      initial.quality.encoder === chosen;
     if (!unchanged) {
-      onshare(selected, { resolution, fps });
+      onshare(selected, { resolution: shownResolution, fps: shownFps, mode: shownMode, encoder: chosen });
     }
     onclose();
   }
@@ -113,6 +165,22 @@
 </script>
 
 <svelte:window {onkeydown} />
+
+{#snippet lock()}
+  <svg
+    class="screen-picker__lock"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+{/snippet}
 
 <div class="screen-picker" role="presentation" {onpointerdown}>
   <div class="screen-picker__card" role="dialog" aria-modal="true" aria-labelledby="screen-picker-title">
@@ -180,14 +248,24 @@
           <span class="screen-picker__label" id="screen-resolution">{t("screen.resolution")}</span>
           <div class="screen-picker__options" role="radiogroup" aria-labelledby="screen-resolution">
             {#each resolutions as option (option)}
+              {@const locked = resolutionLocked(option, direct)}
               <button
                 type="button"
                 class="screen-picker__option"
-                class:screen-picker__option--active={resolution === option}
+                class:screen-picker__option--active={shownResolution === option}
                 role="radio"
-                aria-checked={resolution === option}
-                onclick={() => (resolution = option)}
+                aria-checked={shownResolution === option}
+                aria-disabled={locked}
+                data-tooltip={locked ? t("screen.directRequired") : undefined}
+                onclick={() => {
+                  if (!locked) {
+                    resolution = option;
+                  }
+                }}
               >
+                {#if locked}
+                  {@render lock()}
+                {/if}
                 {option}p
               </button>
             {/each}
@@ -197,19 +275,51 @@
           <span class="screen-picker__label" id="screen-fps">{t("screen.fps")}</span>
           <div class="screen-picker__options" role="radiogroup" aria-labelledby="screen-fps">
             {#each frameRates as option (option)}
+              {@const locked = frameRateLocked(option, direct)}
               <button
                 type="button"
                 class="screen-picker__option"
-                class:screen-picker__option--active={fps === option}
+                class:screen-picker__option--active={shownFps === option}
                 role="radio"
-                aria-checked={fps === option}
-                onclick={() => (fps = option)}
+                aria-checked={shownFps === option}
+                aria-disabled={locked}
+                data-tooltip={locked ? t("screen.directRequired") : undefined}
+                onclick={() => {
+                  if (!locked) {
+                    fps = option;
+                  }
+                }}
               >
+                {#if locked}
+                  {@render lock()}
+                {/if}
                 {t("screen.fpsValue", { fps: option })}
               </button>
             {/each}
           </div>
         </div>
+      </div>
+
+      <div class="screen-picker__quality">
+        <Select
+          id="screen-encoder"
+          label={t("screen.encoder")}
+          options={encoders}
+          value={shownEncoder}
+          compact
+          onchange={(value) => (encoder = value)}
+        />
+        <Select
+          id="screen-mode"
+          label={t("screen.mode")}
+          options={modes}
+          value={shownMode}
+          compact
+          onchange={(value) => {
+            mode = value;
+            modeChosen = true;
+          }}
+        />
       </div>
 
       <div class="screen-picker__actions">
@@ -414,6 +524,10 @@
     height: 32px;
     padding: 0;
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     background: transparent;
@@ -432,6 +546,20 @@
     border-color: var(--brand-color);
     background: var(--brand-color);
     color: var(--on-brand-color);
+  }
+
+  .screen-picker__option[aria-disabled="true"],
+  .screen-picker__option[aria-disabled="true"]:hover {
+    background: transparent;
+    color: var(--subtle-color);
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  .screen-picker__lock {
+    width: 12px;
+    height: 12px;
+    flex: none;
   }
 
   .screen-picker__actions {

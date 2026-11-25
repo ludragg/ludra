@@ -1,5 +1,46 @@
 [
   {
+    "version": "0.5.0",
+    "notes": {
+      "pt": {
+        "features": [
+          "Aviso de privacidade: para ajudar no desenvolvimento, o Ludra agora envia relatórios de erros ao servidor, e essa opção vem ativada. Vão os erros do app, a atividade técnica recente antes deles, as versões do Ludra, do Windows e do WebView2 e o nome da GPU. Mensagens, arquivos, senhas, e-mails e endereços IP não são enviados. Cada relatório fica ligado à sua conta e é apagado depois de 30 dias. Para desativar: Configurações › Conta › Privacidade.",
+          "Transmissão de tela refeita: o Ludra passa a usar o codificador de vídeo da sua GPU e codifica uma vez só para todos que estão assistindo.",
+          "Ao compartilhar a tela, dá para escolher o codificador e o modo: Desempenho, Equilibrado, Qualidade ou Extrema.",
+          "Para transmitir acima de 720p ou de 30 FPS, ou usar os modos Qualidade e Extrema, é preciso estar com a conexão direta ativada.",
+          "Acima de 720p30, ou nos modos Qualidade e Extrema, só assiste quem é seu amigo e tem a conexão direta ativada, assim como você. Em 720p30 nos modos Desempenho ou Equilibrado, todos na chamada podem assistir."
+        ],
+        "fixes": [
+          "Menos travamentos no jogo e menos atraso para quem assiste durante uma transmissão.",
+          "Os vídeos já baixados mostram um quadro como miniatura, em vez de ficarem pretos.",
+          "As prévias de vídeos do YouTube voltam a mostrar o título e a miniatura.",
+          "Imagens coladas não aparecem mais trocadas umas pelas outras.",
+          "Em janelas pequenas, não aparece mais rolagem dupla e a barra de título não some.",
+          "O contador de quem está assistindo não cobre mais o texto nas miniaturas das transmissões.",
+          "Shift + Esc não abre mais o gerenciador de tarefas do navegador."
+        ]
+      },
+      "en": {
+        "features": [
+          "Privacy notice: to help development, Ludra now sends error reports to the server, and this option is on by default. They carry the app's errors, its recent technical activity before them, the Ludra, Windows and WebView2 versions and the GPU name. Messages, files, passwords, emails and IP addresses are not sent. Each report is linked to your account and deleted after 30 days. To turn it off: Settings › Account › Privacy.",
+          "Screen sharing was rebuilt: Ludra now uses your GPU's video encoder and encodes once for everyone watching.",
+          "When sharing your screen you can pick the encoder and the mode: Performance, Balanced, Quality or Extreme.",
+          "Streaming above 720p or 30 FPS, or using the Quality and Extreme modes, requires direct connection to be turned on.",
+          "Above 720p30, or in the Quality and Extreme modes, only friends with direct connection on can watch, and yours must be on too. At 720p30 in Performance or Balanced mode, everyone in the call can watch."
+        ],
+        "fixes": [
+          "Less stuttering in games and less delay for viewers while screen sharing.",
+          "Downloaded videos show a frame as their thumbnail instead of staying black.",
+          "YouTube video previews show the title and thumbnail again.",
+          "Pasted images no longer show up swapped with one another.",
+          "Small windows no longer get a double scrollbar or lose the title bar.",
+          "The viewer count no longer covers the label on stream thumbnails.",
+          "Shift + Esc no longer opens the browser task manager."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.4.3",
     "notes": {
       "pt": {

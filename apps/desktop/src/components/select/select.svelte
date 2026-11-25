@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string">
-  type Option = { value: T; label: string };
+  type Option = { value: T; label: string; display?: string; locked?: string };
 
   let {
     id,
@@ -7,6 +7,7 @@
     options,
     value,
     hideLabel = false,
+    compact = false,
     onchange,
   }: {
     id: string;
@@ -14,6 +15,7 @@
     options: Option[];
     value: T;
     hideLabel?: boolean;
+    compact?: boolean;
     onchange: (value: T) => void;
   } = $props();
 
@@ -22,7 +24,10 @@
 
   const current = $derived(options.find((option) => option.value === value));
 
-  function choose(next: T) {
+  function choose({ value: next, locked }: Option) {
+    if (locked) {
+      return;
+    }
     open = false;
     if (next !== value) {
       onchange(next);
@@ -35,27 +40,44 @@
     }
   }
 
+  function focusOption(step: number) {
+    const buttons = [...(root?.querySelectorAll<HTMLButtonElement>(".select__option") ?? [])];
+    const focused = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    const selected = options.findIndex((option) => option.value === value);
+    const next = focused === -1 ? Math.max(selected, 0) : (focused + step + buttons.length) % buttons.length;
+    buttons[next]?.focus();
+  }
+
   function onkeydown(event: KeyboardEvent) {
     if (open && event.key === "Escape") {
+      event.stopPropagation();
       open = false;
+      root?.querySelector<HTMLButtonElement>(".select__button")?.focus();
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      open = true;
+      requestAnimationFrame(() => focusOption(event.key === "ArrowDown" ? 1 : -1));
     }
   }
 </script>
 
-<svelte:window {onpointerdown} {onkeydown} />
+<svelte:window {onpointerdown} />
 
-<div class="select" bind:this={root}>
+<div class="select" class:select--compact={compact} bind:this={root}>
   <span id="{id}-label" class={hideLabel ? "sr-only" : "select__label"}>{label}</span>
   <div class="select__control">
     <button
+      type="button"
       class="select__button"
       class:select__button--open={open}
       aria-haspopup="listbox"
       aria-expanded={open}
       aria-labelledby="{id}-label"
       onclick={() => (open = !open)}
+      {onkeydown}
     >
-      {current?.label}
+      {current?.display ?? current?.label}
       <svg
         class="select__chevron"
         viewBox="0 0 24 24"
@@ -74,13 +96,31 @@
       <div class="select__list" role="listbox" aria-labelledby="{id}-label">
         {#each options as option (option.value)}
           <button
+            type="button"
             class="select__option"
             role="option"
             aria-selected={option.value === value}
-            onclick={() => choose(option.value)}
+            aria-disabled={!!option.locked}
+            data-tooltip={option.locked}
+            onclick={() => choose(option)}
+            {onkeydown}
           >
             {option.label}
-            {#if option.value === value}
+            {#if option.locked}
+              <svg
+                class="select__lock"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="4" y="11" width="16" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+            {:else if option.value === value}
               <svg
                 class="select__check"
                 viewBox="0 0 24 24"
@@ -189,5 +229,64 @@
   .select__check {
     width: 16px;
     color: var(--brand-color);
+  }
+
+  .select__option[aria-disabled="true"],
+  .select__option[aria-disabled="true"]:hover {
+    background: transparent;
+    color: var(--subtle-color);
+    opacity: 0.7;
+    cursor: default;
+  }
+
+  .select__lock {
+    width: 14px;
+    flex: none;
+  }
+
+  .select--compact {
+    gap: 6px;
+  }
+
+  .select--compact .select__label {
+    font-size: var(--small-font-size);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--subtle-color);
+  }
+
+  .select--compact .select__button {
+    height: 36px;
+    border-radius: 6px;
+    background: transparent;
+    font-size: var(--hint-font-size);
+    font-weight: 600;
+  }
+
+  .select--compact .select__button--open {
+    border-color: var(--brand-color);
+  }
+
+  .select--compact .select__chevron {
+    width: 16px;
+  }
+
+  .select--compact .select__list {
+    top: auto;
+    bottom: calc(100% + 4px);
+    padding: 4px;
+    background: var(--dark-background-color);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+
+  .select--compact .select__option {
+    padding: 6px 10px;
+    font-size: var(--hint-font-size);
+    font-weight: 600;
+  }
+
+  .select--compact .select__option[aria-selected="true"] {
+    background: var(--surface-color);
   }
 </style>

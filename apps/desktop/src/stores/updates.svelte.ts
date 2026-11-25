@@ -2,6 +2,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { releases, type Release } from "@/changelog";
+import { report } from "@/services/diagnostics";
 
 type Phase = "idle" | "available" | "downloading" | "installing" | "failed";
 
@@ -80,7 +81,8 @@ class UpdateStore {
         }
       });
       await relaunch();
-    } catch {
+    } catch (cause) {
+      report("error", "update", "could not install the update", cause);
       forgetAttempt();
       this.phase = "failed";
     }
@@ -97,6 +99,9 @@ class UpdateStore {
     }
     this.#current = current;
     this.stuck = this.resumed !== null && this.resumed !== current;
+    if (this.stuck) {
+      report("error", "update", `the update to ${this.resumed} did not apply`);
+    }
     let previous: string | null = null;
     try {
       previous = localStorage.getItem(seenKey);

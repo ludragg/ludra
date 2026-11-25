@@ -2,6 +2,7 @@ package unfurl
 
 import (
 	"net/netip"
+	"net/url"
 	"testing"
 )
 
@@ -58,5 +59,38 @@ func TestReadMeta(t *testing.T) {
 <meta property="og:image" content="https://example.com/a.png"></head><body><meta property="og:title" content="ignored"></body>`)
 	if page.title != "GitHub - ludragg/ludra: Open-source app" || page.description != "Chat & play" || page.site != "GitHub" || page.image != "https://example.com/a.png" {
 		t.Errorf("unexpected page: %+v", page)
+	}
+}
+
+func TestVideoID(t *testing.T) {
+	cases := map[string]string{
+		"https://www.youtube.com/watch?v=0EsISvNBhS4":         "0EsISvNBhS4",
+		"https://m.youtube.com/watch?v=0EsISvNBhS4&t=10":      "0EsISvNBhS4",
+		"https://youtu.be/0EsISvNBhS4?si=abc":                 "0EsISvNBhS4",
+		"https://youtube.com/shorts/0EsISvNBhS4":              "0EsISvNBhS4",
+		"https://www.youtube.com/@channel/live":               "",
+		"https://www.youtube.com/watch?v=short":               "",
+		"https://example.com/watch?v=0EsISvNBhS4":             "",
+		"https://youtube.com.example.com/watch?v=0EsISvNBhS4": "",
+	}
+	for input, want := range cases {
+		target, err := url.Parse(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := videoID(target); got != want {
+			t.Errorf("videoID(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestStrippedPage(t *testing.T) {
+	youtube, _ := url.Parse("https://www.youtube.com/watch?v=0EsISvNBhS4")
+	other, _ := url.Parse("https://example.com/")
+	if !strippedPage(youtube, "- YouTube") || !strippedPage(youtube, "YouTube") {
+		t.Error("a stripped YouTube page should be refused")
+	}
+	if strippedPage(youtube, "A video - YouTube") || strippedPage(other, "YouTube") {
+		t.Error("real titles should be kept")
 	}
 }

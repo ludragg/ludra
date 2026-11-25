@@ -69,6 +69,10 @@ fn owner(window: &WebviewWindow) -> Option<isize> {
     window.hwnd().ok().map(|handle| handle.0 as isize)
 }
 
+fn claimed(app: &AppHandle, state: &FilesState, path: &Path) -> bool {
+    state.shared.lock().unwrap().refers(app, path) || state.saved.lock().unwrap().refers(app, path)
+}
+
 fn name_of(path: &Path) -> String {
     path.file_name()
         .map(|name| name.to_string_lossy().into_owned())
@@ -194,11 +198,13 @@ pub fn stash_file(
         .download_dir()
         .map_err(|error| error.to_string())?;
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
-    let path = unused_path(&folder, &name);
+    let path = unused_path_where(&folder, &name, |path| {
+        path.exists() || claimed(&app, &state, path)
+    });
     std::fs::write(&path, data).map_err(|error| error.to_string())?;
     state.picked.lock().unwrap().insert(path.clone());
     Ok(Picked {
-        name,
+        name: name_of(&path),
         path: path.to_string_lossy().into_owned(),
         size: data.len() as u64,
     })
@@ -231,7 +237,9 @@ pub fn stash_voice(
         .ok_or("invalid recording name")?;
     let folder = documents_folder(&app)?.join(VOICE_FOLDER);
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
-    let path = unused_path(&folder, &name);
+    let path = unused_path_where(&folder, &name, |path| {
+        path.exists() || claimed(&app, &state, path)
+    });
     std::fs::write(&path, data).map_err(|error| error.to_string())?;
     state.picked.lock().unwrap().insert(path.clone());
     Ok(Picked {
@@ -239,10 +247,6 @@ pub fn stash_voice(
         path: path.to_string_lossy().into_owned(),
         size: data.len() as u64,
     })
-}
-
-fn unused_path(folder: &Path, name: &str) -> PathBuf {
-    unused_path_where(folder, name, |path| path.exists())
 }
 
 fn unused_path_where(folder: &Path, name: &str, taken: impl Fn(&Path) -> bool) -> PathBuf {
@@ -270,13 +274,18 @@ pub fn reveal_file(app: AppHandle, state: State<'_, FilesState>, id: String) -> 
 }
 
 #[tauri::command]
-pub fn media_path(app: AppHandle, state: State<'_, FilesState>, id: String) -> Option<String> {
-    let path = state
-        .saved
-        .lock()
-        .unwrap()
-        .get(&app, &id)
-        .or_else(|| state.shared.lock().unwrap().get(&app, &id))?;
+pub fn media_path(
+    app: AppHandle,
+    state: State<'_, FilesState>,
+    id: String,
+    size: u64,
+) -> Option<String> {
+    let saved = state.saved.lock().unwrap().get(&app, &id);
+    let shared = state.shared.lock().unwrap().get(&app, &id);
+    let path = [saved, shared]
+        .into_iter()
+        .flatten()
+        .find(|path| std::fs::metadata(path).is_ok_and(|found| found.len() == size))?;
     app.asset_protocol_scope().allow_file(&path).ok()?;
     Some(path.to_string_lossy().into_owned())
 }
@@ -438,7 +447,7 @@ fn folder_target_for(
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
     let mut targets = state.targets.lock().unwrap();
     let path = unused_path_where(&folder, &name, |path| {
-        path.exists() || targets.contains(path)
+        path.exists() || targets.contains(path) || claimed(app, state, path)
     });
     targets.insert(path.clone());
     Ok(path.to_string_lossy().into_owned())

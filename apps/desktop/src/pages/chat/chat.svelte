@@ -78,6 +78,7 @@
 <style>
   .chat {
     height: 100%;
+    overflow: clip;
     display: flex;
   }
 
@@ -91,6 +92,8 @@
 
   .chat__main {
     min-width: 0;
+    min-height: 0;
+    overflow: clip;
     flex-grow: 1;
     display: flex;
     flex-direction: column;

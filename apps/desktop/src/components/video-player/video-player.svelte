@@ -101,10 +101,10 @@
     timer = window.setTimeout(() => (idle = playing), hideAfter);
   }
 
-  function measured() {
-    if (video && video.videoWidth > 0 && video.videoHeight > 0) {
-      ratio = `${video.videoWidth} / ${video.videoHeight}`;
-      duration = video.duration;
+  function measured(element: HTMLVideoElement) {
+    if (element.videoWidth > 0 && element.videoHeight > 0) {
+      ratio = `${element.videoWidth} / ${element.videoHeight}`;
+      duration = element.duration;
     }
   }
 
@@ -138,7 +138,7 @@
       autoplay
       bind:this={video}
       onclick={toggle}
-      onloadedmetadata={measured}
+      onloadedmetadata={(event) => measured(event.currentTarget)}
       onplay={() => {
         sync();
         awake();
@@ -249,6 +249,17 @@
       {/if}
     </div>
   {:else}
+    {#if source}
+      <video
+        class="video-player__poster"
+        src="{source}#t=0.1"
+        preload="metadata"
+        muted
+        tabindex="-1"
+        aria-hidden="true"
+        onloadedmetadata={(event) => measured(event.currentTarget)}
+      ></video>
+    {/if}
     <button
       type="button"
       class="video-player__play"
@@ -407,7 +418,17 @@
     opacity: 1;
   }
 
+  .video-player__poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
   .video-player__play {
+    position: relative;
     width: 56px;
     height: 56px;
     padding: 0;

@@ -2,10 +2,12 @@ mod audio;
 mod bridge;
 mod capture;
 mod fullscreen;
+mod handoff;
+mod scaler;
 mod sources;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use tauri::ipc::{Channel, InvokeResponseBody};
@@ -20,7 +22,12 @@ use audio::SystemAudio;
 use bridge::Bridge;
 use capture::{Capture, Flags};
 use fullscreen::Capturing;
+use handoff::Handoff;
 use sources::{Source, Target};
+
+use crate::diagnostics::{self, Level};
+use crate::encoder::Mode;
+use crate::stream::{self, Quality, Selection, StreamState};
 
 struct Session {
     capturing: Arc<Capturing>,
@@ -34,12 +41,15 @@ pub struct ShareOptions {
     width: u32,
     height: u32,
     fps: u32,
+    encoder: String,
+    mode: String,
 }
 
 #[derive(Default)]
 pub struct ScreenState {
     session: Mutex<Option<Session>>,
     generation: AtomicU64,
+    handoff: OnceLock<Option<Arc<Mutex<Handoff>>>>,
 }
 
 #[tauri::command]
@@ -63,6 +73,30 @@ pub async fn screen_start(
     let width = options.width.clamp(2, 3840);
     let height = options.height.clamp(2, 2160);
     let fps = options.fps.clamp(1, 120);
+    let publisher = app.state::<StreamState>().publisher(&app);
+    let handoff = state
+        .handoff
+        .get_or_init(|| {
+            Handoff::new()
+                .map_err(|error| {
+                    diagnostics::report(
+                        Level::Warning,
+                        "capture",
+                        format_args!("no shared encoder device: {error}"),
+                    )
+                })
+                .ok()
+                .map(|handoff| Arc::new(Mutex::new(handoff)))
+        })
+        .clone();
+    publisher.configure(
+        Quality {
+            height,
+            fps,
+            mode: Mode::parse(&options.mode),
+        },
+        Selection::parse(&options.encoder),
+    );
 
     let session = tauri::async_runtime::spawn_blocking(move || -> Result<Session, String> {
         let target = sources::resolve(&source).ok_or("source not found")?;
@@ -81,6 +115,8 @@ pub async fn screen_start(
         let flags = Flags {
             bridge: Arc::new(Bridge::new(webview, size, session_id)?),
             watched: watched.clone(),
+            publisher,
+            handoff,
             app,
             width: buffer_width,
             height: buffer_height,
@@ -98,7 +134,15 @@ pub async fn screen_start(
         Ok(Session {
             capturing,
             watched,
-            audio: SystemAudio::start(audio, excluded).ok(),
+            audio: SystemAudio::start(audio, excluded)
+                .map_err(|error| {
+                    diagnostics::report(
+                        Level::Warning,
+                        "audio",
+                        format_args!("system audio capture did not start: {error}"),
+                    )
+                })
+                .ok(),
         })
     })
     .await
@@ -120,8 +164,9 @@ pub async fn screen_start(
 }
 
 #[tauri::command]
-pub fn screen_stop(state: State<'_, ScreenState>) {
+pub fn screen_stop(app: AppHandle, state: State<'_, ScreenState>) {
     stop(&state);
+    stream::reset(&app);
 }
 
 #[tauri::command]
@@ -137,6 +182,7 @@ pub fn reset(app: &AppHandle) {
     if let Some(state) = app.try_state::<ScreenState>() {
         stop(&state);
     }
+    stream::reset(app);
 }
 
 fn stop(state: &State<'_, ScreenState>) {

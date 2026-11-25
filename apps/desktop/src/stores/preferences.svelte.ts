@@ -21,9 +21,12 @@ export type Preferences = {
   sensitivity: number;
   shareResolution: number;
   shareFps: number;
+  shareEncoder: string;
+  shareMode: string;
   watchHeight: number;
   callHeight: number;
   directCalls: boolean;
+  errorReports: boolean;
   directDownloads: boolean;
   askDownloadLocation: boolean;
   autoDownload: boolean;
@@ -53,9 +56,12 @@ const defaults: Preferences = {
   sensitivity: 16,
   shareResolution: 1080,
   shareFps: 60,
+  shareEncoder: "auto",
+  shareMode: "balanced",
   watchHeight: 420,
   callHeight: 0,
   directCalls: true,
+  errorReports: true,
   directDownloads: true,
   askDownloadLocation: false,
   autoDownload: true,

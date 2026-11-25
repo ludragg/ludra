@@ -416,11 +416,13 @@ func (FileSignalKind) EnumDescriptor() ([]byte, []int) {
 type SignalKind int32
 
 const (
-	SignalKind_SIGNAL_KIND_UNSPECIFIED SignalKind = 0
-	SignalKind_SIGNAL_KIND_OFFER       SignalKind = 1
-	SignalKind_SIGNAL_KIND_ANSWER      SignalKind = 2
-	SignalKind_SIGNAL_KIND_CANDIDATE   SignalKind = 3
-	SignalKind_SIGNAL_KIND_STATE       SignalKind = 4
+	SignalKind_SIGNAL_KIND_UNSPECIFIED   SignalKind = 0
+	SignalKind_SIGNAL_KIND_OFFER         SignalKind = 1
+	SignalKind_SIGNAL_KIND_ANSWER        SignalKind = 2
+	SignalKind_SIGNAL_KIND_CANDIDATE     SignalKind = 3
+	SignalKind_SIGNAL_KIND_STATE         SignalKind = 4
+	SignalKind_SIGNAL_KIND_STREAM_OFFER  SignalKind = 5
+	SignalKind_SIGNAL_KIND_STREAM_ANSWER SignalKind = 6
 )
 
 // Enum value maps for SignalKind.
@@ -431,13 +433,17 @@ var (
 		2: "SIGNAL_KIND_ANSWER",
 		3: "SIGNAL_KIND_CANDIDATE",
 		4: "SIGNAL_KIND_STATE",
+		5: "SIGNAL_KIND_STREAM_OFFER",
+		6: "SIGNAL_KIND_STREAM_ANSWER",
 	}
 	SignalKind_value = map[string]int32{
-		"SIGNAL_KIND_UNSPECIFIED": 0,
-		"SIGNAL_KIND_OFFER":       1,
-		"SIGNAL_KIND_ANSWER":      2,
-		"SIGNAL_KIND_CANDIDATE":   3,
-		"SIGNAL_KIND_STATE":       4,
+		"SIGNAL_KIND_UNSPECIFIED":   0,
+		"SIGNAL_KIND_OFFER":         1,
+		"SIGNAL_KIND_ANSWER":        2,
+		"SIGNAL_KIND_CANDIDATE":     3,
+		"SIGNAL_KIND_STATE":         4,
+		"SIGNAL_KIND_STREAM_OFFER":  5,
+		"SIGNAL_KIND_STREAM_ANSWER": 6,
 	}
 )
 
@@ -1773,14 +1779,16 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\x16FILE_SIGNAL_KIND_OFFER\x10\x02\x12\x1b\n" +
 	"\x17FILE_SIGNAL_KIND_ANSWER\x10\x03\x12\x1b\n" +
 	"\x17FILE_SIGNAL_KIND_CANCEL\x10\x04\x12 \n" +
-	"\x1cFILE_SIGNAL_KIND_UNAVAILABLE\x10\x05*\x8a\x01\n" +
+	"\x1cFILE_SIGNAL_KIND_UNAVAILABLE\x10\x05*\xc7\x01\n" +
 	"\n" +
 	"SignalKind\x12\x1b\n" +
 	"\x17SIGNAL_KIND_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11SIGNAL_KIND_OFFER\x10\x01\x12\x16\n" +
 	"\x12SIGNAL_KIND_ANSWER\x10\x02\x12\x19\n" +
 	"\x15SIGNAL_KIND_CANDIDATE\x10\x03\x12\x15\n" +
-	"\x11SIGNAL_KIND_STATE\x10\x04Bu\n" +
+	"\x11SIGNAL_KIND_STATE\x10\x04\x12\x1c\n" +
+	"\x18SIGNAL_KIND_STREAM_OFFER\x10\x05\x12\x1d\n" +
+	"\x19SIGNAL_KIND_STREAM_ANSWER\x10\x06Bu\n" +
 	"\fcom.ludra.v1B\vModelsProtoP\x01Z\x17ludra/internal/protocol\xa2\x02\x03LXX\xaa\x02\bLudra.V1\xca\x02\bLudra\\V1\xe2\x02\x14Ludra\\V1\\GPBMetadata\xea\x02\tLudra::V1b\x06proto3"
 
 var (

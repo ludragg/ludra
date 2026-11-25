@@ -4,7 +4,7 @@ import { loadIdentity, safetyNumber, signText, verifyText, type Identity } from 
 
 type Sealed = { d: string; s: string };
 
-const signedKinds = new Set([SignalKind.OFFER, SignalKind.ANSWER]);
+const signedKinds = new Set([SignalKind.OFFER, SignalKind.ANSWER, SignalKind.STREAM_OFFER, SignalKind.STREAM_ANSWER]);
 
 function pinsKey(userId: string): string {
   return `ludra.pins.${userId}`;

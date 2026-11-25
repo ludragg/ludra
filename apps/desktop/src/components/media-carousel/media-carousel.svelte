@@ -36,7 +36,7 @@
     const id = item.id;
     void transfer?.state;
     local = null;
-    void files.mediaPath(id).then((path) => {
+    void files.mediaPath(item).then((path) => {
       if (id === item.id) {
         local = path;
       }

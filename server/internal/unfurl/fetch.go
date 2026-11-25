@@ -95,16 +95,29 @@ func (f *Fetcher) fetch(ctx context.Context, rawURL string) (Preview, error) {
 		return Preview{}, errors.New("invalid url")
 	}
 
+	if id := videoID(target); id != "" {
+		if preview, err := f.video(ctx, rawURL, id); err == nil {
+			return preview, nil
+		}
+	}
+
 	body, final, err := f.get(ctx, target.String(), pageLimit, "text/html")
 	if err != nil {
 		return Preview{}, err
 	}
 	meta := readMeta(string(body))
-	if meta.title == "" {
+	if meta.title == "" || strippedPage(final, meta.title) {
 		return Preview{}, errors.New("no title")
 	}
 
 	preview := Preview{URL: canonical(rawURL, final, meta.url), Site: meta.site, Title: meta.title, Description: meta.description}
+	if address, err := url.Parse(preview.URL); err == nil && videoID(target) == "" {
+		if id := videoID(address); id != "" {
+			if resolved, err := f.video(ctx, preview.URL, id); err == nil {
+				return resolved, nil
+			}
+		}
+	}
 	if preview.Site == "" {
 		preview.Site = strings.TrimPrefix(final.Hostname(), "www.")
 	}

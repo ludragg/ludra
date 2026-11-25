@@ -72,8 +72,8 @@ export class VoiceSession {
     await this.#link?.receive(kind, payload);
   }
 
-  async setScreen(stream: MediaStream | null, quality: ScreenQuality | null) {
-    await this.#link?.setScreen(stream, quality);
+  async setScreen(stream: MediaStream | null, quality: ScreenQuality | null, video = true) {
+    await this.#link?.setScreen(stream, quality, video);
   }
 
   async setCamera(track: MediaStreamTrack | null) {
@@ -87,6 +87,10 @@ export class VoiceSession {
 
   get screen(): MediaStream | null {
     return this.#link?.screen ?? null;
+  }
+
+  get screenAudio(): MediaStream | null {
+    return this.#link?.screenAudio ?? null;
   }
 
   get microphone(): Microphone | null {

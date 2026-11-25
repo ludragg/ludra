@@ -1,12 +1,17 @@
 #![windows_subsystem = "windows"]
 
 mod dev;
+mod diagnostics;
 #[cfg(windows)]
 mod dialog;
+#[cfg(windows)]
+mod encoder;
 mod files;
 mod registry;
 #[cfg(windows)]
 mod screen;
+#[cfg(windows)]
+mod stream;
 mod toast;
 mod tray;
 #[cfg(windows)]
@@ -23,6 +28,7 @@ fn launched_by_autostart() -> bool {
 }
 
 fn main() {
+    diagnostics::install_crash_hook();
     let profile = dev::profile();
     let builder = tauri::Builder::default();
     let builder = if profile.is_some() {
@@ -47,10 +53,14 @@ fn main() {
         ))
         .on_permission_request(webview::permission)
         .manage(screen::ScreenState::default())
+        .manage(stream::StreamState::default())
         .manage(toast::ToastState::default())
         .manage(files::FilesState::default())
         .manage(tray::TrayState::default())
         .setup(move |app| {
+            if let Ok(directory) = app.path().app_local_data_dir() {
+                diagnostics::open(directory);
+            }
             if launched_by_autostart()
                 && let Some(window) = app.get_webview_window("main")
             {
@@ -58,6 +68,10 @@ fn main() {
             }
             #[cfg(windows)]
             webview::setup(app);
+            #[cfg(windows)]
+            if let Ok(directory) = app.path().app_local_data_dir() {
+                encoder::set_guard_directory(directory);
+            }
             if let (Some(profile), Some(window)) = (&profile, app.get_webview_window("main")) {
                 let _ = window.set_title(&format!("Ludra Dev · {}", profile.name));
             }
@@ -76,6 +90,8 @@ fn main() {
             }
         })
         .on_page_load(|webview, payload| {
+            #[cfg(windows)]
+            webview::disable_browser_keys(webview);
             if webview.label() == "main"
                 && payload.event() == tauri::webview::PageLoadEvent::Started
             {
@@ -85,6 +101,11 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             launched_by_autostart,
             dev::dev_profile,
+            diagnostics::diagnostics_enable,
+            diagnostics::diagnostics_trail,
+            diagnostics::diagnostics_record,
+            diagnostics::diagnostics_pending,
+            diagnostics::diagnostics_discard,
             files::pick_files,
             files::share_file,
             files::stage_preview,
@@ -110,6 +131,10 @@ fn main() {
             screen::screen_start,
             screen::screen_stop,
             screen::screen_watched,
+            stream::stream_encoders,
+            stream::stream_offer,
+            stream::stream_answer,
+            stream::stream_close,
             toast::toast_push,
             toast::toast_take,
             toast::toast_layout,

@@ -80,6 +80,10 @@
     }
   }
 
+  function watchHint(peerId: string, name: string): string {
+    return t(groupCall.lockedBy(peerId) ? "screen.locked" : "screen.watch", { name });
+  }
+
   function openMenu(event: MouseEvent, user: User) {
     event.preventDefault();
     menu = { user, x: event.clientX, y: event.clientY };
@@ -173,9 +177,9 @@
               class="group-call__adjust"
               aria-haspopup="dialog"
               aria-label={person.live
-                ? t("screen.watch", { name: person.user.username })
+                ? watchHint(person.id, person.user.username)
                 : t("call.userVolume", { name: person.user.username })}
-              data-tooltip={person.live ? t("screen.watch", { name: person.user.username }) : undefined}
+              data-tooltip={person.live ? watchHint(person.id, person.user.username) : undefined}
               class:group-call__adjust--live={person.live}
               onclick={() => person.live && groupCall.watch(person.id)}
               oncontextmenu={(event) => openMenu(event, person.user)}
@@ -228,6 +232,7 @@
           name={sharer.user.username}
           width={previewWidth(previewCount)}
           disabled={groupCall.joining}
+          locked={!!call && groupCall.lockedBy(sharer.id)}
           onwatch={() => watchSharer(sharer.id)}
         />
       {/each}
@@ -347,6 +352,7 @@
 <style>
   .group-call {
     position: relative;
+    max-height: calc(100% - 200px);
     flex: none;
     justify-content: center;
     padding: 24px var(--page-gutter);

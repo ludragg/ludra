@@ -79,6 +79,10 @@
   const tileGap = 32;
   const tileRoom = 16;
 
+  function watchHint(name: string): string {
+    return t(calls.peerLocked ? "screen.locked" : "screen.watch", { name });
+  }
+
   let peopleWidth = $state(0);
   let peopleHeight = $state(0);
 
@@ -114,8 +118,8 @@
       <button
         class="call-panel__adjust"
         aria-haspopup="dialog"
-        aria-label={live ? t("screen.watch", { name: user.username }) : t("call.userVolume", { name: user.username })}
-        data-tooltip={live ? t("screen.watch", { name: user.username }) : undefined}
+        aria-label={live ? watchHint(user.username) : t("call.userVolume", { name: user.username })}
+        data-tooltip={live ? watchHint(user.username) : undefined}
         class:call-panel__adjust--live={live}
         onclick={() => live && calls.watch()}
         oncontextmenu={(event) => openMenu(event, user)}
@@ -260,6 +264,7 @@
               image={calls.peerPreview}
               name={call.peer.username}
               width={previewWidth(previewCount)}
+              locked={calls.peerLocked}
               onwatch={() => calls.watch()}
             />
           {/if}
@@ -347,6 +352,7 @@
 <style>
   .call-panel {
     position: relative;
+    max-height: calc(100% - 200px);
     flex: none;
     justify-content: center;
     padding: 28px var(--page-gutter) 24px;

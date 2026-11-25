@@ -41,7 +41,7 @@
 
   $effect(() => {
     void transfer?.state;
-    void files.mediaPath(message.id).then((path) => (local = path));
+    void files.mediaPath(message).then((path) => (local = path));
   });
 
   $effect(() => {

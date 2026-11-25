@@ -12,7 +12,7 @@ function reloading(event: KeyboardEvent): boolean {
 }
 
 function blocked(event: KeyboardEvent): boolean {
-  if (blockedKeys.has(event.key)) {
+  if (blockedKeys.has(event.key) || (event.shiftKey && event.key === "Escape")) {
     return true;
   }
   if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {

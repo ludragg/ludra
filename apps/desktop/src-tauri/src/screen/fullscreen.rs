@@ -11,6 +11,8 @@ use windows_capture::capture::CaptureControl;
 use windows_capture::monitor::Monitor;
 use windows_capture::window::Window;
 
+use crate::diagnostics::{self, Level};
+
 use super::begin;
 use super::capture::{Capture, Flags};
 use super::sources::Target;
@@ -95,7 +97,12 @@ pub fn watch(capturing: Arc<Capturing>, window: Window, flags: Flags) {
                         *guard = Some(control);
                         on_monitor = false;
                     }
-                    Err(_) => {
+                    Err(error) => {
+                        diagnostics::report(
+                            Level::Error,
+                            "capture",
+                            format_args!("could not restart the capture: {error}"),
+                        );
                         drop(guard);
                         let _ = flags.app.emit("screen-ended", ());
                         return;

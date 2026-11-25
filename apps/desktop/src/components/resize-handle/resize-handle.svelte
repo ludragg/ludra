@@ -15,7 +15,7 @@
   }
 
   function current(handle: HTMLElement): number {
-    return preferences.values[setting] || handle.parentElement?.getBoundingClientRect().height || minimum;
+    return handle.parentElement?.getBoundingClientRect().height || preferences.values[setting] || minimum;
   }
 
   function onpointerdown(event: PointerEvent) {

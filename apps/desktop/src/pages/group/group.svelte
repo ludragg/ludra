@@ -38,6 +38,7 @@
 <style>
   .group {
     min-height: 0;
+    overflow: clip;
     flex-grow: 1;
     display: flex;
   }

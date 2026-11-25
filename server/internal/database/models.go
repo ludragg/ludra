@@ -30,6 +30,20 @@ type Conversation struct {
 	Avatar    string
 }
 
+type DiagnosticReport struct {
+	ID          int64
+	UserID      string
+	ReceivedAt  time.Time
+	OccurredAt  time.Time
+	Level       string
+	Area        string
+	Message     string
+	Detail      string
+	Occurrences int32
+	AppVersion  string
+	System      string
+}
+
 type FriendRequest struct {
 	SenderID    string
 	RecipientID string

@@ -15,6 +15,7 @@ import (
 
 	"ludra/internal/account"
 	"ludra/internal/chat"
+	"ludra/internal/diagnostics"
 	"ludra/internal/friends"
 	"ludra/internal/gifs"
 	"ludra/internal/protocol"
@@ -23,20 +24,21 @@ import (
 )
 
 type Gateway struct {
-	chat     *chat.Service
-	friends  *friends.Service
-	account  *account.Service
-	relay    *voice.Relay
-	calls    *calls
-	rooms    *rooms
-	voice    *sync.Mutex
-	origins  []string
-	hub      *hub
-	guard    *guard
-	proxies  []netip.Prefix
-	previews *unfurl.Fetcher
-	gifs     *gifs.Client
-	pending  *atomic.Int32
+	diagnostics *diagnostics.Service
+	chat        *chat.Service
+	friends     *friends.Service
+	account     *account.Service
+	relay       *voice.Relay
+	calls       *calls
+	rooms       *rooms
+	voice       *sync.Mutex
+	origins     []string
+	hub         *hub
+	guard       *guard
+	proxies     []netip.Prefix
+	previews    *unfurl.Fetcher
+	gifs        *gifs.Client
+	pending     *atomic.Int32
 }
 
 func NewGateway(
@@ -46,6 +48,7 @@ func NewGateway(
 	relay *voice.Relay,
 	previews *unfurl.Fetcher,
 	gifs *gifs.Client,
+	diagnostics *diagnostics.Service,
 	origins []string,
 	proxies []netip.Prefix,
 ) *Gateway {
@@ -89,20 +92,21 @@ func NewGateway(
 	}
 
 	return &Gateway{
-		chat:     chat,
-		friends:  friends,
-		account:  account,
-		relay:    relay,
-		calls:    newCalls(hub, finish),
-		rooms:    newRooms(finishRoom),
-		voice:    &sync.Mutex{},
-		origins:  origins,
-		proxies:  proxies,
-		hub:      hub,
-		guard:    newGuard(),
-		previews: previews,
-		gifs:     gifs,
-		pending:  pending,
+		diagnostics: diagnostics,
+		chat:        chat,
+		friends:     friends,
+		account:     account,
+		relay:       relay,
+		calls:       newCalls(hub, finish),
+		rooms:       newRooms(finishRoom),
+		voice:       &sync.Mutex{},
+		origins:     origins,
+		proxies:     proxies,
+		hub:         hub,
+		guard:       newGuard(),
+		previews:    previews,
+		gifs:        gifs,
+		pending:     pending,
 	}
 }
 
@@ -135,20 +139,21 @@ func (g *Gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadLimit(maxFrameSize)
 
 	s := &session{
-		conn:     conn,
-		hub:      g.hub,
-		guard:    g.guard,
-		chat:     g.chat,
-		friends:  g.friends,
-		account:  g.account,
-		relay:    g.relay,
-		calls:    g.calls,
-		rooms:    g.rooms,
-		voice:    g.voice,
-		ip:       ip,
-		previews: g.previews,
-		gifs:     g.gifs,
-		send:     make(chan []byte, sendBuffer),
+		diagnostics: g.diagnostics,
+		conn:        conn,
+		hub:         g.hub,
+		guard:       g.guard,
+		chat:        g.chat,
+		friends:     g.friends,
+		account:     g.account,
+		relay:       g.relay,
+		calls:       g.calls,
+		rooms:       g.rooms,
+		voice:       g.voice,
+		ip:          ip,
+		previews:    g.previews,
+		gifs:        g.gifs,
+		send:        make(chan []byte, sendBuffer),
 	}
 	s.run(r.Context())
 }

@@ -5,10 +5,16 @@ use webview2_com::Microsoft::Web::WebView2::Win32::{
     COREWEBVIEW2_PERMISSION_KIND_AUTOPLAY, COREWEBVIEW2_PERMISSION_KIND_CAMERA,
     COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ, COREWEBVIEW2_PERMISSION_KIND_MICROPHONE,
     COREWEBVIEW2_PERMISSION_KIND_NOTIFICATIONS, COREWEBVIEW2_PERMISSION_STATE_ALLOW,
-    ICoreWebView2_13, ICoreWebView2Profile2, ICoreWebView2Profile4,
+    COREWEBVIEW2_PROCESS_FAILED_KIND, ICoreWebView2_13, ICoreWebView2Profile2,
+    ICoreWebView2Profile4, ICoreWebView2Settings3,
 };
-use webview2_com::{ClearBrowsingDataCompletedHandler, SetPermissionStateCompletedHandler};
+use webview2_com::{
+    ClearBrowsingDataCompletedHandler, ProcessFailedEventHandler,
+    SetPermissionStateCompletedHandler,
+};
 use windows::core::{HSTRING, Interface};
+
+use crate::diagnostics::{self, Level};
 
 const GRANTED: [COREWEBVIEW2_PERMISSION_KIND; 5] = [
     COREWEBVIEW2_PERMISSION_KIND_MICROPHONE,
@@ -35,10 +41,46 @@ pub fn permission<R: Runtime>(_: Webview<R>, kind: PermissionKind) -> Permission
     }
 }
 
+pub fn disable_browser_keys<R: Runtime>(webview: &Webview<R>) {
+    let _ = webview.with_webview(|platform| unsafe {
+        let settings = platform
+            .controller()
+            .CoreWebView2()
+            .and_then(|webview| webview.Settings())
+            .and_then(|settings| settings.cast::<ICoreWebView2Settings3>());
+        if let Ok(settings) = settings {
+            let _ = settings.SetAreBrowserAcceleratorKeysEnabled(false);
+        }
+    });
+}
+
 pub fn setup<R: Runtime, M: Manager<R>>(manager: &M) {
     if let Some(window) = manager.get_webview_window("main") {
         save_permissions(&window);
+        watch_failures(&window);
     }
+}
+
+fn watch_failures<R: Runtime>(window: &WebviewWindow<R>) {
+    let _ = window.with_webview(|platform| unsafe {
+        let Ok(webview) = platform.controller().CoreWebView2() else {
+            return;
+        };
+        let handler = ProcessFailedEventHandler::create(Box::new(|_, arguments| {
+            let mut kind = COREWEBVIEW2_PROCESS_FAILED_KIND::default();
+            if let Some(arguments) = arguments {
+                let _ = arguments.ProcessFailedKind(&mut kind);
+            }
+            diagnostics::report(
+                Level::Crash,
+                "webview",
+                format_args!("a webview process failed, kind {}", kind.0),
+            );
+            Ok(())
+        }));
+        let mut token = 0;
+        let _ = webview.add_ProcessFailed(&handler, &mut token);
+    });
 }
 
 #[tauri::command]

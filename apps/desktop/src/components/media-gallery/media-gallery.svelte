@@ -19,7 +19,7 @@
   $effect(() => {
     const id = first.id;
     void files.transfers[id]?.state;
-    void files.mediaPath(id).then((path) => {
+    void files.mediaPath(first).then((path) => {
       if (id === first.id) {
         local = path;
       }
