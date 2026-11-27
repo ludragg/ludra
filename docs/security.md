@@ -24,8 +24,14 @@ the WebView2 profile.
   order, so a logout can't be overtaken by an earlier save.
 
 **Migration.** The first read after the update finds the token an older version left in localStorage, saves it to
-Credential Manager and removes it from localStorage. Nobody gets signed out. If Credential Manager can't be read, the
-app keeps using the old token and reports a warning. Reports never include the token.
+Credential Manager and removes it from localStorage. Nobody gets signed out. localStorage is only cleared after
+Credential Manager has saved the token: if Credential Manager can't be read or written, the app keeps the token in
+localStorage, as older versions did, and moves it on a later start. Failures are not reported anywhere.
+
+**Uninstalling.** The token isn't in the app's data folder, so deleting that folder doesn't remove it. When the user
+chooses to delete the app's data, the uninstaller's NSIS hook must also run
+`cmdkey /delete:app.ludra.desktop/session`. Otherwise the user stays signed in after reinstalling, and the token stays
+on the PC.
 
 **Ludra Dev panel.** Each test account runs with its own `WEBVIEW2_USER_DATA_FOLDER`. When that variable is set, the
 credential name gets the folder appended (`app.ludra.dev/session@<folder>`), so test accounts keep separate sessions,

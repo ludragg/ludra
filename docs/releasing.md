@@ -26,7 +26,10 @@ itself. That's why [`.github/workflows/release.yml`](../.github/workflows/releas
 
 ### `publish`
 
-1. Downloads the installer and checks it against the SHA-256 from `build`.
+1. Downloads the installer and checks its SHA-256 against the one `build` reported. This only catches an artifact that
+   changed between the two jobs. A compromised `build` job can still produce an installer with a backdoor, and
+   `publish` will sign it. What the split protects is the key itself: no code running in `build` can read it, so it
+   can't be stolen and reused outside a release.
 2. Installs the signer: `scripts/signer-lock.mjs` writes a `package.json` and `package-lock.json` holding only
    `@tauri-apps/cli` and its native packages, copied from the app's lockfile, and `npm ci --ignore-scripts` installs them.
    npm refuses a tampered CLI package (`EINTEGRITY`). A tampered native package is optional, so npm skips it instead, and
@@ -56,7 +59,8 @@ moves.
   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: its password. If this secret is missing, the password is empty, which is what
     the release used before. Set it once the key has a password (see below).
 
-Keep the signing secrets in the environment only, never as repository secrets, or the `build` job could read them.
+Keep the signing secrets in the environment only, never as repository secrets, so only jobs that run in the `release`
+environment can use them.
 
 ### Repository variable (Settings › Secrets and variables › Actions › Variables)
 
@@ -75,9 +79,21 @@ starts a release.
    `apps/desktop/src/changelog.json` in Portuguese and English. The release notes and the in-app "What's new" come
    from that entry, and `publish` fails if the tag's version has none.
 2. Merge to `main`, then tag that commit: `git tag v0.5.1 && git push origin v0.5.1`.
-3. Wait for `build`, then approve the `publish` job when it asks.
+3. Wait for `build`. With required reviewers on, approve the `publish` job when it asks.
 4. Check the draft release: it has `ludra-installer.exe` and `latest.json`, and no `.sig` file.
-5. Publish the draft.
+5. Publish the draft **as a pre-release**: tick "Set as a pre-release" before publishing. While Ludra is in early
+   development, every release is a pre-release. The update feed still serves pre-releases, so installed apps update
+   as usual.
+
+## Authenticode signing (planned)
+
+Code signing for Windows (for example through SignPath) has to sign `ludra.exe` **before** NSIS packages it, and then
+sign the installer. With the current split, `build` packages the installer, so that will need one of:
+
+- signing `ludra.exe` in the middle of `build`, through the signing service, without a key on the runner;
+- or moving the NSIS packaging into a job that runs after the signing.
+
+Pick one when adding Authenticode. The updater signature in `publish` stays as it is.
 
 ## Verifying a release by hand
 
