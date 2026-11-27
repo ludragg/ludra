@@ -48,7 +48,8 @@ Add the area when it helps: `feat(server): ...`, `fix(desktop): ...`.
 
 - Code, commit messages and docs are in English. The app UI is in Portuguese and English, so add new strings to both `apps/desktop/src/i18n/pt.ts` and `en.ts`.
 - No comments in the code. If something needs explaining, make the code clearer instead.
-- Keep it light. Think twice before adding a dependency.
+- Keep it light. Think twice before adding a dependency. CI installs npm packages with `--ignore-scripts`, so a package
+  that needs an install script won't work there. See [`docs/security.md`](docs/security.md).
 - Components live in `apps/desktop/src/components/<name>/<name>.svelte` and use BEM class names.
 - UI changes start in the design mockup. Ask a maintainer for access before changing a screen.
 
