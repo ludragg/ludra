@@ -165,7 +165,7 @@ class ChatStore {
 
   async logout() {
     const client = this.#client;
-    clearSessionToken();
+    void clearSessionToken();
     this.#reset("");
 
     if (client) {
@@ -175,14 +175,14 @@ class ChatStore {
   }
 
   async #restore() {
-    const token = readSessionToken();
+    const token = await readSessionToken();
 
     if (token) {
       try {
         await this.#authenticate((client) => client.resume(token));
       } catch (error) {
         if (error instanceof ServerError) {
-          clearSessionToken();
+          await clearSessionToken();
         } else {
           this.notice = t("common.connectionFailed");
         }
@@ -230,7 +230,7 @@ class ChatStore {
       client.listFriends(),
       client.listBlocked(),
     ]);
-    saveSessionToken(account.token);
+    void saveSessionToken(account.token);
 
     client.onMessage = (message) => this.#receive(message);
     client.onMessageUpdated = (message) => this.#update(message);
@@ -292,7 +292,11 @@ class ChatStore {
   }
 
   async #reconnect() {
-    const token = readSessionToken();
+    const started = this.#generation;
+    const token = await readSessionToken();
+    if (started !== this.#generation) {
+      return;
+    }
     if (!token) {
       this.#reset(t("common.connectionLost"));
       return;
@@ -317,7 +321,7 @@ class ChatStore {
           return;
         }
         if (error instanceof ServerError && error.code === ErrorCode.UNAUTHENTICATED) {
-          clearSessionToken();
+          await clearSessionToken();
           this.#reset(t("common.connectionLost"));
           return;
         }
