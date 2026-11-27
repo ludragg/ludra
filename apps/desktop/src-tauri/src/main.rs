@@ -10,6 +10,7 @@ mod files;
 mod registry;
 #[cfg(windows)]
 mod screen;
+mod session;
 #[cfg(windows)]
 mod stream;
 mod toast;
@@ -131,6 +132,9 @@ fn main() {
             screen::screen_start,
             screen::screen_stop,
             screen::screen_watched,
+            session::session_token_read,
+            session::session_token_save,
+            session::session_token_clear,
             stream::stream_encoders,
             stream::stream_offer,
             stream::stream_answer,
