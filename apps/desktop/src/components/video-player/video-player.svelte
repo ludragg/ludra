@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import MediaHint from "@/components/media-hint/media-hint.svelte";
   import { clock } from "@/helpers/time";
   import { t } from "@/i18n";
@@ -11,7 +12,7 @@
     pinned = false,
     autoplay = false,
     onrequest,
-    onreveal,
+    onfolder = null,
   }: {
     source: string | null;
     caption: string;
@@ -20,7 +21,7 @@
     pinned?: boolean;
     autoplay?: boolean;
     onrequest?: () => void;
-    onreveal?: () => void;
+    onfolder?: (() => void) | null;
   } = $props();
 
   const hideAfter = 2500;
@@ -29,6 +30,11 @@
   let video = $state<HTMLVideoElement>();
   let started = $state(false);
   let failed = $state(false);
+
+  $effect(() => {
+    void source;
+    failed = false;
+  });
   let playing = $state(false);
   let current = $state(0);
   let duration = $state(0);
@@ -39,6 +45,8 @@
   let fullscreen = $state(false);
   let ratio = $state("16 / 9");
   let timer = 0;
+
+  const revealed = $derived(pinned || (hovered && !idle));
 
   $effect(() => {
     if (source && autoplay) {
@@ -244,8 +252,8 @@
   {:else if failed}
     <div class="video-player__message">
       <span>{t("chat.videoUnsupported")}</span>
-      {#if onreveal}
-        <button type="button" class="video-player__link" onclick={onreveal}>{t("chat.openFolder")}</button>
+      {#if onfolder}
+        <button type="button" class="video-player__link" onclick={onfolder}>{t("chat.openFolder")}</button>
       {/if}
     </div>
   {:else}
@@ -276,7 +284,12 @@
     {/if}
   {/if}
   {#if name}
-    <MediaHint {name} {detail} visible={pinned || (hovered && !idle)} />
+    <MediaHint {name} {detail} visible={revealed} />
+  {/if}
+  {#if onfolder}
+    <span class="video-player__folder" class:video-player__folder--visible={revealed}>
+      <FolderButton variant="overlay" onclick={onfolder} />
+    </span>
   {/if}
 </div>
 
@@ -415,6 +428,22 @@
   .video-player__range--volume:focus-visible {
     width: 64px;
     margin-left: 4px;
+    opacity: 1;
+  }
+
+  .video-player__folder {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    opacity: 0;
+    transition: opacity ease 0.15s;
+  }
+
+  .video-player__folder--visible,
+  .video-player__folder:focus-within {
     opacity: 1;
   }
 

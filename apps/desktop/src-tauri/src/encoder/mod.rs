@@ -21,8 +21,6 @@ use windows::Win32::System::Threading::{
 };
 use windows::core::Interface;
 
-use crate::diagnostics;
-
 pub use guard::set_directory as set_guard_directory;
 pub use profile::{Backend, Mode};
 
@@ -151,13 +149,6 @@ impl Drop for Encoder {
     }
 }
 
-fn unavailable(backend: Backend, error: &str) {
-    diagnostics::trail(
-        "encoder",
-        format_args!("{} did not start: {error}", backend.id()),
-    );
-}
-
 enum Direct {
     Amf(amf::Amf),
     Nvenc(nvenc::Nvenc),
@@ -168,16 +159,12 @@ impl Direct {
         let wanted = |backend| config.backend.is_none_or(|chosen| chosen == backend);
         let amd = || {
             let guard = Guard::arm(Backend::Amf.id())?;
-            let encoder = amf::Amf::open(device, config)
-                .map_err(|error| unavailable(Backend::Amf, &error))
-                .ok()?;
+            let encoder = amf::Amf::open(device, config).ok()?;
             Some((Self::Amf(encoder), guard, amf::NAME))
         };
         let nvidia = || {
             let guard = Guard::arm(Backend::Nvenc.id())?;
-            let encoder = nvenc::Nvenc::open(device, config)
-                .map_err(|error| unavailable(Backend::Nvenc, &error))
-                .ok()?;
+            let encoder = nvenc::Nvenc::open(device, config).ok()?;
             Some((Self::Nvenc(encoder), guard, nvenc::NAME))
         };
         wanted(Backend::Amf)

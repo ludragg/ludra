@@ -28,7 +28,7 @@ func (q *Queries) CloseStaleCalls(ctx context.Context) error {
 const createCallMessage = `-- name: CreateCallMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, call_outcome, call_duration)
 VALUES ($1, $2, '', 'call', 'ongoing', 0)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type CreateCallMessageParams struct {
@@ -63,6 +63,7 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -70,7 +71,7 @@ func (q *Queries) CreateCallMessage(ctx context.Context, arg CreateCallMessagePa
 const createEventMessage = `-- name: CreateEventMessage :one
 INSERT INTO messages (conversation_id, sender_id, content, kind, event, target_id)
 VALUES ($1, $2, $3, 'event', $4, $5)
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type CreateEventMessageParams struct {
@@ -114,6 +115,7 @@ func (q *Queries) CreateEventMessage(ctx context.Context, arg CreateEventMessage
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -127,7 +129,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type CreateMessageParams struct {
@@ -175,6 +177,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -193,7 +196,7 @@ const editMessage = `-- name: EditMessage :one
 UPDATE messages SET content = $1, edited_at = now(),
     preview_url = NULL, preview_site = NULL, preview_title = NULL, preview_description = NULL
 WHERE id = $2 AND kind = 'text'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type EditMessageParams struct {
@@ -228,6 +231,7 @@ func (q *Queries) EditMessage(ctx context.Context, arg EditMessageParams) (Messa
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -235,7 +239,7 @@ func (q *Queries) EditMessage(ctx context.Context, arg EditMessageParams) (Messa
 const finishCallMessage = `-- name: FinishCallMessage :one
 UPDATE messages SET call_outcome = $1, call_duration = $2
 WHERE id = $3 AND kind = 'call'
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type FinishCallMessageParams struct {
@@ -271,6 +275,7 @@ func (q *Queries) FinishCallMessage(ctx context.Context, arg FinishCallMessagePa
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -335,7 +340,7 @@ func (q *Queries) GetReplyTarget(ctx context.Context, id string) (GetReplyTarget
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, m.edited_at, m.preview_url, m.preview_site, m.preview_title, m.preview_description, m.file_name, m.file_size, m.file_mime, m.file_direct, m.reply_to, m.reply_sender_id, m.reply_kind, m.reply_excerpt, sender.username AS sender_name, target.username AS target_name,
+SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.kind, m.call_outcome, m.call_duration, m.event, m.target_id, m.edited_at, m.preview_url, m.preview_site, m.preview_title, m.preview_description, m.file_name, m.file_size, m.file_mime, m.file_direct, m.reply_to, m.reply_sender_id, m.reply_kind, m.reply_excerpt, m.file_censored, sender.username AS sender_name, target.username AS target_name,
        photo.id AS photo_id, photo.width AS photo_width, photo.height AS photo_height, photo.expired AS photo_expired,
        thumb.id AS thumb_id, thumb.width AS thumb_width, thumb.height AS thumb_height,
        stored.id AS stored_id, stored.expired AS stored_expired
@@ -405,6 +410,7 @@ func (q *Queries) ListMessages(ctx context.Context, arg ListMessagesParams) ([]L
 			&i.Message.ReplySenderID,
 			&i.Message.ReplyKind,
 			&i.Message.ReplyExcerpt,
+			&i.Message.FileCensored,
 			&i.SenderName,
 			&i.TargetName,
 			&i.PhotoID,
@@ -434,7 +440,7 @@ UPDATE messages SET
     reply_kind = $3::text,
     reply_excerpt = $4::text
 WHERE id = $5::uuid
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type SetMessageReplyParams struct {
@@ -478,6 +484,7 @@ func (q *Queries) SetMessageReply(ctx context.Context, arg SetMessageReplyParams
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }

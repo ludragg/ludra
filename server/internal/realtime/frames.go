@@ -129,10 +129,11 @@ func withExtraFiles(message *protocol.Message, extras []database.MessageFile) {
 	message.Files = []*protocol.FileRef{message.File}
 	for _, extra := range extras {
 		message.Files = append(message.Files, &protocol.FileRef{
-			Name:   extra.Name,
-			Size:   uint64(extra.Size),
-			Mime:   extra.Mime,
-			Direct: true,
+			Name:     extra.Name,
+			Size:     uint64(extra.Size),
+			Mime:     extra.Mime,
+			Direct:   true,
+			Censored: extra.Censored,
 		})
 	}
 }
@@ -394,9 +395,10 @@ func toMessage(message database.Message) *protocol.Message {
 	if message.Kind == "file" {
 		result.Kind = protocol.MessageKind_MESSAGE_KIND_FILE
 		result.File = &protocol.FileRef{
-			Name:   text(message.FileName),
-			Mime:   text(message.FileMime),
-			Direct: message.FileDirect,
+			Name:     text(message.FileName),
+			Mime:     text(message.FileMime),
+			Direct:   message.FileDirect,
+			Censored: message.FileCensored,
 		}
 		if message.FileSize != nil {
 			result.File.Size = uint64(*message.FileSize)

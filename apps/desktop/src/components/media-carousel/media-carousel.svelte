@@ -1,10 +1,13 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
   import { untrack } from "svelte";
+  import CensoredVideo from "@/components/censored-video/censored-video.svelte";
   import CarouselControls from "@/components/carousel-controls/carousel-controls.svelte";
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
   import VideoPlayer from "@/components/video-player/video-player.svelte";
   import { formatSize, playableTypes } from "@/helpers/files";
+  import { rendition, Thumbnail } from "@/helpers/rendition.svelte";
   import { t } from "@/i18n";
   import type { Message } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
@@ -14,18 +17,29 @@
     items,
     mine,
     start = 0,
+    revealed = null,
     onclose,
-  }: { items: Message[]; mine: boolean; start?: number; onclose: () => void } = $props();
+  }: {
+    items: Message[];
+    mine: boolean;
+    start?: number;
+    revealed?: string | null;
+    onclose: () => void;
+  } = $props();
 
   let index = $state(untrack(() => start));
   let local = $state<string | null>(null);
+  let uncensored = $state(untrack(() => revealed));
 
   const item = $derived(items[index]);
   const file = $derived(item.file!);
+  const onfolder = $derived(local ? () => void openFolder() : null);
+  const censored = $derived(file.censored && uncensored !== item.id);
   const video = $derived(playableTypes.has(file.mime));
   const transfer = $derived(files.transfers[item.id]);
   const busy = $derived(transfer?.state === "waiting" || transfer?.state === "receiving");
   const source = $derived(local ? convertFileSrc(local) : null);
+  const thumbnail = new Thumbnail(() => (video ? null : local));
   const downloadable = $derived(!mine && chat.isFriend(item.senderId));
   const position = $derived(`${index + 1} / ${items.length}`);
   const percent = $derived(
@@ -43,11 +57,21 @@
     });
   });
 
+  async function openFolder() {
+    const current = item;
+    const path = await files.openFolder(current);
+    if (current.id === item.id) {
+      local = path;
+    }
+  }
+
   function previous() {
+    uncensored = null;
     index = (index + items.length - 1) % items.length;
   }
 
   function next() {
+    uncensored = null;
     index = (index + 1) % items.length;
   }
 
@@ -67,9 +91,22 @@
 
 <svelte:window onkeydown={keys} />
 
-{#if source && !video}
+{#if local && source && !video}
+  {@const path = local}
   {#key item.id}
-    <ImageViewer load={async () => source} label={file.name} {position} onprevious={previous} onnext={next} {onclose} />
+    <ImageViewer
+      load={() => rendition(path, true)}
+      preview={thumbnail.url}
+      original={source}
+      {onfolder}
+      {censored}
+      onuncensor={() => (uncensored = item.id)}
+      label={file.name}
+      {position}
+      onprevious={previous}
+      onnext={next}
+      {onclose}
+    />
   {/key}
 {:else}
   <div class="media-carousel" role="dialog" aria-modal="true" aria-label={file.name}>
@@ -78,7 +115,21 @@
       {#key item.id}
         {#if source && video}
           <div class="media-carousel__video">
-            <VideoPlayer {source} caption="" name={file.name} detail={formatSize(Number(file.size))} autoplay />
+            {#if onfolder && censored}
+              <FolderButton variant="overlay" onclick={onfolder} />
+            {/if}
+            {#if censored}
+              <CensoredVideo {source} onuncensor={() => (uncensored = item.id)} />
+            {:else}
+              <VideoPlayer
+                {source}
+                caption=""
+                name={file.name}
+                detail={formatSize(Number(file.size))}
+                autoplay
+                {onfolder}
+              />
+            {/if}
           </div>
         {:else}
           <div class="media-carousel__pending">
@@ -142,6 +193,7 @@
   }
 
   .media-carousel__video {
+    position: relative;
     width: min(960px, calc(100vw - 192px));
   }
 

@@ -3,8 +3,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
-use crate::diagnostics::{self, Level};
-
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 static DIRECTORY: OnceLock<PathBuf> = OnceLock::new();
@@ -31,11 +29,6 @@ impl Guard {
         let crashed_before = !armed.contains(backend)
             && fs::read_to_string(&marker).is_ok_and(|seen| seen == VERSION);
         if crashed_before {
-            diagnostics::report(
-                Level::Crash,
-                "encoder",
-                format_args!("Ludra closed while the {backend} encoder was starting"),
-            );
             return None;
         }
         let _ = fs::create_dir_all(directory);

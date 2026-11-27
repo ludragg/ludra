@@ -9,7 +9,6 @@ use windows::Win32::Graphics::Direct3D11::{ID3D11Device, ID3D11Texture2D};
 use super::lane::{Lane, lock};
 use super::quality::Quality;
 use super::viewers::{LANES, MAIN_LANE, SLOW_LANE, Viewer, pace_setter, rebalance};
-use crate::diagnostics::{self, Level};
 use crate::encoder::{Backend, Config, EncodedFrame, Encoder, Mode, Output};
 
 const REBALANCE_GAP: Duration = Duration::from_secs(1);
@@ -130,11 +129,6 @@ impl Publisher {
 
     pub fn fail(&self, reason: String) {
         if !self.broken.swap(true, Ordering::AcqRel) {
-            diagnostics::report(
-                Level::Warning,
-                "stream",
-                format_args!("native streaming disabled: {reason}"),
-            );
             (self.on_broken)(reason);
         }
     }

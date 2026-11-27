@@ -1,4 +1,3 @@
-import { report } from "@/services/diagnostics";
 import { invoke } from "@tauri-apps/api/core";
 import { autoDownloads, fileKey, isVoice } from "@/helpers/files";
 import { FileSignalKind, SignalKind, type FileSignal, type Message } from "@/protocol/ludra/v1/models_pb";
@@ -191,6 +190,19 @@ class FileStore {
     void invoke("reveal_file", { id: messageId }).catch(() => undefined);
   }
 
+  async openFolder(message: Message): Promise<string | null> {
+    this.reveal(message.id);
+    const path = await this.mediaPath(message);
+    if (!path && this.transfers[message.id]?.state === "done") {
+      delete this.transfers[message.id];
+    }
+    return path;
+  }
+
+  downloaded(id: string): Promise<boolean> {
+    return invoke<boolean>("is_downloaded", { id }).catch(() => false);
+  }
+
   mediaPath(message: Message): Promise<string | null> {
     const size = Number(message.file?.size ?? 0);
     return invoke<string | null>("media_path", { id: message.id, size }).catch(() => null);
@@ -200,12 +212,12 @@ class FileStore {
     return invoke<Shared | null>("shared_file", { id: messageId }).catch(() => null);
   }
 
-  async saveBytes(name: string, data: Uint8Array): Promise<string | null> {
+  async saveBytes(name: string, data: Uint8Array, key: string): Promise<string | null> {
     const path = await invoke<string | null>("save_target", { name });
     if (!path) {
       return null;
     }
-    const download = await invoke<number>("begin_download", { path });
+    const download = await invoke<number>("begin_download", { path, key });
     try {
       await write(download, data, 0);
       return await invoke<string>("finish_download", { id: download });
@@ -340,9 +352,6 @@ class FileStore {
       await Promise.all(segments.map((_, index) => this.#fetchSegment(message, run, id, segments, index)));
       this.#done(message.id, await invoke<string>("finish_download", { id }));
     } catch (cause) {
-      if (!run.byUser && !(cause instanceof ExpiredError)) {
-        report("warning", "files", "download failed", cause);
-      }
       run.canceled = true;
       for (const channel of run.channels) {
         channel.close();

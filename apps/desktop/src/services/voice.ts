@@ -3,11 +3,15 @@ import { Microphone } from "@/services/microphone";
 import { PeerLink } from "@/services/peer-link";
 import type { ScreenQuality } from "@/services/screen";
 
-export const speakingThreshold = 0.004;
+export const audibleLevel = 0.001;
+const speakingLevel = 0.004;
 export const speakingHold = 400;
 
 export function selfSpeaking(microphone: Microphone | null, muted: boolean): boolean {
-  return !!microphone && !muted && microphone.transmitting && microphone.level() > speakingThreshold;
+  if (!microphone || muted || !microphone.transmitting) {
+    return false;
+  }
+  return microphone.level() > Math.min(speakingLevel, Math.max(audibleLevel, microphone.threshold));
 }
 
 export class VoiceSession {
@@ -135,7 +139,7 @@ export class VoiceSession {
       if (selfSpeaking(this.#microphone, this.#muted)) {
         selfUntil = now + speakingHold;
       }
-      if ((this.#link?.level() ?? 0) > speakingThreshold) {
+      if ((this.#link?.level() ?? 0) > audibleLevel) {
         peerUntil = now + speakingHold;
       }
 

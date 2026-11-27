@@ -1,6 +1,7 @@
 <script lang="ts">
   import { convertFileSrc } from "@tauri-apps/api/core";
   import AudioPlayer from "@/components/audio-player/audio-player.svelte";
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import FileMedia from "@/components/file-media/file-media.svelte";
   import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
   import VoiceNote from "@/components/voice-note/voice-note.svelte";
@@ -13,6 +14,7 @@
     viewableTypes,
     voiceSeconds,
   } from "@/helpers/files";
+  import { rendition, Thumbnail } from "@/helpers/rendition.svelte";
   import { t } from "@/i18n";
   import type { Message } from "@/protocol/ludra/v1/models_pb";
   import { chat } from "@/stores/chat.svelte";
@@ -24,6 +26,8 @@
   let local = $state<string | null>(null);
   let wanted = $state(false);
   let viewing = $state(false);
+  let uncensored = $state<string | null>(null);
+  const onfolder = $derived(local ? () => void openFolder() : null);
 
   const file = $derived(message.file!);
   const size = $derived(Number(file.size));
@@ -38,6 +42,8 @@
   const voice = $derived(isVoice(file.mime));
   const listenable = $derived(!voice && listenableTypes.has(file.mime) && !expired && !friendsOnly);
   const source = $derived(local ? convertFileSrc(local) : null);
+  const thumbnail = new Thumbnail(() => (media === "image" ? local : null));
+  const censored = $derived(media !== null && file.censored && uncensored !== message.id);
 
   $effect(() => {
     void transfer?.state;
@@ -46,9 +52,24 @@
 
   $effect(() => {
     if (mine) {
-      void files.shared(message.id).then((shared) => (missing = shared === null || !shared.available));
+      void checkShared();
     }
   });
+
+  async function checkShared() {
+    const shared = await files.shared(message.id);
+    missing = shared === null || !shared.available;
+  }
+
+  async function openFolder() {
+    local = await files.openFolder(message);
+    if (!local) {
+      wanted = false;
+      if (mine) {
+        await checkShared();
+      }
+    }
+  }
 
   function request() {
     if (downloadable && !busy) {
@@ -135,24 +156,28 @@
     seed={message.id}
     caption={voiceCaption()}
     {wanted}
+    {onfolder}
     disabled={expired || friendsOnly}
     onrequest={listen}
   />
 {:else if inline && media}
   <FileMedia
     kind={media}
-    {source}
+    source={media === "image" ? thumbnail.url : source}
+    original={source}
+    {censored}
+    onuncensor={() => (uncensored = message.id)}
     name={file.name}
     detail={detail()}
     caption={caption()}
     {busy}
     progress={transfer?.state === "receiving" ? transfer.received / Math.max(1, transfer.total) : null}
-    disabled={!downloadable || busy}
+    disabled={!downloadable || busy || local !== null}
     {wanted}
     onrequest={request}
     oncancel={() => files.cancel(message.id)}
-    onreveal={() => files.reveal(message.id)}
     onview={() => (viewing = true)}
+    {onfolder}
   />
 {:else}
   <div class="file-card" class:file-card--faded={expired || friendsOnly}>
@@ -201,6 +226,9 @@
           {/if}
         </span>
       </span>
+      {#if onfolder && !busy}
+        <FolderButton variant="row" onclick={onfolder} />
+      {/if}
       {#if busy}
         <button
           type="button"
@@ -252,7 +280,7 @@
         caption={transfer?.state === "waiting" ? status() : ""}
         {wanted}
         onrequest={listen}
-        onreveal={() => files.reveal(message.id)}
+        onreveal={() => void openFolder()}
       />
     {/if}
     {#if transfer?.state === "receiving"}
@@ -266,9 +294,16 @@
   </div>
 {/if}
 
-{#if viewing && source}
-  {@const current = source}
-  <ImageViewer load={async () => current} label={file.name} onclose={() => (viewing = false)} />
+{#if viewing && local && source}
+  {@const path = local}
+  <ImageViewer
+    load={() => rendition(path, true)}
+    preview={thumbnail.url}
+    original={source}
+    {onfolder}
+    label={file.name}
+    onclose={() => (viewing = false)}
+  />
 {/if}
 
 <style>

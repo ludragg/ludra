@@ -22,14 +22,14 @@ pub use publisher::{Publisher, Selection};
 pub use quality::Quality;
 use support::Detected;
 
-use crate::diagnostics;
-
 const PEER_EVENT: &str = "stream-peer";
 const BROKEN_EVENT: &str = "stream-broken";
 const MAIN_WINDOW: &str = "main";
 
 fn trace(message: impl std::fmt::Display) {
-    diagnostics::trail("stream", message);
+    if cfg!(debug_assertions) {
+        eprintln!("stream: {message}");
+    }
 }
 
 #[derive(Default)]

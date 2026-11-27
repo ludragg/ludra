@@ -26,7 +26,6 @@ export type Preferences = {
   watchHeight: number;
   callHeight: number;
   directCalls: boolean;
-  errorReports: boolean;
   directDownloads: boolean;
   askDownloadLocation: boolean;
   autoDownload: boolean;
@@ -61,7 +60,6 @@ const defaults: Preferences = {
   watchHeight: 420,
   callHeight: 0,
   directCalls: true,
-  errorReports: true,
   directDownloads: true,
   askDownloadLocation: false,
   autoDownload: true,

@@ -10,9 +10,10 @@ import (
 )
 
 const addMessageFile = `-- name: AddMessageFile :one
-INSERT INTO message_files (message_id, position, name, size, mime)
-VALUES ($1::uuid, $2::smallint, $3::text, $4::bigint, $5::text)
-RETURNING message_id, position, name, size, mime
+INSERT INTO message_files (message_id, position, name, size, mime, censored)
+VALUES ($1::uuid, $2::smallint, $3::text, $4::bigint, $5::text,
+        $6::boolean)
+RETURNING message_id, position, name, size, mime, censored
 `
 
 type AddMessageFileParams struct {
@@ -21,6 +22,7 @@ type AddMessageFileParams struct {
 	Name      string
 	Size      int64
 	Mime      string
+	Censored  bool
 }
 
 func (q *Queries) AddMessageFile(ctx context.Context, arg AddMessageFileParams) (MessageFile, error) {
@@ -30,6 +32,7 @@ func (q *Queries) AddMessageFile(ctx context.Context, arg AddMessageFileParams) 
 		arg.Name,
 		arg.Size,
 		arg.Mime,
+		arg.Censored,
 	)
 	var i MessageFile
 	err := row.Scan(
@@ -38,6 +41,7 @@ func (q *Queries) AddMessageFile(ctx context.Context, arg AddMessageFileParams) 
 		&i.Name,
 		&i.Size,
 		&i.Mime,
+		&i.Censored,
 	)
 	return i, err
 }
@@ -46,7 +50,7 @@ const clearPreview = `-- name: ClearPreview :one
 UPDATE messages
 SET preview_url = NULL, preview_site = NULL, preview_title = NULL, preview_description = NULL
 WHERE id = $1
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 func (q *Queries) ClearPreview(ctx context.Context, id string) (Message, error) {
@@ -76,6 +80,7 @@ func (q *Queries) ClearPreview(ctx context.Context, id string) (Message, error) 
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -97,15 +102,15 @@ func (q *Queries) CountRecentPhotos(ctx context.Context, userID string) (int32, 
 }
 
 const createFileMessage = `-- name: CreateFileMessage :one
-INSERT INTO messages (conversation_id, sender_id, content, kind, file_name, file_size, file_mime, file_direct)
+INSERT INTO messages (conversation_id, sender_id, content, kind, file_name, file_size, file_mime, file_direct, file_censored)
 SELECT $1::uuid, $2::uuid, $3::text, 'file', $4::text,
-       $5::bigint, $6::text, $7::boolean
+       $5::bigint, $6::text, $7::boolean, $8::boolean
 WHERE EXISTS (
     SELECT 1 FROM participants
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type CreateFileMessageParams struct {
@@ -116,6 +121,7 @@ type CreateFileMessageParams struct {
 	FileSize       int64
 	FileMime       string
 	FileDirect     bool
+	FileCensored   bool
 }
 
 func (q *Queries) CreateFileMessage(ctx context.Context, arg CreateFileMessageParams) (Message, error) {
@@ -127,6 +133,7 @@ func (q *Queries) CreateFileMessage(ctx context.Context, arg CreateFileMessagePa
 		arg.FileSize,
 		arg.FileMime,
 		arg.FileDirect,
+		arg.FileCensored,
 	)
 	var i Message
 	err := row.Scan(
@@ -153,6 +160,7 @@ func (q *Queries) CreateFileMessage(ctx context.Context, arg CreateFileMessagePa
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -165,7 +173,7 @@ WHERE EXISTS (
     WHERE conversation_id = $1::uuid
       AND user_id = $2::uuid
 )
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type CreateImageMessageParams struct {
@@ -200,6 +208,7 @@ func (q *Queries) CreateImageMessage(ctx context.Context, arg CreateImageMessage
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }
@@ -285,7 +294,7 @@ func (q *Queries) GetImage(ctx context.Context, arg GetImageParams) (GetImageRow
 }
 
 const listMessageFiles = `-- name: ListMessageFiles :many
-SELECT message_id, position, name, size, mime FROM message_files
+SELECT message_id, position, name, size, mime, censored FROM message_files
 WHERE message_id = ANY($1::uuid[])
 ORDER BY message_id, position
 `
@@ -305,6 +314,7 @@ func (q *Queries) ListMessageFiles(ctx context.Context, ids []string) ([]Message
 			&i.Name,
 			&i.Size,
 			&i.Mime,
+			&i.Censored,
 		); err != nil {
 			return nil, err
 		}
@@ -371,7 +381,7 @@ UPDATE messages
 SET preview_url = $1, preview_site = $2, preview_title = $3,
     preview_description = $4
 WHERE id = $5 AND kind = 'text' AND strpos(content, $6::text) > 0
-RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt
+RETURNING id, conversation_id, sender_id, content, created_at, kind, call_outcome, call_duration, event, target_id, edited_at, preview_url, preview_site, preview_title, preview_description, file_name, file_size, file_mime, file_direct, reply_to, reply_sender_id, reply_kind, reply_excerpt, file_censored
 `
 
 type SetPreviewParams struct {
@@ -417,6 +427,7 @@ func (q *Queries) SetPreview(ctx context.Context, arg SetPreviewParams) (Message
 		&i.ReplySenderID,
 		&i.ReplyKind,
 		&i.ReplyExcerpt,
+		&i.FileCensored,
 	)
 	return i, err
 }

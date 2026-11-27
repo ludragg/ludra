@@ -1,8 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import { trail } from "@/services/diagnostics";
-
 export type ScreenSource = {
   id: string;
   kind: "screen" | "window";
@@ -122,7 +120,6 @@ export class NativeScreen {
 
   setWatched(watched: boolean) {
     if (!this.#stopped) {
-      trail("stream", `capture: compatibility viewer=${watched}`);
       invoke("screen_watched", { watched }).catch(() => undefined);
     }
   }

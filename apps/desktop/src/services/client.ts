@@ -2,8 +2,7 @@ import { create, fromBinary, toBinary, type MessageInitShape } from "@bufbuild/p
 import { timestampMs } from "@bufbuild/protobuf/wkt";
 import { splitKey } from "@/helpers/files";
 import { t } from "@/i18n";
-import { ClientFrameSchema, type CodePurpose, type DiagnosticReportSchema } from "@/protocol/ludra/v1/client_pb";
-import { report } from "@/services/diagnostics";
+import { ClientFrameSchema, type CodePurpose } from "@/protocol/ludra/v1/client_pb";
 import {
   FileSignalKind,
   type Call,
@@ -45,8 +44,6 @@ export type Account = {
 export type SignIn = { account: Account } | { pendingEmail: string } | { twoFactorEmail: string };
 
 export class ServerError extends Error {
-  override name = "ServerError";
-
   constructor(
     readonly code: ErrorCode,
     message: string,
@@ -173,7 +170,7 @@ export class Client {
 
   async sendDirectFiles(
     conversationId: string,
-    files: { name: string; size: number; mime: string }[],
+    files: { name: string; size: number; mime: string; censored: boolean }[],
     content = "",
     replyToId = "",
   ): Promise<Message> {
@@ -186,7 +183,8 @@ export class Client {
           name: first.name,
           size: BigInt(first.size),
           mime: first.mime,
-          extra: extra.map(({ name, size, mime }) => ({ name, size: BigInt(size), mime })),
+          censored: first.censored,
+          extra: extra.map((file) => ({ ...file, size: BigInt(file.size) })),
           content,
           replyToId,
         },
@@ -407,10 +405,6 @@ export class Client {
     await this.#request({ case: "leaveGroupCall", value: { callId } }, "ack");
   }
 
-  async reportDiagnostics(reports: MessageInitShape<typeof DiagnosticReportSchema>[], system: string) {
-    await this.#request({ case: "reportDiagnostics", value: { reports, system } }, "ack");
-  }
-
   close() {
     this.onClose = () => {};
     this.#socket.close();
@@ -474,9 +468,6 @@ export class Client {
         if (!reply) {
           reject(new Error(t("common.connectionLost")));
         } else if (reply.case === "error") {
-          if (reply.value.code === ErrorCode.INTERNAL && payload?.case !== "reportDiagnostics") {
-            report("error", "server", `internal server error on ${payload?.case}`);
-          }
           reject(new ServerError(reply.value.code, reply.value.message));
         } else {
           resolve(reply);

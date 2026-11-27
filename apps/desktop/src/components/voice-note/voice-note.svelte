@@ -1,4 +1,5 @@
 <script lang="ts">
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import { clock } from "@/helpers/time";
   import { t } from "@/i18n";
   import { claimPlayback } from "@/services/exclusive-audio";
@@ -11,6 +12,7 @@
     wanted = false,
     disabled = false,
     onrequest,
+    onfolder = null,
   }: {
     source: string | null;
     seconds: number | null;
@@ -19,6 +21,7 @@
     wanted?: boolean;
     disabled?: boolean;
     onrequest?: () => void;
+    onfolder?: (() => void) | null;
   } = $props();
 
   const bars = 26;
@@ -32,6 +35,11 @@
   let volume = $state(1);
   let speed = $state(0);
   let failed = $state(false);
+
+  $effect(() => {
+    void source;
+    failed = false;
+  });
 
   const total = $derived(seconds ?? measured);
   const progress = $derived(total > 0 ? Math.min(1, position / total) : 0);
@@ -190,6 +198,9 @@
   >
     {speeds[speed]}X
   </button>
+  {#if onfolder}
+    <FolderButton variant="compact" onclick={onfolder} />
+  {/if}
   <div class="voice-note__volume">
     <button
       type="button"

@@ -25,9 +25,9 @@ func (s *session) sendDirectFile(ctx context.Context, req *protocol.SendDirectFi
 	if len(req.Extra) >= chat.MaxMessageFiles {
 		return errorFrame(protocol.ErrorCode_ERROR_CODE_INVALID_REQUEST, "too many files")
 	}
-	specs := []chat.FileSpec{{Name: req.Name, Mime: req.Mime, Size: req.Size}}
+	specs := []chat.FileSpec{{Name: req.Name, Mime: req.Mime, Size: req.Size, Censored: req.Censored}}
 	for _, extra := range req.Extra {
-		specs = append(specs, chat.FileSpec{Name: extra.Name, Mime: extra.Mime, Size: extra.Size})
+		specs = append(specs, chat.FileSpec{Name: extra.Name, Mime: extra.Mime, Size: extra.Size, Censored: extra.Censored})
 	}
 	message, extras, recipients, err := s.chat.SendDirectFile(ctx, s.user.Id, req.ConversationId, specs, req.Content, req.ReplyToId)
 	if err != nil {

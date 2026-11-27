@@ -1,6 +1,5 @@
 import type { IceServer } from "@/protocol/ludra/v1/models_pb";
 import { describe } from "@/services/peer-link";
-import { report, trail } from "@/services/diagnostics";
 
 const gatherLimit = 8000;
 const relayGrace = 150;
@@ -60,9 +59,7 @@ export class StreamReceiver {
       }
     };
     this.#connection.onconnectionstatechange = () => {
-      trail("stream", `receiver: ${this.#connection.connectionState}`);
       if (this.#connection.connectionState === "failed" && !this.#closed) {
-        report("warning", "stream", "the viewer connection failed");
         this.onFailed();
       }
     };
@@ -78,7 +75,6 @@ export class StreamReceiver {
   }
 
   close() {
-    trail("stream", "receiver: closed");
     this.#closed = true;
     this.#connection.close();
     this.stream = null;

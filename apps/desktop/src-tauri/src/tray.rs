@@ -5,6 +5,8 @@ use tauri::{
     WebviewWindowBuilder,
 };
 
+use crate::{front, popup};
+
 const LABEL: &str = "tray";
 
 #[derive(Default)]
@@ -23,7 +25,7 @@ pub async fn tray_menu<R: Runtime>(
         return window.destroy().map_err(|error| error.to_string());
     }
     *state.anchor.lock().map_err(|error| error.to_string())? = (x, y);
-    WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("tray.html".into()))
+    let builder = WebviewWindowBuilder::new(&app, LABEL, WebviewUrl::App("tray.html".into()))
         .title("Ludra")
         .inner_size(200.0, 96.0)
         .decorations(false)
@@ -31,9 +33,8 @@ pub async fn tray_menu<R: Runtime>(
         .shadow(false)
         .resizable(false)
         .skip_taskbar(true)
-        .always_on_top(true)
-        .visible(false)
-        .build()
+        .always_on_top(true);
+    popup::create(builder)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
@@ -80,11 +81,7 @@ pub fn tray_close<R: Runtime>(window: WebviewWindow<R>) -> Result<(), String> {
 
 #[tauri::command]
 pub fn tray_open<R: Runtime>(window: WebviewWindow<R>) -> Result<(), String> {
-    if let Some(main) = window.app_handle().get_webview_window("main") {
-        let _ = main.show();
-        let _ = main.unminimize();
-        let _ = main.set_focus();
-    }
+    front::show_main(window.app_handle());
     window.destroy().map_err(|error| error.to_string())
 }
 

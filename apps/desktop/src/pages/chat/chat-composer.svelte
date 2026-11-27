@@ -260,7 +260,12 @@
     />
   {:else}
     {#if chat.staged.length > 0}
-      <AttachmentTray items={chat.staged} squared={replying !== null} onremove={(path) => chat.unstage(path)} />
+      <AttachmentTray
+        items={chat.staged}
+        squared={replying !== null}
+        onremove={(path) => chat.unstage(path)}
+        oncensor={(path) => chat.toggleCensored(path)}
+      />
     {/if}
     <form
       class="chat-composer__form"

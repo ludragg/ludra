@@ -24,7 +24,6 @@ fn epoch() -> Instant {
     *EPOCH.get_or_init(Instant::now)
 }
 
-#[derive(Clone)]
 pub struct Flags {
     pub bridge: Arc<Bridge>,
     pub watched: Arc<AtomicBool>,

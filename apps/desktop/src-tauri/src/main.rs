@@ -1,15 +1,19 @@
 #![windows_subsystem = "windows"]
 
 mod dev;
-mod diagnostics;
 #[cfg(windows)]
 mod dialog;
 #[cfg(windows)]
 mod encoder;
 mod files;
+mod front;
+mod popup;
 mod registry;
 #[cfg(windows)]
+mod rendition;
+#[cfg(windows)]
 mod screen;
+mod storage;
 #[cfg(windows)]
 mod stream;
 mod toast;
@@ -17,7 +21,7 @@ mod tray;
 #[cfg(windows)]
 mod webview;
 
-use tauri::Manager;
+use tauri::{Manager, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 
 const AUTOSTART_FLAG: &str = "--autostart";
@@ -28,18 +32,13 @@ fn launched_by_autostart() -> bool {
 }
 
 fn main() {
-    diagnostics::install_crash_hook();
     let profile = dev::profile();
     let builder = tauri::Builder::default();
     let builder = if profile.is_some() {
         builder
     } else {
         builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
+            front::show_main(app);
         }))
     };
 
@@ -58,8 +57,11 @@ fn main() {
         .manage(files::FilesState::default())
         .manage(tray::TrayState::default())
         .setup(move |app| {
-            if let Ok(directory) = app.path().app_local_data_dir() {
-                diagnostics::open(directory);
+            let directory = storage::prepare(app.handle())?;
+            #[cfg(windows)]
+            rendition::prune();
+            if let Some(config) = app.config().app.windows.first() {
+                storage::webview(WebviewWindowBuilder::from_config(app, config)?).build()?;
             }
             if launched_by_autostart()
                 && let Some(window) = app.get_webview_window("main")
@@ -69,9 +71,7 @@ fn main() {
             #[cfg(windows)]
             webview::setup(app);
             #[cfg(windows)]
-            if let Ok(directory) = app.path().app_local_data_dir() {
-                encoder::set_guard_directory(directory);
-            }
+            encoder::set_guard_directory(directory.to_path_buf());
             if let (Some(profile), Some(window)) = (&profile, app.get_webview_window("main")) {
                 let _ = window.set_title(&format!("Ludra Dev · {}", profile.name));
             }
@@ -101,16 +101,13 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             launched_by_autostart,
             dev::dev_profile,
-            diagnostics::diagnostics_enable,
-            diagnostics::diagnostics_trail,
-            diagnostics::diagnostics_record,
-            diagnostics::diagnostics_pending,
-            diagnostics::diagnostics_discard,
             files::pick_files,
             files::share_file,
             files::stage_preview,
             files::shared_file,
             files::media_path,
+            files::is_downloaded,
+            rendition::image_rendition,
             files::stash_file,
             files::stash_voice,
             files::reveal_file,

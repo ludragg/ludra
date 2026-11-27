@@ -42,9 +42,10 @@ func reserveGif(ctx context.Context, q *database.Queries, userID string) error {
 }
 
 type FileSpec struct {
-	Name string
-	Mime string
-	Size uint64
+	Name     string
+	Mime     string
+	Size     uint64
+	Censored bool
 }
 
 const MaxMessageFiles = 5
@@ -72,6 +73,7 @@ func (s *Service) SendDirectFile(ctx context.Context, senderID, conversationID s
 		if !mimePattern.MatchString(specs[i].Mime) {
 			specs[i].Mime = "application/octet-stream"
 		}
+		specs[i].Censored = specs[i].Censored && censorable(specs[i].Mime)
 	}
 
 	var message database.Message
@@ -87,6 +89,7 @@ func (s *Service) SendDirectFile(ctx context.Context, senderID, conversationID s
 			FileSize:       int64(specs[0].Size),
 			FileMime:       specs[0].Mime,
 			FileDirect:     true,
+			FileCensored:   specs[0].Censored,
 		})
 		if err != nil {
 			return err
@@ -98,6 +101,7 @@ func (s *Service) SendDirectFile(ctx context.Context, senderID, conversationID s
 				Name:      cleanName(spec.Name),
 				Size:      int64(spec.Size),
 				Mime:      spec.Mime,
+				Censored:  spec.Censored,
 			})
 			if err != nil {
 				return err
@@ -157,6 +161,10 @@ func (s *Service) DirectFile(ctx context.Context, userID, messageID string) (Dir
 
 func (s *Service) ExpireFiles(ctx context.Context) (int64, error) {
 	return s.queries.ExpireImages(ctx)
+}
+
+func censorable(mime string) bool {
+	return strings.HasPrefix(mime, "image/") || strings.HasPrefix(mime, "video/")
 }
 
 func cleanName(name string) string {
