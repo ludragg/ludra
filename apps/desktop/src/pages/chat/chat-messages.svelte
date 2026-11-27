@@ -6,6 +6,7 @@
   import EyeButton from "@/components/eye-button/eye-button.svelte";
   import FileCard from "@/components/file-card/file-card.svelte";
   import MediaGallery from "@/components/media-gallery/media-gallery.svelte";
+  import ConfirmDialog from "@/components/confirm-dialog/confirm-dialog.svelte";
   import ImageViewer from "@/components/image-viewer/image-viewer.svelte";
   import LinkPreview from "@/components/link-preview/link-preview.svelte";
   import UserMenu from "@/components/user-menu/user-menu.svelte";
@@ -48,16 +49,35 @@
   let revealed = $state<Record<string, boolean>>({});
   let menu = $state<{ user: { id: string; username: string }; x: number; y: number } | null>(null);
   let editing = $state<{ id: string; content: string } | null>(null);
-  let armed = $state<string | null>(null);
+  let removing = $state<string | null>(null);
   let flashed = $state<string | null>(null);
   const elapsed = new Elapsed();
   onDestroy(() => elapsed.stop());
 
   let viewing = $state<{ image: ImageRef; name: string; label: string } | null>(null);
+  let kept = $state<string | null>(null);
+
+  $effect(() => {
+    const id = viewing?.image.id;
+    if (id) {
+      void files.downloaded(id).then((found) => (kept = found ? id : kept));
+    }
+  });
 
   async function saveImage(image: ImageRef, name: string): Promise<string | null> {
     const { data, mime } = await chat.imageFile(image.id);
-    return files.saveBytes(`${name}.${extensionFor(mime)}`, data);
+    const path = await files.saveBytes(`${name}.${extensionFor(mime)}`, data, image.id);
+    if (path) {
+      kept = image.id;
+    }
+    return path;
+  }
+
+  async function openKept(id: string) {
+    files.reveal(id);
+    if (!(await files.downloaded(id))) {
+      kept = null;
+    }
   }
 
   function openMenu(event: MouseEvent, user: { id: string; username: string }) {
@@ -165,7 +185,6 @@
   }
 
   function startEdit(message: Message) {
-    armed = null;
     editing = { id: message.id, content: message.content };
   }
 
@@ -184,15 +203,6 @@
       event.preventDefault();
       editing = null;
     }
-  }
-
-  async function remove(message: Message) {
-    if (armed !== message.id) {
-      armed = message.id;
-      return;
-    }
-    armed = null;
-    await chat.deleteMessage(message.id).catch(() => undefined);
   }
 
   $effect(() => {
@@ -501,15 +511,9 @@
                     <button
                       type="button"
                       class="chat-messages__action chat-messages__action--delete"
-                      class:chat-messages__action--armed={armed === message.id}
-                      aria-label={armed === message.id ? t("chat.confirmDelete") : t("chat.deleteMessage")}
-                      data-tooltip={armed === message.id ? t("chat.confirmDelete") : t("chat.deleteMessage")}
-                      onclick={() => remove(message)}
-                      onpointerleave={() => {
-                        if (armed === message.id) {
-                          armed = null;
-                        }
-                      }}
+                      aria-label={t("chat.deleteMessage")}
+                      data-tooltip={t("chat.deleteMessage")}
+                      onclick={() => (removing = message.id)}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -534,6 +538,18 @@
   {/each}
 </section>
 
+{#if removing && thread?.messages.some(({ id }) => id === removing)}
+  {@const target = removing}
+  <ConfirmDialog
+    title={t("chat.deleteTitle")}
+    description={t("chat.deleteHint")}
+    confirmLabel={t("chat.delete")}
+    failure={t("chat.deleteFailed")}
+    onconfirm={() => chat.deleteMessage(target)}
+    onclose={() => (removing = null)}
+  />
+{/if}
+
 {#if menu}
   <UserMenu user={menu.user} x={menu.x} y={menu.y} onclose={() => (menu = null)} />
 {/if}
@@ -544,6 +560,7 @@
     load={() => chat.image(current.image.id)}
     label={current.label}
     save={() => saveImage(current.image, current.name)}
+    onfolder={kept === current.image.id ? () => void openKept(current.image.id) : null}
     onclose={() => (viewing = null)}
   />
 {/if}
@@ -787,12 +804,6 @@
 
   .chat-messages__action--delete:hover {
     color: #f6746b;
-  }
-
-  .chat-messages__action--armed,
-  .chat-messages__action--armed:hover {
-    background: var(--danger-color);
-    color: var(--muted-color);
   }
 
   .chat-messages__edited {

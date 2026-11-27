@@ -43,7 +43,6 @@ type guard struct {
 	images          *limit.Limiter
 	imageReads      *limit.Limiter
 	gifSearches     *limit.Limiter
-	diagnostics     *limit.Limiter
 }
 
 func newGuard() *guard {
@@ -75,7 +74,6 @@ func newGuard() *guard {
 		images:          limit.New(10, time.Minute),
 		imageReads:      limit.New(1200, time.Minute),
 		gifSearches:     limit.New(60, time.Minute),
-		diagnostics:     limit.New(30, 10*time.Minute),
 	}
 }
 

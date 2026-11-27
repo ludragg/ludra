@@ -81,22 +81,6 @@ Database migrations run automatically when the server starts.
 docker compose logs -f server
 ```
 
-## Error reports
-
-The app sends its errors to the server unless the person turns it off in Settings, Account, Privacy. Reports are kept for 30 days.
-
-List the problems of the last 7 days, grouped:
-
-```bash
-docker compose exec -T postgres psql -U ludra -d ludra < error-reports.sql
-```
-
-Show one report with its details, using an `example_id` from that list:
-
-```bash
-docker compose exec -T postgres psql -U ludra -d ludra -v id=123 < error-report.sql
-```
-
 ## Backup
 
 ```bash

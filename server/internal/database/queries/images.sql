@@ -42,9 +42,9 @@ WHERE id = $1
 RETURNING *;
 
 -- name: CreateFileMessage :one
-INSERT INTO messages (conversation_id, sender_id, content, kind, file_name, file_size, file_mime, file_direct)
+INSERT INTO messages (conversation_id, sender_id, content, kind, file_name, file_size, file_mime, file_direct, file_censored)
 SELECT sqlc.arg(conversation_id)::uuid, sqlc.arg(sender_id)::uuid, sqlc.arg(content)::text, 'file', sqlc.arg(file_name)::text,
-       sqlc.arg(file_size)::bigint, sqlc.arg(file_mime)::text, sqlc.arg(file_direct)::boolean
+       sqlc.arg(file_size)::bigint, sqlc.arg(file_mime)::text, sqlc.arg(file_direct)::boolean, sqlc.arg(file_censored)::boolean
 WHERE EXISTS (
     SELECT 1 FROM participants
     WHERE conversation_id = sqlc.arg(conversation_id)::uuid
@@ -53,8 +53,9 @@ WHERE EXISTS (
 RETURNING *;
 
 -- name: AddMessageFile :one
-INSERT INTO message_files (message_id, position, name, size, mime)
-VALUES (sqlc.arg(message_id)::uuid, sqlc.arg(position)::smallint, sqlc.arg(name)::text, sqlc.arg(size)::bigint, sqlc.arg(mime)::text)
+INSERT INTO message_files (message_id, position, name, size, mime, censored)
+VALUES (sqlc.arg(message_id)::uuid, sqlc.arg(position)::smallint, sqlc.arg(name)::text, sqlc.arg(size)::bigint, sqlc.arg(mime)::text,
+        sqlc.arg(censored)::boolean)
 RETURNING *;
 
 -- name: ListMessageFiles :many

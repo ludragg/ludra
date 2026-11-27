@@ -1,5 +1,6 @@
 export const pt = {
   common: {
+    cancel: "Cancelar",
     connectionFailed: "Não foi possível conectar ao servidor.",
     connectionLost: "Conexão com o servidor perdida.",
     reconnecting: "Reconectando ao Ludra…",
@@ -158,6 +159,8 @@ export const pt = {
     recordVoice: "Mensagem de voz",
     copyImage: "Copiar imagem",
     tooManyFiles: "Você pode anexar até {count} arquivos por mensagem.",
+    censor: "Censurar",
+    uncensor: "Remover censura",
     removeAttachment: "Remover anexo",
     previous: "Anterior",
     next: "Próxima",
@@ -213,7 +216,10 @@ export const pt = {
     downloaded: "Salvo em Downloads",
     downloadFailed: "Não foi possível salvar",
     closePhoto: "Fechar",
-    confirmDelete: "Clique de novo para apagar",
+    deleteTitle: "Apagar mensagem?",
+    deleteHint: "Essa ação não pode ser desfeita.",
+    delete: "Apagar",
+    deleteFailed: "Não foi possível apagar a mensagem.",
     edited: "(editado)",
     editedAt: "Editado {day} às {time}",
     escapeTo: "Esc para",
@@ -481,10 +487,6 @@ export const pt = {
     disable: "Desativar",
     cancel: "Cancelar",
     twoFactorFailed: "Não foi possível alterar a autenticação em duas etapas.",
-    privacy: "Privacidade",
-    errorReports: "Enviar relatórios de erros",
-    errorReportsHint:
-      "Ajuda no desenvolvimento do Ludra. Vão só os erros do app e dados técnicos, como versão, Windows e GPU. Mensagens, arquivos, senhas, e-mails e endereços IP não são enviados.",
     devices: "Dispositivos",
     processing: "Processamento",
     connection: "Conexão",

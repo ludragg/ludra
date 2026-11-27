@@ -9,7 +9,8 @@ use serde::Serialize;
 use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 
-use crate::registry::Registry;
+use crate::registry::{Registry, SAVED_FILES, SHARED_FILES};
+use crate::storage;
 
 const MAX_CHUNK: u64 = 1 << 20;
 const IMAGE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "bmp"];
@@ -17,7 +18,7 @@ const AUTO_EXTENSIONS: [&str; 14] = [
     "png", "jpg", "jpeg", "gif", "webp", "bmp", "mp4", "webm", "mov", "mp3", "wav", "ogg", "flac",
     "m4a",
 ];
-const APP_FOLDER: &str = "Ludra";
+pub const APP_FOLDER: &str = "Ludra";
 const VOICE_FOLDER: &str = "Voice";
 const FOLDER_FILE: &str = "download-folder.txt";
 const MAX_VOICE: usize = 32 << 20;
@@ -36,8 +37,8 @@ impl Default for FilesState {
         Self {
             picked: Mutex::default(),
             targets: Mutex::default(),
-            shared: Mutex::new(Registry::new("shared-files.json")),
-            saved: Mutex::new(Registry::new("downloaded-files.json")),
+            shared: Mutex::new(Registry::new(SHARED_FILES)),
+            saved: Mutex::new(Registry::new(SAVED_FILES)),
             downloads: Mutex::default(),
             next: AtomicU32::default(),
         }
@@ -69,8 +70,8 @@ fn owner(window: &WebviewWindow) -> Option<isize> {
     window.hwnd().ok().map(|handle| handle.0 as isize)
 }
 
-fn claimed(app: &AppHandle, state: &FilesState, path: &Path) -> bool {
-    state.shared.lock().unwrap().refers(app, path) || state.saved.lock().unwrap().refers(app, path)
+fn claimed(state: &FilesState, path: &Path) -> bool {
+    state.shared.lock().unwrap().refers(path) || state.saved.lock().unwrap().refers(path)
 }
 
 fn name_of(path: &Path) -> String {
@@ -138,27 +139,22 @@ pub fn stage_preview(app: AppHandle, state: State<'_, FilesState>, path: String)
 }
 
 #[tauri::command]
-pub fn share_file(
-    app: AppHandle,
-    state: State<'_, FilesState>,
-    id: String,
-    path: String,
-) -> Result<(), String> {
+pub fn share_file(state: State<'_, FilesState>, id: String, path: String) -> Result<(), String> {
     let path = PathBuf::from(path);
     if !state.picked.lock().unwrap().contains(&path) {
         return Err("file not picked".into());
     }
-    state.shared.lock().unwrap().insert(&app, id, path);
+    state.shared.lock().unwrap().insert(id, path);
     Ok(())
 }
 
 #[tauri::command]
-pub fn shared_file(app: AppHandle, state: State<'_, FilesState>, id: String) -> Option<Shared> {
+pub fn shared_file(state: State<'_, FilesState>, id: String) -> Option<Shared> {
     let mut shared = state.shared.lock().unwrap();
-    if !shared.known(&app, &id) {
+    if !shared.known(&id) {
         return None;
     }
-    let Some(path) = shared.get(&app, &id) else {
+    let Some(path) = shared.get(&id) else {
         return Some(Shared {
             name: String::new(),
             size: 0,
@@ -193,13 +189,10 @@ pub fn stash_file(
             })
         })
         .unwrap_or_else(|| "imagem.png".into());
-    let folder = app
-        .path()
-        .download_dir()
-        .map_err(|error| error.to_string())?;
+    let folder = documents_folder(&app)?;
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
     let path = unused_path_where(&folder, &name, |path| {
-        path.exists() || claimed(&app, &state, path)
+        path.exists() || claimed(&state, path)
     });
     std::fs::write(&path, data).map_err(|error| error.to_string())?;
     state.picked.lock().unwrap().insert(path.clone());
@@ -238,7 +231,7 @@ pub fn stash_voice(
     let folder = documents_folder(&app)?.join(VOICE_FOLDER);
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
     let path = unused_path_where(&folder, &name, |path| {
-        path.exists() || claimed(&app, &state, path)
+        path.exists() || claimed(&state, path)
     });
     std::fs::write(&path, data).map_err(|error| error.to_string())?;
     state.picked.lock().unwrap().insert(path.clone());
@@ -249,7 +242,7 @@ pub fn stash_voice(
     })
 }
 
-fn unused_path_where(folder: &Path, name: &str, taken: impl Fn(&Path) -> bool) -> PathBuf {
+pub fn unused_path_where(folder: &Path, name: &str, taken: impl Fn(&Path) -> bool) -> PathBuf {
     let path = folder.join(name);
     if !taken(&path) {
         return path;
@@ -262,15 +255,20 @@ fn unused_path_where(folder: &Path, name: &str, taken: impl Fn(&Path) -> bool) -
 }
 
 #[tauri::command]
-pub fn reveal_file(app: AppHandle, state: State<'_, FilesState>, id: String) -> Result<(), String> {
+pub fn reveal_file(state: State<'_, FilesState>, id: String) -> Result<(), String> {
     let path = state
         .saved
         .lock()
         .unwrap()
-        .get(&app, &id)
-        .or_else(|| state.shared.lock().unwrap().get(&app, &id))
+        .get(&id)
+        .or_else(|| state.shared.lock().unwrap().get(&id))
         .ok_or("file not found")?;
     explore(&path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn is_downloaded(state: State<'_, FilesState>, id: String) -> bool {
+    state.saved.lock().unwrap().get(&id).is_some()
 }
 
 #[tauri::command]
@@ -280,8 +278,8 @@ pub fn media_path(
     id: String,
     size: u64,
 ) -> Option<String> {
-    let saved = state.saved.lock().unwrap().get(&app, &id);
-    let shared = state.shared.lock().unwrap().get(&app, &id);
+    let saved = state.saved.lock().unwrap().get(&id);
+    let shared = state.shared.lock().unwrap().get(&id);
     let path = [saved, shared]
         .into_iter()
         .flatten()
@@ -292,7 +290,6 @@ pub fn media_path(
 
 #[tauri::command]
 pub async fn read_shared(
-    app: AppHandle,
     state: State<'_, FilesState>,
     id: String,
     offset: u64,
@@ -302,7 +299,7 @@ pub async fn read_shared(
         .shared
         .lock()
         .unwrap()
-        .get(&app, &id)
+        .get(&id)
         .ok_or("file not shared")?;
     let mut file = File::open(path).map_err(|error| error.to_string())?;
     file.seek(SeekFrom::Start(offset))
@@ -321,7 +318,9 @@ pub async fn save_target(
     name: String,
 ) -> Result<Option<String>, String> {
     let handle = owner(&window);
-    let folder = window.app_handle().path().download_dir().ok();
+    let folder = documents_folder(window.app_handle())
+        .ok()
+        .filter(|folder| std::fs::create_dir_all(folder).is_ok());
     let target = tauri::async_runtime::spawn_blocking(move || dialog_save(handle, folder, &name))
         .await
         .map_err(|error| error.to_string())?;
@@ -331,7 +330,7 @@ pub async fn save_target(
     }))
 }
 
-fn documents_folder(app: &AppHandle) -> Result<PathBuf, String> {
+pub fn documents_folder(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app
         .path()
         .document_dir()
@@ -340,10 +339,7 @@ fn documents_folder(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 fn download_folder_of(app: &AppHandle) -> Result<PathBuf, String> {
-    let configured = app
-        .path()
-        .app_local_data_dir()
-        .ok()
+    let configured = storage::directory()
         .and_then(|dir| std::fs::read_to_string(dir.join(FOLDER_FILE)).ok())
         .map(|text| PathBuf::from(text.trim()))
         .filter(|path| path.is_absolute());
@@ -371,10 +367,8 @@ pub async fn choose_download_folder(
     let Some(path) = chosen else {
         return Ok(None);
     };
-    let file = app
-        .path()
-        .app_local_data_dir()
-        .map_err(|error| error.to_string())?
+    let file = storage::directory()
+        .ok_or("data folder unavailable")?
         .join(FOLDER_FILE);
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir).map_err(|error| error.to_string())?;
@@ -385,7 +379,7 @@ pub async fn choose_download_folder(
 
 #[tauri::command]
 pub fn reset_download_folder(app: AppHandle) -> Result<String, String> {
-    if let Ok(dir) = app.path().app_local_data_dir() {
+    if let Some(dir) = storage::directory() {
         let _ = std::fs::remove_file(dir.join(FOLDER_FILE));
     }
     Ok(documents_folder(&app)?.to_string_lossy().into_owned())
@@ -447,7 +441,7 @@ fn folder_target_for(
     std::fs::create_dir_all(&folder).map_err(|error| error.to_string())?;
     let mut targets = state.targets.lock().unwrap();
     let path = unused_path_where(&folder, &name, |path| {
-        path.exists() || targets.contains(path) || claimed(app, state, path)
+        path.exists() || targets.contains(path) || claimed(state, path)
     });
     targets.insert(path.clone());
     Ok(path.to_string_lossy().into_owned())
@@ -541,11 +535,7 @@ pub async fn write_download(
 }
 
 #[tauri::command]
-pub fn finish_download(
-    app: AppHandle,
-    state: State<'_, FilesState>,
-    id: u32,
-) -> Result<String, String> {
+pub fn finish_download(state: State<'_, FilesState>, id: u32) -> Result<String, String> {
     let download = state
         .downloads
         .lock()
@@ -565,7 +555,7 @@ pub fn finish_download(
             .saved
             .lock()
             .unwrap()
-            .insert(&app, key, download.path.clone());
+            .insert(key, download.path.clone());
     }
     Ok(download.path.to_string_lossy().into_owned())
 }

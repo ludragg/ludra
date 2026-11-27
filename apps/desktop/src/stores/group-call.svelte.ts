@@ -1,4 +1,3 @@
-import { report, trail } from "@/services/diagnostics";
 import { t } from "@/i18n";
 import { SignalKind, type CallSignal, type GroupCall, type IceServer, type User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
@@ -57,6 +56,7 @@ export type VoiceSnapshot = {
 };
 
 const ringTimeout = 30_000;
+const alonePreviewEvery = 60_000;
 
 class GroupCallStore {
   current = $state<GroupCurrent | null>(null);
@@ -102,6 +102,7 @@ class GroupCallStore {
   #shareQuality: ScreenQuality | null = null;
   #viewers = new Set<string>();
   #preview: string | null = null;
+  #previewSentAt = 0;
   #pendingWatch: string | null = null;
   #linked = new Set<string>();
   #shareBusy = false;
@@ -202,7 +203,6 @@ class GroupCallStore {
         startedAt: Date.now(),
       };
       this.#wire(room);
-      trail("call", `joined a group call with ${joined.participantIds.length} other people`);
       this.#started = room.start();
       await this.#started;
       room.setMuted(this.muted);
@@ -223,7 +223,6 @@ class GroupCallStore {
       if (room && this.#room !== room) {
         return;
       }
-      report("error", "call", "could not join the group call", cause);
       this.#showError(describe(cause));
       if (this.current) {
         await this.leave();
@@ -573,22 +572,17 @@ class GroupCallStore {
       let payload: string;
       try {
         payload = await trust.open(signal.callId, peerId, signal.kind, signal.payload);
-      } catch (cause) {
-        report("error", "call", "could not verify a call signature", cause);
+      } catch {
         this.#showError(t("call.insecure"));
         room.remove(peerId);
         this.#forget(peerId);
         return;
       }
       if (signal.kind === SignalKind.STREAM_OFFER || signal.kind === SignalKind.STREAM_ANSWER) {
-        this.#streamSignal(peerId, signal.kind, payload).catch((cause) => {
-          report("error", "stream", "could not handle a stream signal", cause);
-          this.#closeReceiver();
-        });
+        this.#streamSignal(peerId, signal.kind, payload).catch(() => this.#closeReceiver());
         return;
       }
-      await room.receive(peerId, signal.kind, payload).catch((cause) => {
-        report("error", "call", "could not handle a group call signal", cause);
+      await room.receive(peerId, signal.kind, payload).catch(() => {
         room.remove(peerId);
       });
     });
@@ -653,7 +647,6 @@ class GroupCallStore {
       await room.setCamera(track);
       this.#shareState();
     } catch (cause) {
-      report("warning", "camera", "the camera did not start", cause);
       this.#showError(cameraError(cause));
     } finally {
       this.#cameraBusy = false;
@@ -697,7 +690,6 @@ class GroupCallStore {
       this.#shareQuality = quality;
       this.shareSettings = { sourceId, quality };
       this.sharing = true;
-      trail("screen", `sharing at ${qualityLabel(quality)}, mode ${quality.mode}, encoder ${quality.encoder}`);
       await this.#enforceLocks();
       capture.onPreview = (image) => {
         this.#preview = image;
@@ -713,8 +705,7 @@ class GroupCallStore {
       this.#syncCapture();
       await Promise.all([...this.#viewers].map((viewer) => this.#serve(viewer)));
       this.#shareState();
-    } catch (cause) {
-      report("error", "screen", "screen sharing did not start", cause);
+    } catch {
       this.#showError(t("screen.failed"));
     } finally {
       this.#shareBusy = false;
@@ -735,6 +726,7 @@ class GroupCallStore {
     this.shareSettings = null;
     this.sharing = false;
     this.#preview = null;
+    this.#previewSentAt = 0;
     this.ownPreview = null;
     this.#sender?.stop();
     this.#sender = null;
@@ -904,6 +896,11 @@ class GroupCallStore {
   #sendPreview() {
     const current = this.current;
     if (current && this.sharing && this.#preview) {
+      const alone = !this.#room?.peers().length;
+      if (alone && Date.now() - this.#previewSentAt < alonePreviewEvery) {
+        return;
+      }
+      this.#previewSentAt = Date.now();
       this.#client?.sendSignal(current.id, SignalKind.STATE, previewMessage(this.#preview), "*").catch(() => undefined);
     }
   }
@@ -998,7 +995,6 @@ class GroupCallStore {
     }
     this.previews = {};
     if (this.current) {
-      trail("call", "left the group call");
       playCue("ended");
     }
     this.#room?.close();

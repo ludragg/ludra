@@ -26,6 +26,11 @@
   let failed = $state(false);
 
   $effect(() => {
+    void source;
+    failed = false;
+  });
+
+  $effect(() => {
     if (audio && source && wanted) {
       void audio.play().catch(() => undefined);
     }

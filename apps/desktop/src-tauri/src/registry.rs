@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use tauri::{AppHandle, Manager};
+use crate::storage;
+
+pub const SHARED_FILES: &str = "shared-files.json";
+pub const SAVED_FILES: &str = "downloaded-files.json";
 
 pub struct Registry {
     file: &'static str,
@@ -13,44 +16,46 @@ impl Registry {
         Self { file, map: None }
     }
 
-    pub fn get(&mut self, app: &AppHandle, id: &str) -> Option<PathBuf> {
-        self.load(app).get(id).filter(|path| path.exists()).cloned()
+    pub fn get(&mut self, id: &str) -> Option<PathBuf> {
+        self.load().get(id).filter(|path| path.exists()).cloned()
     }
 
-    pub fn refers(&mut self, app: &AppHandle, path: &Path) -> bool {
-        self.load(app).values().any(|known| known == path)
+    pub fn refers(&mut self, path: &Path) -> bool {
+        self.load().values().any(|known| known == path)
     }
 
-    pub fn known(&mut self, app: &AppHandle, id: &str) -> bool {
-        self.load(app).contains_key(id)
+    pub fn known(&mut self, id: &str) -> bool {
+        self.load().contains_key(id)
     }
 
-    pub fn insert(&mut self, app: &AppHandle, id: String, path: PathBuf) {
-        self.load(app).insert(id, path);
-        if let (Some(location), Some(map)) = (location(app, self.file), &self.map) {
-            if let Some(dir) = location.parent() {
-                let _ = std::fs::create_dir_all(dir);
-            }
-            if let Ok(text) = serde_json::to_string(map) {
-                let _ = std::fs::write(location, text);
-            }
+    pub fn insert(&mut self, id: String, path: PathBuf) {
+        self.load().insert(id, path);
+        if let (Some(location), Some(map)) = (location(self.file), &self.map) {
+            let _ = write(&location, map);
         }
     }
 
-    fn load(&mut self, app: &AppHandle) -> &mut HashMap<String, PathBuf> {
+    fn load(&mut self) -> &mut HashMap<String, PathBuf> {
         let file = self.file;
-        self.map.get_or_insert_with(|| {
-            location(app, file)
-                .and_then(|path| std::fs::read_to_string(path).ok())
-                .and_then(|text| serde_json::from_str::<HashMap<String, PathBuf>>(&text).ok())
-                .unwrap_or_default()
-        })
+        self.map
+            .get_or_insert_with(|| location(file).map(|path| read(&path)).unwrap_or_default())
     }
 }
 
-fn location(app: &AppHandle, file: &str) -> Option<PathBuf> {
-    app.path()
-        .app_local_data_dir()
+pub fn read(location: &Path) -> HashMap<String, PathBuf> {
+    std::fs::read_to_string(location)
         .ok()
-        .map(|dir| dir.join(file))
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
+pub fn write(location: &Path, map: &HashMap<String, PathBuf>) -> std::io::Result<()> {
+    if let Some(directory) = location.parent() {
+        std::fs::create_dir_all(directory)?;
+    }
+    std::fs::write(location, serde_json::to_string(map)?)
+}
+
+fn location(file: &str) -> Option<PathBuf> {
+    storage::directory().map(|directory| directory.join(file))
 }

@@ -1,7 +1,6 @@
 mod audio;
 mod bridge;
 mod capture;
-mod fullscreen;
 mod handoff;
 mod scaler;
 mod sources;
@@ -21,16 +20,14 @@ use windows_capture::settings::{
 use audio::SystemAudio;
 use bridge::Bridge;
 use capture::{Capture, Flags};
-use fullscreen::Capturing;
 use handoff::Handoff;
 use sources::{Source, Target};
 
-use crate::diagnostics::{self, Level};
 use crate::encoder::Mode;
 use crate::stream::{self, Quality, Selection, StreamState};
 
 struct Session {
-    capturing: Arc<Capturing>,
+    control: CaptureControl<Capture, String>,
     watched: Arc<AtomicBool>,
     audio: Option<SystemAudio>,
 }
@@ -78,13 +75,6 @@ pub async fn screen_start(
         .handoff
         .get_or_init(|| {
             Handoff::new()
-                .map_err(|error| {
-                    diagnostics::report(
-                        Level::Warning,
-                        "capture",
-                        format_args!("no shared encoder device: {error}"),
-                    )
-                })
                 .ok()
                 .map(|handoff| Arc::new(Mutex::new(handoff)))
         })
@@ -122,27 +112,11 @@ pub async fn screen_start(
             height: buffer_height,
             fps,
         };
-        let window = match &target {
-            Target::Window(window) => Some(*window),
-            Target::Monitor(_) => None,
-        };
-        let control = begin(target, flags.clone())?;
-        let capturing = Arc::new(Capturing::new(control));
-        if let Some(window) = window {
-            fullscreen::watch(capturing.clone(), window, flags);
-        }
+        let control = begin(target, flags)?;
         Ok(Session {
-            capturing,
+            control,
             watched,
-            audio: SystemAudio::start(audio, excluded)
-                .map_err(|error| {
-                    diagnostics::report(
-                        Level::Warning,
-                        "audio",
-                        format_args!("system audio capture did not start: {error}"),
-                    )
-                })
-                .ok(),
+            audio: SystemAudio::start(audio, excluded).ok(),
         })
     })
     .await
@@ -195,7 +169,7 @@ fn stop(state: &State<'_, ScreenState>) {
 
 fn halt(session: Session) {
     drop(session.audio);
-    session.capturing.stop();
+    let _ = session.control.stop();
 }
 
 fn begin(target: Target, flags: Flags) -> Result<CaptureControl<Capture, String>, String> {

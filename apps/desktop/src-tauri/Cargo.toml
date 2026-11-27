@@ -1,6 +1,6 @@
 [package]
 name = "ludra"
-version = "0.5.0"
+version = "0.5.1"
 description = "Ludra desktop"
 license = "AGPL-3.0-only"
 edition = "2024"
@@ -22,7 +22,7 @@ tauri-plugin-single-instance = "2"
 
 [target.'cfg(windows)'.dependencies]
 base64 = "0.22"
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 async-trait = "0.1"
 bytes = "1"
 rtc = "=0.21.1"
@@ -38,6 +38,7 @@ windows = { version = "0.62", features = [
     "Win32_Graphics_Dxgi",
     "Win32_Graphics_Dxgi_Common",
     "Win32_Graphics_Gdi",
+    "Win32_Graphics_Imaging",
     "Win32_Media_Audio",
     "Win32_Media_MediaFoundation",
     "Win32_Security",

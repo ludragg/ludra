@@ -9,7 +9,6 @@ import {
   verifyScreenEncoder,
   type ScreenQuality,
 } from "@/services/screen";
-import { report, trail } from "@/services/diagnostics";
 
 type SinkElement = HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
 type SinkContext = AudioContext & { setSinkId?: (id: string) => Promise<void> };
@@ -96,7 +95,6 @@ export class PeerLink {
   #screenSenders: RTCRtpSender[] = [];
   #senderKinds = new Map<RTCRtpSender, string>();
   #screenQuality: ScreenQuality | null = null;
-  #sending = "";
   #guards = new Map<RTCRtpSender, BitrateGuard>();
   #negotiating = false;
   #restartWanted = false;
@@ -193,7 +191,6 @@ export class PeerLink {
     this.#emitStatus();
     if (!this.#negotiating) {
       if (state === "failed") {
-        report("warning", "call", "a peer connection never connected");
         this.onFailed();
       }
       return;
@@ -227,11 +224,6 @@ export class PeerLink {
     this.#giveUpTimer = window.setTimeout(() => {
       this.#giveUpTimer = undefined;
       if (!this.#linked && this.#connection.connectionState !== "closed") {
-        report(
-          "warning",
-          "call",
-          this.#negotiating ? "a peer connection did not recover" : "a peer connection timed out while connecting",
-        );
         this.onFailed();
       }
     }, giveUpAfter);
@@ -355,7 +347,6 @@ export class PeerLink {
   }
 
   async setScreen(stream: MediaStream | null, quality: ScreenQuality | null, video = true) {
-    trail("stream", `link: screen share=${!!stream} sendsVideo=${!!stream && video}`);
     this.#screenQuality = stream ? quality : null;
     window.clearInterval(this.#encoderCheck);
     this.#stopGuards();
@@ -393,34 +384,12 @@ export class PeerLink {
     }
     this.#guards.forEach((guard) => guard.start());
     this.#encoderCheck = window.setInterval(() => {
-      void this.#noteSending();
       for (const sender of this.#screenSenders) {
         if (this.#senderKinds.get(sender) === "video" && this.#screenQuality) {
           verifyScreenEncoder(sender, this.#screenQuality);
         }
       }
     }, encoderCheckEvery);
-  }
-
-  async #noteSending() {
-    const stats = await this.#connection.getStats().catch(() => null);
-    stats?.forEach((entry) => {
-      if (entry.type !== "outbound-rtp" || entry.kind !== "video" || !entry.framesEncoded) {
-        return;
-      }
-      const sending =
-        `compatibility video ${entry.frameHeight}p, encoder ${entry.encoderImplementation ?? "unknown"}, ` +
-        `hardware ${entry.powerEfficientEncoder ?? "unknown"}`;
-      if (sending === this.#sending) {
-        return;
-      }
-      this.#sending = sending;
-      if (entry.powerEfficientEncoder === false) {
-        report("warning", "stream", `software encoding: ${sending}`);
-      } else {
-        trail("stream", sending);
-      }
-    });
   }
 
   async #applyEncoding() {

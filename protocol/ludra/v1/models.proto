@@ -109,6 +109,7 @@ message FileRef {
   string mime = 4;
   bool direct = 5;
   bool expired = 6;
+  bool censored = 7;
 }
 
 enum FileSignalKind {

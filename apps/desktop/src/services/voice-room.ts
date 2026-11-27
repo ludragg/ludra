@@ -2,7 +2,7 @@ import { SignalKind, type IceServer } from "@/protocol/ludra/v1/models_pb";
 import { Microphone } from "@/services/microphone";
 import { PeerLink } from "@/services/peer-link";
 import type { ScreenQuality } from "@/services/screen";
-import { selfSpeaking, speakingHold, speakingThreshold } from "@/services/voice";
+import { audibleLevel, selfSpeaking, speakingHold } from "@/services/voice";
 import { preferences } from "@/stores/preferences.svelte";
 
 export class VoiceRoom {
@@ -193,7 +193,7 @@ export class VoiceRoom {
         until.set(this.#selfId, now + speakingHold);
       }
       for (const [peerId, link] of this.#links) {
-        if (link.level() > speakingThreshold) {
+        if (link.level() > audibleLevel) {
           until.set(peerId, now + speakingHold);
         }
       }

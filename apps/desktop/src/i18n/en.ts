@@ -2,6 +2,7 @@ import type { Messages } from "./pt";
 
 export const en: Messages = {
   common: {
+    cancel: "Cancel",
     connectionFailed: "Couldn't connect to the server.",
     connectionLost: "Lost connection to the server.",
     reconnecting: "Reconnecting to Ludra…",
@@ -160,6 +161,8 @@ export const en: Messages = {
     recordVoice: "Voice message",
     copyImage: "Copy image",
     tooManyFiles: "You can attach up to {count} files per message.",
+    censor: "Censor",
+    uncensor: "Uncensor",
     removeAttachment: "Remove attachment",
     previous: "Previous",
     next: "Next",
@@ -215,7 +218,10 @@ export const en: Messages = {
     downloaded: "Saved to Downloads",
     downloadFailed: "Could not save",
     closePhoto: "Close",
-    confirmDelete: "Click again to delete",
+    deleteTitle: "Delete message?",
+    deleteHint: "This can't be undone.",
+    delete: "Delete",
+    deleteFailed: "Couldn't delete the message.",
     edited: "(edited)",
     editedAt: "Edited {day} at {time}",
     escapeTo: "Escape to",
@@ -483,10 +489,6 @@ export const en: Messages = {
     disable: "Turn off",
     cancel: "Cancel",
     twoFactorFailed: "Couldn't change two-step verification.",
-    privacy: "Privacy",
-    errorReports: "Send error reports",
-    errorReportsHint:
-      "Helps Ludra's development. Only app errors and technical data are sent, such as version, Windows and GPU. Messages, files, passwords, emails and IP addresses are not sent.",
     devices: "Devices",
     processing: "Processing",
     connection: "Connection",

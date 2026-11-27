@@ -1,4 +1,3 @@
-import { report, trail } from "@/services/diagnostics";
 import { t } from "@/i18n";
 import { SignalKind, type Call, type CallSignal, type IceServer, type User } from "@/protocol/ludra/v1/models_pb";
 import { ErrorCode } from "@/protocol/ludra/v1/server_pb";
@@ -153,7 +152,6 @@ class CallStore {
       if (mine && this.current?.id !== mine) {
         return;
       }
-      report("error", "call", "could not start the call", cause);
       this.#showError(describe(cause, peer.username));
       if (mine) {
         await this.hangUp();
@@ -196,7 +194,6 @@ class CallStore {
       if (this.current?.id !== current.id) {
         return;
       }
-      report("error", "call", "could not answer the call", cause);
       this.#showError(describe(cause, current.peer.username));
       await this.hangUp();
     }
@@ -381,7 +378,6 @@ class CallStore {
       await this.#voice?.setCamera(track);
       this.#shareState();
     } catch (cause) {
-      report("warning", "camera", "the camera did not start", cause);
       this.#showError(cameraError(cause));
     } finally {
       this.#cameraBusy = false;
@@ -425,7 +421,6 @@ class CallStore {
       this.#shareQuality = quality;
       this.shareSettings = { sourceId, quality };
       this.sharing = true;
-      trail("screen", `sharing at ${qualityLabel(quality)}, mode ${quality.mode}, encoder ${quality.encoder}`);
       await this.#enforceLock();
       capture.onPreview = (image) => {
         this.ownPreview = image;
@@ -442,8 +437,7 @@ class CallStore {
         await this.#serve(call.peer.id);
       }
       this.#shareState();
-    } catch (cause) {
-      report("error", "screen", "screen sharing did not start", cause);
+    } catch {
       this.#showError(t("screen.failed"));
     } finally {
       this.#shareBusy = false;
@@ -639,7 +633,6 @@ class CallStore {
     };
     voice.onConnected = () => {
       if (this.current?.id === current.id) {
-        trail("call", "direct call connected");
         this.current.status = "active";
         this.current.startedAt ??= Date.now();
         this.#shareState();
@@ -704,8 +697,7 @@ class CallStore {
       this.#peerDirect = direct;
       this.#voice.setDirect(this.#direct && direct, false);
       await this.#voice.offer();
-    } catch (cause) {
-      report("error", "call", "could not offer the call", cause);
+    } catch {
       await this.hangUp();
     }
   }
@@ -782,23 +774,16 @@ class CallStore {
       let payload: string;
       try {
         payload = await trust.open(signal.callId, peerId, signal.kind, signal.payload);
-      } catch (cause) {
-        report("error", "call", "could not verify a call signature", cause);
+      } catch {
         this.#showError(t("call.insecure"));
         await this.hangUp();
         return;
       }
       if (signal.kind === SignalKind.STREAM_OFFER || signal.kind === SignalKind.STREAM_ANSWER) {
-        this.#streamSignal(signal.callId, peerId, signal.kind, payload).catch((cause) => {
-          report("error", "stream", "could not handle a stream signal", cause);
-          this.#closeReceiver();
-        });
+        this.#streamSignal(signal.callId, peerId, signal.kind, payload).catch(() => this.#closeReceiver());
         return;
       }
-      await voice.receive(signal.kind, payload).catch((cause) => {
-        report("error", "call", "could not handle a call signal", cause);
-        return this.hangUp();
-      });
+      await voice.receive(signal.kind, payload).catch(() => this.hangUp());
     });
   }
 
@@ -815,7 +800,6 @@ class CallStore {
     this.watching = false;
     this.screen = null;
     if (this.current) {
-      trail("call", "direct call ended");
       playCue("ended");
     }
     this.#voice?.close();

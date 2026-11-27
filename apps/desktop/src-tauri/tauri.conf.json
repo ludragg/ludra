@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Ludra",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "identifier": "app.ludra.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "create": false,
         "title": "Ludra",
         "width": 1200,
         "height": 760,
@@ -54,7 +55,8 @@
       "nsis": {
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
-        "uninstallerIcon": "icons/icon.ico"
+        "uninstallerIcon": "icons/icon.ico",
+        "installerHooks": "installer/hooks.nsh"
       }
     }
   },

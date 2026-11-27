@@ -1,4 +1,7 @@
 <script lang="ts">
+  import CensoredVideo from "@/components/censored-video/censored-video.svelte";
+  import CensorCover from "@/components/censor-cover/censor-cover.svelte";
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import MediaHint from "@/components/media-hint/media-hint.svelte";
   import VideoPlayer from "@/components/video-player/video-player.svelte";
   import { copyMenu } from "@/helpers/image-menu";
@@ -7,6 +10,8 @@
   let {
     kind,
     source,
+    original,
+    censored,
     name,
     detail,
     caption,
@@ -16,11 +21,14 @@
     wanted,
     onrequest,
     oncancel,
-    onreveal,
     onview,
+    onuncensor,
+    onfolder,
   }: {
     kind: "image" | "video";
     source: string | null;
+    original: string | null;
+    censored: boolean;
     name: string;
     detail: string;
     caption: string;
@@ -30,8 +38,9 @@
     wanted: boolean;
     onrequest: () => void;
     oncancel: () => void;
-    onreveal: () => void;
     onview: () => void;
+    onuncensor: () => void;
+    onfolder: (() => void) | null;
   } = $props();
 
   let hovered = $state(false);
@@ -45,11 +54,27 @@
   onfocusin={() => (hovered = true)}
   onfocusout={() => (hovered = false)}
 >
-  {#if kind === "video"}
-    <VideoPlayer {source} {caption} {name} {detail} pinned={busy} autoplay={wanted} {onrequest} {onreveal} />
+  {#if source && censored && kind === "video"}
+    <CensoredVideo {source} {onuncensor} />
+  {:else if kind === "video"}
+    <VideoPlayer
+      {source}
+      {caption}
+      {name}
+      {detail}
+      pinned={busy}
+      autoplay={wanted}
+      {onrequest}
+      onfolder={busy ? null : onfolder}
+    />
+  {:else if source && censored}
+    <div class="file-media__censored">
+      <img class="file-media__image file-media__image--blurred" src={source} alt="" draggable="false" />
+      <CensorCover {onuncensor} />
+    </div>
   {:else if source}
     <button type="button" class="file-media__photo" aria-label={t("chat.openPhoto")} onclick={onview}>
-      <img class="file-media__image" src={source} alt={name} draggable="false" {@attach copyMenu(() => source)} />
+      <img class="file-media__image" src={source} alt={name} draggable="false" {@attach copyMenu(() => original)} />
     </button>
   {:else}
     <button type="button" class="file-media__placeholder" {disabled} onclick={onrequest}>
@@ -71,6 +96,11 @@
   {/if}
   {#if kind === "image"}
     <MediaHint {name} {detail} visible={hovered || busy} />
+  {/if}
+  {#if onfolder && !busy && (kind === "image" || censored)}
+    <span class="file-media__folder" class:file-media__folder--visible={hovered}>
+      <FolderButton variant="overlay" onclick={onfolder} />
+    </span>
   {/if}
   {#if busy}
     <button
@@ -125,6 +155,21 @@
     object-fit: contain;
   }
 
+  .file-media__censored {
+    position: relative;
+    min-height: 120px;
+    display: grid;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #000000;
+  }
+
+  .file-media__image--blurred {
+    filter: blur(28px);
+    transform: scale(1.2);
+  }
+
   .file-media__placeholder {
     width: 100%;
     aspect-ratio: 16 / 10;
@@ -146,6 +191,16 @@
 
   .file-media__placeholder svg {
     width: 32px;
+  }
+
+  .file-media__folder {
+    opacity: 0;
+    transition: opacity ease 0.15s;
+  }
+
+  .file-media__folder--visible,
+  .file-media__folder:focus-within {
+    opacity: 1;
   }
 
   .file-media__cancel {

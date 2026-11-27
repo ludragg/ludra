@@ -6,6 +6,8 @@ use tauri::{
     WebviewUrl, WebviewWindow, WebviewWindowBuilder,
 };
 
+use crate::{front, popup};
+
 const LABEL: &str = "toast";
 const WIDTH: f64 = 372.0;
 
@@ -98,11 +100,7 @@ pub async fn toast_layout<R: Runtime>(
 
 #[tauri::command]
 pub fn toast_open<R: Runtime>(app: AppHandle<R>, target: String) -> Result<(), String> {
-    if let Some(main) = app.get_webview_window("main") {
-        let _ = main.show();
-        let _ = main.unminimize();
-        let _ = main.set_focus();
-    }
+    front::show_main(&app);
     app.emit_to("main", "toast-open", target)
         .map_err(|error| error.to_string())
 }
@@ -114,7 +112,7 @@ fn monitor<R: Runtime>(app: &AppHandle<R>) -> Option<Monitor> {
 }
 
 fn create<R: Runtime>(app: &AppHandle<R>) -> Result<WebviewWindow<R>, String> {
-    WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("toast.html".into()))
+    let builder = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("toast.html".into()))
         .title("Ludra")
         .inner_size(WIDTH, 96.0)
         .decorations(false)
@@ -123,9 +121,6 @@ fn create<R: Runtime>(app: &AppHandle<R>) -> Result<WebviewWindow<R>, String> {
         .resizable(false)
         .skip_taskbar(true)
         .always_on_top(true)
-        .focused(false)
-        .focusable(false)
-        .visible(false)
-        .build()
-        .map_err(|error| error.to_string())
+        .focusable(false);
+    popup::create(builder).map_err(|error| error.to_string())
 }

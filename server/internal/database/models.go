@@ -30,20 +30,6 @@ type Conversation struct {
 	Avatar    string
 }
 
-type DiagnosticReport struct {
-	ID          int64
-	UserID      string
-	ReceivedAt  time.Time
-	OccurredAt  time.Time
-	Level       string
-	Area        string
-	Message     string
-	Detail      string
-	Occurrences int32
-	AppVersion  string
-	System      string
-}
-
 type FriendRequest struct {
 	SenderID    string
 	RecipientID string
@@ -100,6 +86,7 @@ type Message struct {
 	ReplySenderID      *string
 	ReplyKind          *string
 	ReplyExcerpt       *string
+	FileCensored       bool
 }
 
 type MessageFile struct {
@@ -108,6 +95,7 @@ type MessageFile struct {
 	Name      string
 	Size      int64
 	Mime      string
+	Censored  bool
 }
 
 type Participant struct {

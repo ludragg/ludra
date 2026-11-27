@@ -914,6 +914,7 @@ type FileRef struct {
 	Mime          string                 `protobuf:"bytes,4,opt,name=mime,proto3" json:"mime,omitempty"`
 	Direct        bool                   `protobuf:"varint,5,opt,name=direct,proto3" json:"direct,omitempty"`
 	Expired       bool                   `protobuf:"varint,6,opt,name=expired,proto3" json:"expired,omitempty"`
+	Censored      bool                   `protobuf:"varint,7,opt,name=censored,proto3" json:"censored,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -986,6 +987,13 @@ func (x *FileRef) GetDirect() bool {
 func (x *FileRef) GetExpired() bool {
 	if x != nil {
 		return x.Expired
+	}
+	return false
+}
+
+func (x *FileRef) GetCensored() bool {
+	if x != nil {
+		return x.Censored
 	}
 	return false
 }
@@ -1668,14 +1676,15 @@ const file_ludra_v1_models_proto_rawDesc = "" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12)\n" +
 	"\x04kind\x18\x03 \x01(\x0e2\x15.ludra.v1.MessageKindR\x04kind\x12\x18\n" +
 	"\aexcerpt\x18\x04 \x01(\tR\aexcerpt\x12\x14\n" +
-	"\x05voice\x18\x05 \x01(\bR\x05voice\"\x87\x01\n" +
+	"\x05voice\x18\x05 \x01(\bR\x05voice\"\xa3\x01\n" +
 	"\aFileRef\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\x04R\x04size\x12\x12\n" +
 	"\x04mime\x18\x04 \x01(\tR\x04mime\x12\x16\n" +
 	"\x06direct\x18\x05 \x01(\bR\x06direct\x12\x18\n" +
-	"\aexpired\x18\x06 \x01(\bR\aexpired\"\xe2\x02\n" +
+	"\aexpired\x18\x06 \x01(\bR\aexpired\x12\x1a\n" +
+	"\bcensored\x18\a \x01(\bR\bcensored\"\xe2\x02\n" +
 	"\n" +
 	"FileSignal\x12\x1d\n" +
 	"\n" +

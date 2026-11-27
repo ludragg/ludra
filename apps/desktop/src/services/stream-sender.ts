@@ -5,7 +5,6 @@ import { SignalKind, type IceServer } from "@/protocol/ludra/v1/models_pb";
 import { describe } from "@/services/peer-link";
 import type { ScreenQuality } from "@/services/screen";
 import { hardwareEncoders } from "@/services/stream-encoders";
-import { report, trail } from "@/services/diagnostics";
 import { streamClosed } from "@/services/stream-signal";
 
 const connectLimit = 20_000;
@@ -46,10 +45,9 @@ export class StreamSender {
     if (!changed) {
       return;
     }
-    trail("stream", `sender: share settings changed to ${profile}`);
     for (const viewerId of [...this.#viewers.keys()]) {
       if (this.#compatibility) {
-        this.#fallback(viewerId, "compatibility chosen");
+        this.#fallback(viewerId);
       } else {
         this.remove(viewerId);
       }
@@ -62,16 +60,11 @@ export class StreamSender {
 
   async add(viewerId: string, iceServers: IceServer[], direct: boolean): Promise<boolean> {
     if (this.#compatibility || !(await hardwareEncoders()).length || this.#broken || this.#stopped) {
-      trail(
-        "stream",
-        `sender: not native, compatibility=${this.#compatibility} broken=${this.#broken} stopped=${this.#stopped}`,
-      );
       return false;
     }
     this.remove(viewerId);
-    trail("stream", `sender: offering native stream, direct=${direct}`);
     const viewer = {
-      timer: window.setTimeout(() => this.#fallback(viewerId, "no connection in 20 s"), connectLimit),
+      timer: window.setTimeout(() => this.#fallback(viewerId), connectLimit),
       direct,
     };
     this.#viewers.set(viewerId, viewer);
@@ -90,8 +83,7 @@ export class StreamSender {
       }
       this.onSignal(viewerId, SignalKind.STREAM_OFFER, describe({ type: "offer", sdp }));
       return true;
-    } catch (cause) {
-      report("warning", "stream", "the native stream offer failed", cause);
+    } catch {
       this.#drop(viewerId);
       return false;
     }
@@ -113,14 +105,11 @@ export class StreamSender {
       return;
     }
     const { sdp } = JSON.parse(payload) as RTCSessionDescriptionInit;
-    await invoke("stream_answer", { viewer: viewerId, sdp }).catch((cause) =>
-      this.#fallback(viewerId, `answer failed: ${cause}`),
-    );
+    await invoke("stream_answer", { viewer: viewerId, sdp }).catch(() => this.#fallback(viewerId));
   }
 
   remove(viewerId: string) {
     if (this.#drop(viewerId)) {
-      trail("stream", "sender: closing native stream");
       invoke("stream_close", { viewer: viewerId }).catch(() => undefined);
     }
   }
@@ -146,20 +135,15 @@ export class StreamSender {
       return;
     }
     if (!connected) {
-      this.#fallback(viewer, "native connection failed");
+      this.#fallback(viewer);
       return;
     }
     window.clearTimeout(entry.timer);
   }
 
-  #fallback(viewerId: string, reason: string) {
+  #fallback(viewerId: string) {
     if (!this.#viewers.has(viewerId)) {
       return;
-    }
-    if (this.#compatibility) {
-      trail("stream", `sender: using compatibility, ${reason}`);
-    } else {
-      report("warning", "stream", `the native stream fell back to compatibility: ${reason}`);
     }
     this.remove(viewerId);
     this.onSignal(viewerId, SignalKind.STREAM_OFFER, streamClosed);
@@ -172,7 +156,7 @@ export class StreamSender {
       this.onBroken();
     }
     for (const viewerId of [...this.#viewers.keys()]) {
-      this.#fallback(viewerId, "encoder broke");
+      this.#fallback(viewerId);
     }
   }
 }

@@ -1,7 +1,7 @@
 import { localeTag } from "@/i18n";
 import type { FileRef, Message } from "@/protocol/ludra/v1/models_pb";
 
-export type Picked = { path: string; name: string; size: number };
+export type Picked = { path: string; name: string; size: number; censored?: boolean };
 
 export type FileCategory = "image" | "video" | "audio" | "archive" | "document" | "code" | "other";
 

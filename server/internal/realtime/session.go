@@ -14,7 +14,6 @@ import (
 
 	"ludra/internal/account"
 	"ludra/internal/chat"
-	"ludra/internal/diagnostics"
 	"ludra/internal/failure"
 	"ludra/internal/friends"
 	"ludra/internal/gifs"
@@ -33,28 +32,27 @@ const (
 )
 
 type session struct {
-	diagnostics *diagnostics.Service
-	conn        *websocket.Conn
-	hub         *hub
-	guard       *guard
-	chat        *chat.Service
-	friends     *friends.Service
-	account     *account.Service
-	relay       *voice.Relay
-	calls       *calls
-	rooms       *rooms
-	voice       *sync.Mutex
-	ip          string
-	previews    *unfurl.Fetcher
-	gifs        *gifs.Client
-	user        *protocol.User
-	sessionID   string
-	challenge   *account.Challenge
-	expires     time.Time
-	handling    atomic.Bool
-	receiving   atomic.Bool
-	later       []*protocol.ServerFrame
-	send        chan []byte
+	conn      *websocket.Conn
+	hub       *hub
+	guard     *guard
+	chat      *chat.Service
+	friends   *friends.Service
+	account   *account.Service
+	relay     *voice.Relay
+	calls     *calls
+	rooms     *rooms
+	voice     *sync.Mutex
+	ip        string
+	previews  *unfurl.Fetcher
+	gifs      *gifs.Client
+	user      *protocol.User
+	sessionID string
+	challenge *account.Challenge
+	expires   time.Time
+	handling  atomic.Bool
+	receiving atomic.Bool
+	later     []*protocol.ServerFrame
+	send      chan []byte
 }
 
 func (s *session) run(ctx context.Context) {
@@ -258,11 +256,6 @@ func (s *session) handle(ctx context.Context, frame *protocol.ClientFrame) *prot
 	switch payload := frame.Payload.(type) {
 	case *protocol.ClientFrame_Logout:
 		return s.logout(ctx)
-	case *protocol.ClientFrame_ReportDiagnostics:
-		if !s.guard.diagnostics.Allow(s.user.Id) {
-			return tooManyRequests()
-		}
-		return s.reportDiagnostics(ctx, payload.ReportDiagnostics)
 	case *protocol.ClientFrame_ListConversations:
 		return s.listConversations(ctx)
 	case *protocol.ClientFrame_LoadMessages:

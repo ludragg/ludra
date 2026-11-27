@@ -24,6 +24,7 @@ type room struct {
 	voice          map[string]voiceState
 	direct         map[string]bool
 	previews       map[string]string
+	forwarded      map[string]time.Time
 }
 
 type voiceState struct {
@@ -33,7 +34,10 @@ type voiceState struct {
 	camera   bool
 }
 
-const aloneTimeout = 10 * time.Minute
+const (
+	aloneTimeout      = 3 * time.Hour
+	alonePreviewEvery = 55 * time.Second
+)
 
 type roomFinisher func(conversationID, messageID string, duration time.Duration)
 
@@ -126,6 +130,7 @@ func (r *rooms) join(conversationID string, s *session, direct bool) (*room, boo
 			voice:          make(map[string]voiceState),
 			direct:         make(map[string]bool),
 			previews:       make(map[string]string),
+			forwarded:      make(map[string]time.Time),
 			startedAt:      time.Now(),
 		}
 		r.byID[current.id] = current
@@ -179,6 +184,7 @@ func (r *rooms) leaveLocked(found *room, s *session) bool {
 	delete(found.voice, found.sessions[s])
 	delete(found.direct, found.sessions[s])
 	delete(found.previews, found.sessions[s])
+	delete(found.forwarded, found.sessions[s])
 	delete(r.byUser, found.sessions[s])
 	delete(found.sessions, s)
 	empty := len(found.sessions) == 0
@@ -242,6 +248,7 @@ func (r *rooms) setVoice(roomID string, from *session, state voiceState, direct 
 	current.voice[userID] = state
 	if !state.sharing {
 		delete(current.previews, userID)
+		delete(current.forwarded, userID)
 	}
 	if direct != nil && current.direct[userID] != *direct {
 		changed = true
@@ -270,6 +277,12 @@ func (r *rooms) setPreview(roomID string, from *session, image string) (string, 
 		return "", nil, false
 	}
 	current.previews[userID] = image
+	if len(current.sessions) == 1 {
+		if time.Since(current.forwarded[userID]) < alonePreviewEvery {
+			return "", nil, false
+		}
+		current.forwarded[userID] = time.Now()
+	}
 	inside := make(map[string]bool, len(current.sessions))
 	for _, id := range current.sessions {
 		inside[id] = true

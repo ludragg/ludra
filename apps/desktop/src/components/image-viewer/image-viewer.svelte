@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { tick } from "svelte";
+  import { tick, untrack } from "svelte";
+  import CensorCover from "@/components/censor-cover/censor-cover.svelte";
   import CarouselControls from "@/components/carousel-controls/carousel-controls.svelte";
+  import FolderButton from "@/components/folder-button/folder-button.svelte";
   import { copyMenu } from "@/helpers/image-menu";
   import { t } from "@/i18n";
 
@@ -8,6 +10,11 @@
     load,
     label,
     save,
+    preview,
+    original,
+    censored = false,
+    onuncensor,
+    onfolder = null,
     position,
     onprevious,
     onnext,
@@ -16,20 +23,27 @@
     load: () => Promise<string>;
     label: string;
     save?: () => Promise<string | null>;
+    preview?: string | null;
+    original?: string;
+    censored?: boolean;
+    onuncensor?: () => void;
+    onfolder?: (() => void) | null;
     position?: string;
     onprevious?: () => void;
     onnext?: () => void;
     onclose: () => void;
   } = $props();
 
-  let url = $state("");
+  let url = $state(untrack(() => preview ?? ""));
   let natural = $state(0);
+  let fitted = $state(0);
+  let picture = $state<HTMLImageElement>();
   let zoomed = $state(false);
   let saved = $state<"idle" | "saving" | "saved" | "failed">("idle");
   let stage = $state<HTMLElement>();
   let drag: { x: number; y: number; left: number; top: number; moved: boolean } | null = null;
 
-  const zoomWidth = $derived(natural >= 1200 ? natural : natural * 2);
+  const zoomWidth = $derived(natural >= fitted * 1.5 ? natural : fitted * 2);
   const downloadLabel = $derived(
     saved === "saved" ? t("chat.downloaded") : saved === "failed" ? t("chat.downloadFailed") : t("chat.download"),
   );
@@ -41,6 +55,12 @@
   });
 
   async function zoom(next: boolean) {
+    if (next && !natural) {
+      return;
+    }
+    if (next) {
+      fitted = picture?.clientWidth || natural;
+    }
     zoomed = next;
     await tick();
     if (next && stage) {
@@ -138,19 +158,25 @@
           alt={label}
           draggable="false"
           style:width="{zoomWidth}px"
-          {@attach copyMenu(() => url)}
+          {@attach copyMenu(() => original ?? url)}
           onpointerdown={pointerdown}
           onpointermove={pointermove}
           onpointerup={pointerup}
         />
+      {:else if censored}
+        <div class="image-viewer__censored">
+          <img class="image-viewer__image image-viewer__image--blurred" src={url} alt="" draggable="false" />
+          <CensorCover onuncensor={() => onuncensor?.()} />
+        </div>
       {:else}
         <button type="button" class="image-viewer__fit" aria-label={t("chat.zoomIn")} onclick={() => zoom(true)}>
           <img
             class="image-viewer__image"
+            bind:this={picture}
             src={url}
             alt={label}
             draggable="false"
-            {@attach copyMenu(() => url)}
+            {@attach copyMenu(() => original ?? url)}
             onload={(event) => (natural = (event.currentTarget as HTMLImageElement).naturalWidth)}
           />
         </button>
@@ -182,26 +208,28 @@
       <CarouselControls {position} {onprevious} {onnext} />
     {/if}
     <div class="image-viewer__toolbar">
-      <div class="image-viewer__tools">
-        <button
-          type="button"
-          class="image-viewer__tool"
-          aria-label={t("chat.zoomIn")}
-          data-tooltip={t("chat.zoomIn")}
-          onclick={() => zoom(true)}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            aria-hidden="true"
+      <div class="image-viewer__tools" class:image-viewer__tools--empty={censored && !save && !onfolder}>
+        {#if !censored}
+          <button
+            type="button"
+            class="image-viewer__tool"
+            aria-label={t("chat.zoomIn")}
+            data-tooltip={t("chat.zoomIn")}
+            onclick={() => zoom(true)}
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3.5-3.5M11 8v6M8 11h6" />
-          </svg>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5M11 8v6M8 11h6" />
+            </svg>
+          </button>
+        {/if}
         {#if save}
           <button
             type="button"
@@ -228,6 +256,9 @@
               {/if}
             </svg>
           </button>
+        {/if}
+        {#if onfolder}
+          <FolderButton variant="viewer" onclick={onfolder} />
         {/if}
       </div>
       <button
@@ -294,6 +325,24 @@
     user-select: none;
   }
 
+  .image-viewer__censored {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    min-width: 240px;
+    min-height: 120px;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .image-viewer__image--blurred {
+    filter: blur(40px);
+    transform: scale(1.2);
+  }
+
   .image-viewer__image--zoomed {
     max-width: none;
     max-height: none;
@@ -319,6 +368,10 @@
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background: var(--dark-background-color);
+  }
+
+  .image-viewer__tools--empty {
+    display: none;
   }
 
   .image-viewer__tool {

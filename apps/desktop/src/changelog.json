@@ -1,5 +1,46 @@
 [
   {
+    "version": "0.5.1",
+    "notes": {
+      "pt": {
+        "features": [
+          "Os relatórios de erro que chegaram na 0.5.0 foram removidos: o Ludra não coleta nem envia mais esses dados, e os relatórios recebidos foram apagados do banco de dados do servidor.",
+          "Fotos e vídeos podem ser enviados com censura: antes de enviar, clique no olho ao lado da lixeira. Eles aparecem borrados até alguém clicar em \"Remover censura\". A censura é só visual: quem recebe tem o arquivo original.",
+          "Para apagar uma mensagem, basta um clique na lixeira e uma confirmação.",
+          "Arquivos que estão no seu PC ganharam um botão para abrir a pasta. Se um arquivo que você baixou não estiver mais lá, dá para baixar de novo.",
+          "Quem fica sozinho em uma chamada em grupo agora pode esperar até 3 horas.",
+          "Os dados do app agora ficam na pasta do Ludra em %LOCALAPPDATA%. Imagens coladas e a janela \"Salvar como\" usam a pasta Documentos\\Ludra."
+        ],
+        "fixes": [
+          "Imagens muito grandes não travam mais o app: o chat e o visualizador usam versões mais leves.",
+          "O zoom agora funciona em imagens que antes não ampliavam.",
+          "A borda verde de quem está falando aparece mesmo com a sensibilidade do microfone no mínimo.",
+          "Ao compartilhar uma janela, a transmissão mostra somente essa janela. Antes, um jogo em tela cheia sem borda podia fazer o Ludra capturar o monitor inteiro.",
+          "As notificações e o menu do ícone na bandeja voltam a funcionar em PCs onde não abriam.",
+          "Clicar em uma notificação agora traz o Ludra para a frente."
+        ]
+      },
+      "en": {
+        "features": [
+          "The error reports added in 0.5.0 were removed: Ludra no longer collects or sends that data, and the reports already received were deleted from the server database.",
+          "Photos and videos can be sent censored: before sending, click the eye next to the trash. They stay blurred until someone clicks \"Uncensor\". The censorship is only visual: whoever receives them has the original file.",
+          "Deleting a message takes one click on the trash and a confirmation.",
+          "Files that are on your PC have a new button to open their folder. If a file you downloaded is no longer there, you can download it again.",
+          "Someone left alone in a group call can now wait for up to 3 hours.",
+          "The app's data now lives in the Ludra folder under %LOCALAPPDATA%. Pasted images and the \"Save as\" window use the Documents\\Ludra folder."
+        ],
+        "fixes": [
+          "Very large images no longer freeze the app: the chat and the viewer use lighter versions.",
+          "Zoom now works on images that did not zoom before.",
+          "The green speaking ring shows up even with the microphone sensitivity at its lowest.",
+          "Sharing a window now streams only that window. Before, a borderless fullscreen game could make Ludra capture the whole monitor.",
+          "Notifications and the tray icon menu work again on PCs where they did not open.",
+          "Clicking a notification now brings Ludra to the front."
+        ]
+      }
+    }
+  },
+  {
     "version": "0.5.0",
     "notes": {
       "pt": {

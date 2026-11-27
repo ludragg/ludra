@@ -42,21 +42,6 @@
 Ludra runs on Windows. Builds are published as pre-releases on the
 [Releases](https://github.com/ludragg/ludra/releases) page while the app is in early development.
 
-## Privacy: error reports
-
-To help fix problems, the app sends error reports to the Ludra server it is connected to. **This is on by default.**
-You can turn it off in Settings › Account › Privacy. The app then stops collecting and deletes the reports it had not
-sent yet; reports already sent stay on the server until they expire.
-
-- **What is sent:** the error and its technical details, the app's recent technical activity before it, the Ludra
-  version, the Windows and WebView2 versions and the GPU name. Nothing is sent when there is no problem to
-  report.
-- **What is not sent:** chat messages, files, passwords, email addresses and IP addresses are not put in reports. As a
-  second safeguard, an automatic filter removes emails, IP addresses, file paths, external links, keys and long quoted
-  text before a report leaves your PC.
-- **Who it is linked to:** reports are only sent while you are signed in, are linked to that account and are deleted
-  after 30 days.
-
 ## Running locally
 
 You need Go, Node.js, Rust and Docker.
