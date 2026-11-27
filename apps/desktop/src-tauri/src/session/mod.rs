@@ -36,7 +36,7 @@ fn target(app: &AppHandle) -> String {
 #[tauri::command]
 pub fn session_token_read(app: AppHandle, webview: Webview) -> Result<Option<String>, String> {
     main_window(&webview)?;
-    let Some(secret) = store::read(&target(&app))? else {
+    let Some(secret) = credential::read(&target(&app)).map_err(|error| error.to_string())? else {
         return Ok(None);
     };
     Ok(String::from_utf8(secret).ok().filter(|token| valid(token)))
@@ -48,47 +48,13 @@ pub fn session_token_save(app: AppHandle, webview: Webview, token: String) -> Re
     if !valid(&token) {
         return Err("invalid token".into());
     }
-    store::write(&target(&app), token.as_bytes())
+    credential::write(&target(&app), token.as_bytes()).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub fn session_token_clear(app: AppHandle, webview: Webview) -> Result<(), String> {
     main_window(&webview)?;
-    store::delete(&target(&app))
-}
-
-#[cfg(windows)]
-mod store {
-    use super::credential;
-
-    pub fn read(target: &str) -> Result<Option<Vec<u8>>, String> {
-        credential::read(target).map_err(|error| error.to_string())
-    }
-
-    pub fn write(target: &str, secret: &[u8]) -> Result<(), String> {
-        credential::write(target, secret).map_err(|error| error.to_string())
-    }
-
-    pub fn delete(target: &str) -> Result<(), String> {
-        credential::delete(target).map_err(|error| error.to_string())
-    }
-}
-
-#[cfg(not(windows))]
-mod store {
-    const UNSUPPORTED: &str = "secure token storage is only implemented on Windows";
-
-    pub fn read(_: &str) -> Result<Option<Vec<u8>>, String> {
-        Err(UNSUPPORTED.into())
-    }
-
-    pub fn write(_: &str, _: &[u8]) -> Result<(), String> {
-        Err(UNSUPPORTED.into())
-    }
-
-    pub fn delete(_: &str) -> Result<(), String> {
-        Err(UNSUPPORTED.into())
-    }
+    credential::delete(&target(&app)).map_err(|error| error.to_string())
 }
 
 #[cfg(test)]
