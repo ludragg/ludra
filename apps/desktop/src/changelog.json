@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.5.2",
+    "notes": {
+      "pt": {
+        "features": [
+          "Sua sessão agora fica guardada no Gerenciador de Credenciais do Windows, protegida pela sua conta do Windows, e não mais num arquivo comum. Isso dificulta que programas que copiam arquivos do PC levem a sua conta. Você continua conectado depois de atualizar.",
+          "As atualizações do Ludra agora são assinadas numa etapa separada e mais protegida, o que dificulta que alguém publique uma atualização falsa."
+        ],
+        "fixes": []
+      },
+      "en": {
+        "features": [
+          "Your session is now kept in Windows Credential Manager, protected by your Windows account, instead of a plain file. This makes it harder for programs that copy files from your PC to take over your account. You stay signed in after updating.",
+          "Ludra updates are now signed in a separate, better protected step, which makes it harder for anyone to publish a fake update."
+        ],
+        "fixes": []
+      }
+    }
+  },
+  {
     "version": "0.5.1",
     "notes": {
       "pt": {

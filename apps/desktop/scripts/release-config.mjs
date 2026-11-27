@@ -25,6 +25,7 @@ writeFileSync(
   new URL("../src-tauri/tauri.release.conf.json", import.meta.url),
   JSON.stringify({
     app: { security: { csp } },
+    bundle: { createUpdaterArtifacts: false },
     plugins: { updater: { endpoints: [`${web}/update`] } },
   }),
 );
