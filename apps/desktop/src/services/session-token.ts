@@ -60,11 +60,11 @@ export function readSessionToken(): Promise<string | null> {
       return stored;
     }
 
-    if (stored === null && !(await nativeSave(legacy))) {
+    if (!(await nativeSave(legacy))) {
       return legacy;
     }
     legacyRemove();
-    return stored ?? legacy;
+    return legacy;
   });
 }
 
