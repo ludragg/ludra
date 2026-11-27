@@ -109,7 +109,7 @@ jobs:
           name: installer
           path: dist
 
-      - name: Verify installer
+      - name: Check artifact checksum
         env:
           EXPECTED: ${{ needs.build.outputs.sha256 }}
         run: echo "${EXPECTED}  dist/ludra-installer.exe" | sha256sum --check --strict
