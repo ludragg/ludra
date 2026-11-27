@@ -71,7 +71,9 @@ starts a release.
 ## Cutting a release
 
 1. Bump the version in `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json` and
-   `apps/desktop/src-tauri/Cargo.toml`, and add the notes to `apps/desktop/src/changelog.json`.
+   `apps/desktop/src-tauri/Cargo.toml` (plus `package-lock.json` and `Cargo.lock`), and add the notes to
+   `apps/desktop/src/changelog.json` in Portuguese and English. The
+   release notes and the in-app "What's new" come from that entry, and `publish` fails if the tag's version has none.
 2. Merge to `main`, then tag that commit: `git tag v0.5.1 && git push origin v0.5.1`.
 3. Wait for `build`, then approve the `publish` job when it asks.
 4. Check the draft release: it has `ludra-installer.exe` and `latest.json`, and no `.sig` file.
